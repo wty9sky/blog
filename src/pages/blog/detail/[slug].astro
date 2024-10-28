@@ -2,7 +2,7 @@
 import Layout from "@layouts/Layout.astro";
 import apis from "@scripts/apis";
 import utils from "@scripts/utils";
-import markdown from "@scripts";
+import markdown from "@scripts/markdown";
 
 export async function getStaticPaths() {
   const { list } = await apis.getArticles(1, 10000);

@@ -116,3 +116,5 @@ declare module "@configs/services.yml" {
 }
 
 declare module "remarkable";
+declare module "remarkable-katex";
+declare module "markdown-toc";

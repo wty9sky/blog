@@ -1,15 +1,12 @@
 ---
-import CC from "@components/badges/CC.astro";
-import NotByAI from "@components/badges/NotByAI.astro";
 import Menu from "@components/menu/Menu.astro";
-import Path from "@components/Path.astro";
 
 interface Props {
   menuItems: MenuItem[];
   pathItems: PathItem[];
 }
 
-const { menuItems, pathItems } = Astro.props;
+const { menuItems } = Astro.props;
 const year = new Date().getFullYear();
 ---
 

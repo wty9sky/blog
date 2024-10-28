@@ -8,7 +8,7 @@ const { articles } = Astro.props;
 
 <div class="article-list w-full flex gap-[5%] flex-row flex-wrap items-start">
   {
-    articles.map((article, index) => (
+    articles.map((article) => (
       <>
         {article.isTop && (
           <article class="article-item flex flex-row justify-between items-center mt-[30px]">
