@@ -7,7 +7,7 @@ groups:
         method: Docker
       - name: CV
         app: WebCV 在线简历
-        url: https://wty9sky.github.io/wty_cv
+        url: https://wty9sky.github.io/wty_resume
         method: Vercel
   - name: 🌟 自开源&文档
     services:

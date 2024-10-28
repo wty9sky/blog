@@ -1,4 +1,5 @@
 ---
+import dayjs from 'dayjs'
 interface Props {
   articles: GotArticle[];
 }
@@ -40,11 +41,12 @@ const { articles } = Astro.props;
                   {article.desc}
                 </span>
               </a>
+              <span class="text-sm text-gray-400 mt-[5px]">{dayjs(article.submitTime).format('YYYY-MM-DD')}</span>
             </div>
           </article>
         )}
         {!article.isTop && (
-            <article class="article-content flex flex-col mt-[30px] w-[30%]">
+            <article class="article-content flex flex-col mt-[30px] w-[30%] rounded">
               {article.cover && (
                 <a
                   href={article.cover}
@@ -73,6 +75,7 @@ const { articles } = Astro.props;
                   {article.desc}
                 </span>
               </a>
+              <span class="text-sm text-gray-400 mt-[5px]">{dayjs(article.submitTime).format('YYYY-MM-DD')}</span>
             </article>
           )}
       </>
