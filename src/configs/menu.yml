@@ -1,0 +1,13 @@
+items:
+  - name: 文章
+    icon: ri-newspaper-line
+    url: /blog
+  - name: 项目
+    icon: ri-server-line
+    url: /projects
+  - name: 实验室
+    icon: ri-server-line
+    url: /lab
+  - name: 关于
+    icon: ri-cup-line
+    url: /about

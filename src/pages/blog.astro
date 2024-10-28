@@ -1,0 +1,42 @@
+---
+import Layout from "@layouts/Layout.astro";
+import Passages from "@components/blog/Passages.astro";
+import apis from "@scripts/apis";
+
+const { total, list } = await apis.getArticles(1, 10);
+
+const hasTop = list.findIndex((item) => item.isTop === true);
+---
+
+<Layout
+  title="文章"
+  pathItems={[{ title: "文章", url: "" }]}
+  description="文章"
+  keywords={[]}
+>
+  <main class="page">
+    <hr class="page__divide page__divide--between-sections" />
+    <section class="page__section">
+      <Passages articles={list} />
+    </section>
+
+    {
+      ((hasTop!==-1 && total >= 10) ||
+        (hasTop===-1 && total > 9)) && (
+          <section class="page__section mt-[50px]">
+            <div class="paginator">
+              <div class="paginator__left" />
+              <div class="paginator__center">
+                <span>第 1 页</span>
+              </div>
+              <div class="paginator__right">
+                <a href="/blog/2" class="link">
+                  下一页
+                </a>
+              </div>
+            </div>
+          </section>
+        )
+    }
+  </main>
+</Layout>

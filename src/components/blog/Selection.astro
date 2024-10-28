@@ -1,0 +1,34 @@
+---
+import apis from "@scripts/apis";
+
+interface Props {
+  selections: Selection[];
+}
+
+const { selections } = Astro.props;
+---
+
+<div class="selections">
+  {
+    selections.map((selection) => (
+      <div class="selections__group">
+        <h2>{selection.name}</h2>
+        <ul>
+          {selection.slugs.map(async (slug) => {
+            const post = await apis.getArticle(slug);
+            return (
+              <li>
+                <a
+                  href={"/blog/" + slug}
+                  class="content__link content__link--no-underline-by-default"
+                >
+                  {post.title}
+                </a>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    ))
+  }
+</div>

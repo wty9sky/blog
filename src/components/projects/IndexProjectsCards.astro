@@ -1,0 +1,22 @@
+---
+import ProjectCard from "@components/projects/ProjectCard.astro";
+
+interface Props {
+  projects: Project[];
+}
+
+const { projects } = Astro.props;
+console.log(projects);
+---
+
+<div class="flex flex-row">
+  <ul class="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+    {
+      projects.map((project) => {
+        return <ProjectCard project={project} />;
+      })
+    }
+  </ul>
+</div>
+
+<style></style>

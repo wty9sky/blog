@@ -1,0 +1,60 @@
+---
+import type { InferGetStaticPropsType, GetStaticPaths } from "astro";
+
+import Layout from "@layouts/Layout.astro";
+import Passages from "@components/blog/Passages.astro";
+import apis from "@scripts/apis";
+
+const { page } = Astro.props;
+
+export const getStaticPaths = (async ({ paginate }) => {
+  const { list }: { list: GotArticle[] } = await apis.getArticles(1, 1000);
+  return paginate(list, { pageSize: 9 });
+}) satisfies GetStaticPaths;
+
+type Props = InferGetStaticPropsType<typeof getStaticPaths>;
+---
+
+<Layout
+  title={`博客第 ${page.currentPage} 页`}
+  pathItems={[
+    { title: "文章", url: "/blog" },
+    { title: `第 ${page.currentPage} 页`, url: "" },
+  ]}
+  description={`博客第 ${page.currentPage} 页`}
+  keywords={["博客"]}
+>
+  <main class="page">
+    <section class="page__section page__section--at-top">
+      <Passages articles={page.data} />
+    </section>
+    <section class="page__section mt-[50px]">
+      <div class="paginator">
+        <div class="paginator__left">
+          {
+            page.url.prev && (
+              <a
+                href={page.currentPage === 2 ? "/blog" : page.url.prev}
+                class="link"
+              >
+                上一页
+              </a>
+            )
+          }
+        </div>
+        <div class="paginator__center">
+          <span>第 {page.currentPage} 页</span>
+        </div>
+        <div class="paginator__right">
+          {
+            page.url.next && (
+              <a href={page.url.next} class="link">
+                下一页
+              </a>
+            )
+          }
+        </div>
+      </div>
+    </section>
+  </main>
+</Layout>

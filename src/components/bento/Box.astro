@@ -1,0 +1,57 @@
+---
+interface Props {
+  url?: string;
+  bg_image?: string;
+  lg: [number, number, number, number];
+  sm: [number, number, number, number];
+  align?: "start" | "center";
+  class?: string[];
+}
+
+const {
+  url,
+  bg_image,
+  lg,
+  sm,
+  align = "left",
+  class: className = [],
+} = Astro.props;
+
+const classes = className;
+classes.push("card card--bento");
+if (url) classes.push("card--clickable");
+if (bg_image) classes.push("card--with-image");
+if (align === "center") classes.push("card--align-center");
+---
+
+{
+  url ? (
+    <a href={url} class:list={classes}>
+      <slot />
+    </a>
+  ) : (
+    <div class:list={classes}>
+      <slot />
+    </div>
+  )
+}
+
+<style
+  define:vars={{
+    bg_image,
+    lg: lg.join(" / "),
+    sm: sm.join(" / "),
+  }}
+  lang="scss"
+>
+  .card {
+    grid-area: var(--sm);
+    @screen lg {
+      grid-area: var(--lg);
+    }
+  }
+
+  .card--with-image {
+    background-image: var(--bg_image);
+  }
+</style>

@@ -1,0 +1,19 @@
+---
+import Path from "@components/Path.astro";
+import Navbar from "./Navbar.astro";
+
+interface Props {
+  pathItems: PathItem[];
+  menuItems: MenuItem[];
+}
+
+const { pathItems, menuItems } = Astro.props;
+---
+
+<header class="header">
+  <h5 class="header__heading">
+    <Path items={pathItems} />
+  </h5>
+</header>
+
+<Navbar pathItems={pathItems} menuItems={menuItems} />

@@ -1,0 +1,67 @@
+---
+import Layout from "@layouts/Layout.astro";
+import apis from "@scripts/apis";
+import utils from "@scripts/utils";
+
+const articles = await apis.getArticles(1, 10000);
+const groupedArticles = groupByYear(articles);
+
+interface GroupedArticles {
+  [year: number]: GotArticle[];
+}
+
+function groupByYear(articles: GotArticle[]): GroupedArticles {
+  const ret: GroupedArticles = {};
+  articles.forEach((article) => {
+    const year = new Date(article.created).getFullYear();
+    if (ret[year] === undefined) {
+      ret[year] = [];
+    }
+    ret[year].push(article);
+  });
+
+  return ret;
+}
+---
+
+<Layout
+  title="文章归档"
+  pathItems={[
+    { title: "博客", url: "/blog" },
+    { title: "文章归档", url: "" },
+  ]}
+  description={"文章归档"}
+  keywords={[]}
+>
+  <main class="page">
+    <section class="page__section page__section--at-top">
+      <h1 class="page__heading">文章归档</h1>
+      <p class="page__meta">共发布 {articles.length} 篇文章。</p>
+      <hr class="page__divide" />
+      <article class="content">
+        {
+          Object.entries(groupedArticles)
+            .sort((a, b) => parseInt(b[0]) - parseInt(a[0]))
+            .map((entry) => (
+              <>
+                <h2>{entry[0]}</h2>
+                <ul>
+                  {entry[1].map((article: GotArticle) => (
+                    <li>
+                      {utils.getMonthDay(article.created)}
+                      <a
+                        href={"/blog/" + article.articleId}
+                        class="content__link content__link--no-underline-by-default"
+                      >
+                        {article.title}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ))
+        }
+      </article>
+    </section>
+  </main>
+</Layout>

@@ -1,0 +1,77 @@
+---
+interface Props {
+  project: Project;
+}
+
+const { project } = Astro.props;
+
+const formatDate = (date: string) => {
+  const dates = new Date(date);
+  const year = dates.getFullYear();
+  const month =
+    dates.getMonth() < 9 ? "0" + (dates.getMonth() + 1) : dates.getMonth() + 1;
+  return year + "年" + month + "月";
+};
+
+project.startTime = formatDate(project.startTime);
+project.endTime = project.endTime ? formatDate(project.endTime) : "";
+---
+
+<li class="my-[10px]">
+  <div class="card h-full flex flex-col min-h-[250px]">
+    <div class="flex flex-row justify-start items-center">
+      <img
+        src={project.cover}
+        class="w-[50px] h-[50px] mr-[10px] object-cover"
+      />
+      <h5 class="text-base font-bold">{project.name}</h5>
+    </div>
+    <div class="flex-grow mt-2">
+      <div
+        class="tags overflow-auto flex flex-row flex-wrap items-center justify-start"
+      >
+        {
+          project.tags.map((tag) => {
+            return (
+              <span class="text-[12px] block mr-[5px] mb-[5px] bg-blue-300 px-[5px] py-[2px] rounded text-white">
+                {tag}
+              </span>
+            );
+          })
+        }
+      </div>
+      <p class="text-xs leading-[24px] text-gray-400">{project.desc}</p>
+      <span class="text-xs text-gray-400 mt-2 block"
+        >项目周期：{project.startTime}-{
+          project.inNow ? "至今" : project.endTime
+        }</span
+      >
+    </div>
+    <div class="mt-[10px]">
+      {
+        project.visitUrls.map((url) => {
+          return (
+            <a
+              href={url.url}
+              class="text-xs text-blue-500 bg-gray-100 border border-gray-200 py-[5px] px-[10px] rounded mr-[5px] "
+            >
+              {url.name}
+            </a>
+          );
+        })
+      }
+      {
+        project.gitUrls.map((url) => {
+          return (
+            <a
+              href={url.url}
+              class="text-xs text-blue-500 bg-gray-100 border border-gray-200 py-[5px] px-[10px] rounded mr-[5px]"
+            >
+              {url.name}
+            </a>
+          );
+        })
+      }
+    </div>
+  </div>
+</li>

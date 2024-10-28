@@ -1,0 +1,26 @@
+---
+import CC from "@components/badges/CC.astro";
+import NotByAI from "@components/badges/NotByAI.astro";
+import Menu from "@components/menu/Menu.astro";
+import Path from "@components/Path.astro";
+
+interface Props {
+  menuItems: MenuItem[];
+  pathItems: PathItem[];
+}
+
+const { menuItems, pathItems } = Astro.props;
+const year = new Date().getFullYear();
+---
+
+<footer class="footer">
+  <hr class="footer__divide" />
+  <div class="footer__row">
+    <p class="m-2">
+      &#169; 2017-{year} <a href="/" class="link">9Sky 九天</a>
+    </p>
+    <div class="m-2">
+      <Menu showIcon={false} items={menuItems} />
+    </div>
+  </div>
+</footer>

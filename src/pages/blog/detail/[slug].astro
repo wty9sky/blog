@@ -1,0 +1,67 @@
+---
+import Layout from "@layouts/Layout.astro";
+import apis from "@scripts/apis";
+import utils from "@scripts/utils";
+import markdown from "@scripts";
+
+export async function getStaticPaths() {
+  const { list } = await apis.getArticles(1, 10000);
+  return list.map((article) => ({
+    params: { slug: article.articleId },
+  }));
+}
+
+const { slug } = Astro.params;
+
+const article = await apis.getArticle(slug);
+---
+
+<Layout
+  title={article.title}
+  includeHeader={true}
+  pathItems={[
+    { title: "博客", url: "/blog" },
+    { title: article.title, url: "" },
+  ]}
+  description={article.desc}
+  keywords={article.keywords ?? ["详情"]}
+>
+  <main class="page">
+    <section class="page__section page__section--at-top">
+      <!-- {
+        article.cover && (
+          <a href={article.cover} data-fancybox data-caption={article.title}>
+            <img
+              src={article.cover}
+              alt={article.title}
+              title={article.title}
+              class="page__cover mb-8"
+            />
+          </a>
+        )
+      } -->
+      <h1 class="page__heading">{article.title}</h1>
+      <p class="page__meta">
+        <i class="ri-calendar-line"></i>
+        <span>{utils.getFullDate(article.submitTime)}</span>
+      </p>
+
+      <hr class="page__divide" />
+
+      <article class="content">
+        <Fragment set:html={markdown.parseContent(article.content ?? "")} />
+      </article>
+    </section>
+  </main>
+</Layout>
+
+<script>
+  import { Fancybox } from "@fancyapps/ui";
+  document.addEventListener(
+    "astro:page-load",
+    () => {
+      Fancybox.bind("[data-fancybox]", {});
+    },
+    { once: false },
+  );
+</script>

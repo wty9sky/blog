@@ -1,0 +1,29 @@
+---
+import Layout from "@layouts/Layout.astro";
+import apis from "@scripts/apis";
+import ProjectsCards from "@components/projects/ProjectsCards.astro";
+
+const { list } = await apis.getProjects(1, 10);
+---
+
+<Layout
+  title="我的项目之旅"
+  pathItems={[{ title: "我的项目之旅", url: "" }]}
+  description="我的项目之旅"
+  keywords={["项目"]}
+>
+  <main class="page">
+    <div class="page__section mt-[20px]">
+      <div class="card card--in-content">
+        <p>
+          🗃️ 多年来，我参与或主导过各种各样的项目，包括开源、实验、
+          独立开发，也是我在技术领域中尝试和探索的见证。
+        </p>
+      </div>
+    </div>
+    <hr class="page__divide page__divide--between-sections" />
+    <section class="page__section">
+      <ProjectsCards projects={list} />
+    </section>
+  </main>
+</Layout>

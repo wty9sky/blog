@@ -1,0 +1,193 @@
+---
+import Box from "./Box.astro";
+import Map from "./Map.astro";
+---
+
+<div id="too-small-hint" class="text-center text-secondary mt-4">
+  <i class="ri-alert-line text-4xl"></i>
+  <p class="mt-2">你的屏幕太小，这一部分的自我介绍 Bento 组件无法正常显示。</p>
+  <p class="mt-2">
+    请尝试在浏览器选项中缩小页面字号，或者使用屏幕更大的设备浏览，
+  </p>
+  <p class="mt-2">
+    <a class="link underline" href="/about">
+      看看 <i class="ri-cup-line"></i> 关于 页面
+    </a>
+  </p>
+</div>
+
+<div
+  id="bento-wrapper"
+  class="mt-16 grid gap-4 sm:gap-6 justify-center grid-rows-[repeat(20,_5rem)] grid-cols-[repeat(4,_5rem)] lg:grid-rows-[repeat(10,_5rem)] lg:grid-cols-[repeat(8,_5rem)]"
+>
+  <Box lg={[1, 1, 3, 3]} sm={[1, 1, 3, 3]}>
+    <h3>
+      💻📱⌚️🛠️<br />
+      科技数码<br />爱好者
+    </h3>
+  </Box>
+
+  <Box lg={[1, 3, 3, 5]} sm={[1, 3, 3, 5]}>
+    <h3>Mine-Projects</h3>
+    <a href="/projects" class="block link mt-2 secondary-color">
+      我的<br />项目 <i class="ri-external-link-line"></i>
+    </a>
+  </Box>
+
+  <Box lg={[1, 5, 3, 9]} sm={[3, 1, 5, 5]}>
+    <div class="text-right">
+      <img
+        src="/intj.svg"
+        alt="INTJ"
+        class="absolute left-0 bottom-0 h-[120%]"
+      />
+      <p class="absolute top-4 right-4 text-sm secondary-color">
+        <i class="ri-user-heart-line"></i> MBTI 人格类型
+      </p>
+      <h3 class="text-[#886199]">
+        INTJ<br />建筑师型人格
+      </h3>
+      <a
+        href="https://www.16personalities.com/intj-personality"
+        class="absolute bottom-4 right-4 text-sm link secondary-color"
+        target="_blank"
+      >
+        了解更多 <i class="ri-external-link-line"></i>
+      </a>
+    </div>
+  </Box>
+
+  <Box
+    lg={[3, 1, 7, 3]}
+    sm={[7, 1, 11, 3]}
+    bg_image="url('/quzhou_tower.jpeg')"
+  >
+    <p class="absolute text-sm top-4 left-4">
+      <i class="ri-home-line"></i> 故乡
+    </p>
+    <h3 class="text-white text-center">
+      <!-- 浙<br />江<br />衢<br />州 -->
+      黑龙江<br /> 牡丹江
+    </h3>
+  </Box>
+
+  <Box lg={[3, 3, 5, 5]} sm={[7, 3, 9, 5]} bg_image="url('/hnu.jpg')">
+    <p class="absolute text-sm top-4 left-4">
+      <i class="ri-graduation-cap-line"></i> 本科就读于
+    </p>
+    <h3 class="mt-2 text-center text-white">电子科技大学成都学院</h3>
+    <!-- <p class="mt-2 font-bold text-center">Hunan University</p> -->
+  </Box>
+
+  <Map lg={[3, 5, 5, 9]} sm={[5, 1, 7, 5]} />
+
+  <!-- <Box lg={[5, 7, 7, 9]} sm={[9, 3, 11, 5]} bg_image="url('/changsha.jpg')" /> -->
+
+  <!-- <Box lg={[5, 7, 7, 9]} sm={[9, 3, 11, 5]} bg_image="url('/hnu.jpg')">
+    <p class="absolute text-sm top-4 left-4">
+      <i class="ri-graduation-cap-line"></i> 相册长廊
+    </p>
+    <h3 class="mt-2 text-center text-white">(开发中)</h3>
+  </Box> -->
+
+  <Box lg={[5, 3, 9, 7]} sm={[11, 1, 15, 5]}>
+    <h1 class="text-center text-8xl">👨‍💻</h1>
+    <h3 class="text-center mt-6">
+      <span class="secondary-color">立志成为</span>
+      <br />
+      <span>全栈工程师</span>
+    </h3>
+
+    <div class="mt-1 text-lg text-center w-2/3 mx-auto text-secondary">
+      <i class="ri-html5-line"></i>
+      <i class="ri-css3-line"></i>
+      <i class="ri-javascript-line"></i>
+      <i class="ri-reactjs-line"></i>
+      <i class="ri-nextjs-line"></i>
+      <i class="ri-vuejs-line"></i>
+      <i class="ri-svelte-line"></i>
+      <i class="ri-npmjs-line"></i>
+      <i class="ri-nodejs-line"></i>
+      <i class="ri-mini-program-line"></i>
+      <i class="ri-tailwind-css-line"></i>
+      <i class="ri-bootstrap-line"></i>
+      <i class="ri-codepen-line"></i>
+      <i class="ri-safari-line"></i>
+      <i class="ri-chrome-line"></i>
+      <i class="ri-firefox-line"></i>
+      <i class="ri-flutter-line"></i>
+      <i class="ri-apple-line"></i>
+      <i class="ri-android-line"></i>
+      <i class="ri-google-play-line"></i>
+      <i class="ri-windows-line"></i>
+      <i class="ri-copilot-line"></i>
+      <i class="ri-github-line"></i>
+      <i class="ri-openai-line"></i>
+      <i class="ri-open-source-line"></i>
+      <i class="ri-product-hunt-line"></i>
+      <i class="ri-stack-overflow-line"></i>
+    </div>
+  </Box>
+
+  <Box lg={[7, 1, 9, 3]} sm={[15, 1, 17, 3]}>
+    <h3>LABS</h3>
+    <a href="/lab" class="block link mt-2 secondary-color">
+      看看我的<br />实验室 <i class="ri-external-link-line"></i>
+    </a>
+  </Box>
+
+
+  <Box lg={[5, 7, 5, 9]} sm={[15, 3, 16, 5]} url="https://wty9sky.github.io/cv">
+    <div class="absolute top-1 right-2 text-sm">
+      <i class="ri-external-link-line"></i>
+    </div>
+    <p class="text-center">
+      <i class="ri-file-list-line"></i>
+      我的简历
+    </p>
+  </Box>
+
+  <Box lg={[6, 7, 7, 9]} sm={[16, 3, 17, 5]} url="mailto:xmsn2014@126.com">
+    <div class="absolute top-1 right-2 text-sm">
+      <i class="ri-external-link-line"></i>
+    </div>
+    <p class="text-center">
+      <i class="ri-mail-line"></i>
+      xmsn2014@126.com
+    </p>
+  </Box>
+
+
+  <Box
+    lg={[7, 7, 9, 9]}
+    sm={[19, 3, 21, 5]}
+    align="center"
+    class={[
+      "hover:border-8",
+      "hover:border-dotted",
+      "border-gray-300",
+      "dark:border-neutral-500",
+    ]}
+    url="/about"
+  >
+    <h3>了🤔解<br />更多👉<br />🌟<i class="ri-external-link-line"></i>👀</h3>
+  </Box>
+</div>
+
+<style lang="scss">
+  #bento-wrapper {
+    @media (max-width: 374px) {
+      @apply hidden;
+    }
+  }
+
+  #too-small-hint {
+    @media (min-width: 375px) {
+      @apply hidden;
+    }
+  }
+
+  h3 {
+    @apply font-black;
+  }
+</style>

@@ -1,0 +1,111 @@
+---
+import Layout from "@layouts/Layout.astro";
+import Menu from "@components/menu/Menu.astro";
+import Bento from "@components/bento/Bento.astro";
+import IndexProjectCards from "@components/projects/IndexProjectsCards.astro";
+import menu_yml from "@configs/menu.yml";
+import Navbar from "@components/Navbar.astro";
+import apis from "@scripts/apis";
+
+const projects  = await apis.getIndexProjects();
+console.log(projects)
+---
+
+<Layout title="9Sky 九天" includeHeader={false} description="" keywords={[]}>
+  <main class="page">
+    <section class="page__section cover">
+      <h1 class="cover__heading">
+        <span>✨ Always <br /> On the Road.</span>
+      </h1>
+      <h4 class="cover__subheading">一直在路上。</h4>
+      <div class="cover__nav">
+        <span class="mr-2">Wty9ksy</span>
+        <Menu includeHome={false} items={menu_yml.items} />
+      </div>
+      <!-- <p id="scroll-hint" class="cover__hint invisible">
+        <i class="ri-scroll-to-bottom-line"></i>
+        滚动滚轮或滑动触控板继续浏览
+      </p> -->
+      <script is:inline>
+        var hintTimer = null;
+        document.addEventListener(
+          "astro:page-load",
+          () => {
+            hintTimer = setTimeout(() => {
+              const scrollHintEle = document.querySelector("#scroll-hint");
+              if (scrollHintEle) {
+                // 这里的写法不太好
+                scrollHintEle.classList.remove("invisible");
+                scrollHintEle.classList.add("cover__hint--fade-in");
+              }
+            }, 5000);
+          },
+          { once: false },
+        );
+        document.addEventListener(
+          "astro:before-swap",
+          () => {
+            clearTimeout(hintTimer);
+            hintTimer = null;
+          },
+          { once: false },
+        );
+      </script>
+    </section>
+
+    <Navbar pathItems={[]} menuItems={menu_yml.items} hidden={true} />
+
+    <hr class="page__divide page__divide--between-sections" />
+
+    <section
+      class="page__section page__section--with-padding page__section--width-unlimited"
+    >
+      <h2 class="text-center">你好 👋 我是 9Sky 九天。</h2>
+      <Bento />
+    </section>
+
+    <hr class="page__divide page__divide--between-sections" />
+
+    <section
+      class="page__section page__section--with-padding page__section--wide"
+    >
+      <h4 class="text-secondary text-center">
+        <i class="ri-code-s-slash-line"></i> 我的项目集
+      </h4>
+      <h1 class="leading-normal text-center">
+        设计与开发<br />
+      </h1>
+      <div class="mt-8">
+        <IndexProjectCards projects={projects.list} />
+      </div>
+    </section>
+
+    <hr class="page__divide page__divide--between-sections" />
+
+    <section class="page__section page__section--after-something">
+      <h2>关于本站</h2>
+      <div class="mt-8 content">
+        <p>
+          该网站是2024年版本的「9Sky 九天」个人站。
+          从2022年起，每年都会用新的技术和工具重新设计我的网站。<br>
+          本版本由 Astro、TypeScript、TailwindCss 等技术驱动，后端使用NestJS驱动。
+        </p>
+      </div>
+    </section>
+  </main>
+</Layout>
+
+<style lang="scss">
+  #scroll-hint {
+    @apply hidden;
+    @screen md {
+      @apply block;
+    }
+  }
+
+  #too-small-hint {
+    @media (min-width: 375px) {
+      @apply hidden;
+    }
+  }
+</style>

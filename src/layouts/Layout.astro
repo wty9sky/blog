@@ -1,0 +1,93 @@
+---
+import Header from "@components/Header.astro";
+import Footer from "@components/Footer.astro";
+
+import "@fontsource/noto-serif-sc/200.css";
+import "@fontsource/noto-serif-sc/300.css";
+import "@fontsource/noto-serif-sc/400.css";
+import "@fontsource/noto-serif-sc/500.css";
+import "@fontsource/noto-serif-sc/600.css";
+import "@fontsource/noto-serif-sc/700.css";
+import "@fontsource/noto-serif-sc/900.css";
+import "remixicon/fonts/remixicon.css";
+import "highlight.js/styles/github-dark.css";
+import "@fancyapps/ui/dist/fancybox/fancybox.css";
+import "katex/dist/katex.css";
+
+import "@styles/global.scss";
+
+import { ViewTransitions } from "astro:transitions";
+import menu_yml from "@configs/menu.yml";
+
+import { SEO } from "astro-seo";
+
+interface Props {
+  title: string;
+  includeHeader?: boolean;
+  pathItems?: PathItem[];
+  description: string;
+  keywords: string[];
+}
+
+const {
+  title,
+  includeHeader = true,
+  pathItems = [],
+  description,
+  keywords,
+} = Astro.props;
+---
+
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+
+    <title>{title}</title>
+
+    <link rel="icon" type="image/vnd.microsoft.icon" href="/favicon.ico" />
+
+    <link rel="sitemap" href="/sitemap-index.xml" />
+
+    <SEO
+      title={title}
+      description={description}
+      openGraph={{
+        basic: {
+          title: title,
+          type: "article",
+          image: "/og.svg",
+        },
+        optional: {
+          locale: "zh_CN",
+          localeAlternate: ["zh_TW", "en_US"],
+          siteName: "9Sky 九天",
+        },
+      }}
+      extend={{
+        link: [
+          { rel: "shortcut icon", href: "/favicon.ico" },
+          { rel: "bookmark", href: "/favicon.ico" },
+          { rel: "apple-touch-icon", href: "/avatar.png" },
+        ],
+        meta: [
+          // { name: "description", content: description },
+          { name: "generator", content: Astro.generator },
+          { name: "keywords", content: keywords.join(",") },
+        ],
+      }}
+    />
+
+    <ViewTransitions />
+  </head>
+  <body>
+    {
+      includeHeader && (
+        <Header pathItems={pathItems} menuItems={menu_yml.items} />
+      )
+    }
+    <slot />
+    <Footer menuItems={menu_yml.items} pathItems={pathItems} />
+  </body>
+</html>

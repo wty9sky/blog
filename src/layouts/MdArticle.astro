@@ -1,0 +1,23 @@
+---
+import Layout from "./Layout.astro";
+
+const { frontmatter } = Astro.props;
+---
+
+<Layout
+  title={frontmatter.title}
+  includeHeader={true}
+  pathItems={[{ title: frontmatter.title, url: "" }]}
+  description={frontmatter.description}
+  keywords={frontmatter.keywords.split(",")}
+>
+  <main class="page">
+    <section class="page__section page__section--at-top">
+      <h1 class="page__heading">{frontmatter.title}</h1>
+      <hr class="page__divide" />
+      <article class="content">
+        <slot />
+      </article>
+    </section>
+  </main>
+</Layout>

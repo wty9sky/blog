@@ -1,0 +1,108 @@
+---
+interface Props {
+  articles: GotArticle[];
+}
+
+const { articles } = Astro.props;
+---
+
+<div class="article-list w-full flex gap-[5%] flex-row flex-wrap items-start">
+  {
+    articles.map((article, index) => (
+      <>
+        {article.isTop && (
+          <article class="article-item flex flex-row justify-between items-center mt-[30px]">
+            {article.cover && (
+              <a
+                href={article.cover}
+                data-fancybox
+                data-caption={article.title}
+                class="w-[65%] h-[380px] rounded-sm"
+              >
+                <img
+                  class="w-full h-full object-cover"
+                  src={article.cover}
+                  alt={article.title}
+                  title={article.title}
+                />
+              </a>
+            )}
+            <div class="w-[30%] right-info">
+              <span class="text-xs text-[#2C59F6] block mt-[20px]">
+                {article.subject.name}
+              </span>
+              <a
+                href={"/blog/detail/" + article.articleId}
+                class="content__link content__link--no-underline-by-default flex flex-col"
+              >
+                <span class="text-xl font-bold">{article.title}</span>
+                <span class="text-sm text-gray-500 my-[5px] line-clamp-3	">
+                  {article.desc}
+                </span>
+              </a>
+            </div>
+          </article>
+        )}
+        {!article.isTop && (
+            <article class="article-content flex flex-col mt-[30px] w-[30%]">
+              {article.cover && (
+                <a
+                  href={article.cover}
+                  data-fancybox
+                  data-caption={article.title}
+                  class="w-full h-[200px] rounded"
+                >
+                  <img
+                    class="w-full h-full object-cover rounded"
+                    src={article.cover}
+                    alt={article.title}
+                    title={article.title}
+                    loading="lazy"
+                  />
+                </a>
+              )}
+              <span class="text-xs text-[#2C59F6] block mt-[20px]">
+                {article.subject.name}
+              </span>
+              <a
+                href={"/blog/detail/" + article.articleId}
+                class="content__link content__link--no-underline-by-default flex flex-col"
+              >
+                <span class="text-xl font-bold">{article.title}</span>
+                <span class="text-sm text-gray-500 my-[5px] line-clamp-3	">
+                  {article.desc}
+                </span>
+              </a>
+            </article>
+          )}
+      </>
+    ))
+  }
+</div>
+
+<style lang="scss">
+  // typography 有一点不好：样式不能直接覆盖
+  // 因为其默认设置的样式优先级比传入 tailwind 样式优先级高
+  // 只能以这种丑陋的方式应用样式
+  h1 {
+    @apply leading-relaxed;
+  }
+</style>
+
+<script>
+  import { Fancybox } from "@fancyapps/ui";
+  document.addEventListener(
+    "astro:page-load",
+    () => {
+      Fancybox.bind("[data-fancybox]", {});
+    },
+    { once: false },
+  );
+</script>
+
+<style>
+  /* .article-content{
+    margin-left: 2.5%;
+    margin-right: 2.5%;
+  } */
+</style>

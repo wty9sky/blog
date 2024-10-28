@@ -1,0 +1,43 @@
+groups:
+  - name: 🌟 公共服务
+    services:
+      - name: Blog
+        app: VitePress 旧博客
+        url: https://wty9sky.github.io/blog_2023
+        method: Docker
+      - name: CV
+        app: WebCV 在线简历
+        url: https://wty9sky.github.io/wty_cv
+        method: Vercel
+  - name: 🌟 自开源&文档
+    services:
+      - name: SwdDesign
+        app: SwdDesign 组件库文档
+        url: https://blog.swdwiki.com/sword-design
+        method: Github
+  - name: 🌟 AI & AIGC APP
+    services:
+      - name: AIGC
+        app: Dify 生成式 AI 应用创新引擎 
+        url: https://dify.swdwiki.com
+        method: Docker
+  - name: 👨‍💻 效率工具
+    services:
+      - name: Memos
+        app: memos 卡片笔记
+        url: https://memo.wty9sky.swdwiki.com
+        method: Docker
+      # - name: Archive
+      #   app: ArchiveBox 网页存档
+      #   url: https://archive.swdwiki.com
+      #   method: Docker
+      - name: Password
+        app: Warden 密码管理
+        url: https://pass.wty9sky.swdwiki.com
+        method: Docker
+  - name: 🛠️ 开发与运维
+    services:
+      - name: Push
+        app: Bark iOS 推送服务
+        url: https://bark.wty9sky.swdwiki.com
+        method: Docker

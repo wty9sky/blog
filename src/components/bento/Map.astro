@@ -1,0 +1,61 @@
+---
+interface Props {
+  lg: [number, number, number, number];
+  sm: [number, number, number, number];
+}
+
+const { lg, sm } = Astro.props;
+---
+
+<div class="card card--bento" onclick="">
+  <p class="absolute top-4 left-4 text-sm z-10">
+    <i class="ri-map-pin-line"></i> 现居
+  </p>
+  <div id="address" class="absolute">
+    <h3 class="text-gray-600">
+      浙江省<br />杭州市<br />西湖区
+    </h3>
+  </div>
+
+  <div class="self-center border-2 border-white rounded-full shadow-lg z-10">
+    <div class="w-0 h-0 border-8 border-blue-500 rounded-full"></div>
+  </div>
+</div>
+
+<style
+  define:vars={{
+    lg: lg.join(" / "),
+    sm: sm.join(" / "),
+  }}
+  lang="scss"
+>
+  /* #address {
+    display: none;
+  } */
+
+  .card {
+    grid-area: var(--sm);
+    background-image: url("/map.png");
+    background-color: rgba(0, 0, 0, 0.4);
+    @screen lg {
+      grid-area: var(--lg);
+    }
+
+    @apply transition-all bg-center bg-cover bg-no-repeat bg-blend-overlay bg-transparent;
+    /* background-color: rgba(0, 0, 0, 0.4); */
+    @media (prefers-color-scheme: dark) {
+      background-color: rgba(0, 0, 0, 0.7);
+    }
+    #address {
+        display: block;
+        top: 45px;
+    }
+    /* &:hover {
+      background-color: rgba(0, 0, 0, 0.4);
+      @apply text-white;
+      #address {
+        display: block;
+      }
+    } */
+  }
+</style>

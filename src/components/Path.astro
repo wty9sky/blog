@@ -1,0 +1,23 @@
+---
+interface Props {
+  items: PathItem[];
+}
+
+const { items } = Astro.props;
+---
+
+<a href="/" class="link">9Sky 九天</a>
+{
+  items.map((pathItem) => (
+    <span>
+      /
+      {pathItem.url ? (
+        <a href={pathItem.url} class="link">
+          {pathItem.title}
+        </a>
+      ) : (
+        pathItem.title
+      )}
+    </span>
+  ))
+}
