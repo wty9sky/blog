@@ -1,0 +1,251 @@
+<!DOCTYPE html><html> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width"><title>从零实现mini-react(6)：实现useEffect</title><link rel="icon" type="image/vnd.microsoft.icon" href="/favicon.ico"><link rel="sitemap" href="/sitemap-index.xml"><title>从零实现mini-react(6)：实现useEffect</title><link rel="canonical" href="https://wty9sky.github.io/blog/detail/6/"><meta name="description" content="自定义实现useEffect(Hook)。useEffect用于在函数组件中处理副作用，类似于类组件中的componentDidMount、componentDidUpdate和componentWillUnmount生命周期方法的组合。"><meta name="robots" content="index, follow"><meta property="og:title" content="从零实现mini-react(6)：实现useEffect"><meta property="og:type" content="article"><meta property="og:image" content="/og.svg"><meta property="og:url" content="https://wty9sky.github.io/blog/detail/6/"><meta property="og:locale" content="zh_CN"><meta property="og:locale:alternate" content="zh_TW"><meta property="og:locale:alternate" content="en_US"><meta property="og:site_name" content="9Sky 九天"><link rel="shortcut icon" href="/favicon.ico"><link rel="bookmark" href="/favicon.ico"><link rel="apple-touch-icon" href="/avatar.png"><meta name="generator" content="Astro v4.16.7"><meta name="keywords" content="详情"><meta name="astro-view-transitions-enabled" content="true"><meta name="astro-view-transitions-fallback" content="animate"><link rel="stylesheet" href="/_astro/about.CkC6PiIh.css">
+<link rel="stylesheet" href="/_astro/about.D3zQv4Ly.css"><script type="module" src="/_astro/hoisted.HO6_Fzad.js"></script></head> <body> <header class="header"> <h5 class="header__heading"> <a href="/" class="link">9Sky 九天</a> <span>
+/
+<a href="/blog" class="link"> 博客 </a> </span><span>
+/
+从零实现mini-react(6)：实现useEffect </span> </h5> </header> <div id="navbar-sentinal"></div> <nav class="navbar" id="navbar-wrapper"> <div class="navbar__content"> <h5 class="navbar__path"> <a href="/" class="link">9Sky 九天</a> <span>
+/
+<a href="/blog" class="link"> 博客 </a> </span><span>
+/
+从零实现mini-react(6)：实现useEffect </span> </h5> <div class="navbar__menu"> <ul data-astro-cid-tfcnbjmv> <li data-astro-cid-tfcnbjmv> <a class="link" href="/" data-astro-cid-tfcnbjmv> <i class="ri-home-line" data-astro-cid-tfcnbjmv></i>
+主页
+</a> </li> <li data-astro-cid-tfcnbjmv> <a class="link" href="/blog" data-astro-cid-tfcnbjmv> <i class="ri-newspaper-line" data-astro-cid-tfcnbjmv></i> 文章 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/projects" data-astro-cid-tfcnbjmv> <i class="ri-server-line" data-astro-cid-tfcnbjmv></i> 项目 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/lab" data-astro-cid-tfcnbjmv> <i class="ri-server-line" data-astro-cid-tfcnbjmv></i> 实验室 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/about" data-astro-cid-tfcnbjmv> <i class="ri-cup-line" data-astro-cid-tfcnbjmv></i> 关于 </a> </li> </ul>  </div> </div> </nav> <script>
+  // 使用 ViewTransition 后，所有 DOM 操作的 js 都有一堆问题
+  // 这里用了极不优雅的 var，有待改进
+  var observer;
+  function addNavObserver() {
+    const headerEl = document.querySelector("#navbar-wrapper");
+    const sentinalEl = document.querySelector("#navbar-sentinal");
+    if (!sentinalEl || !headerEl) return;
+    observer = new window.IntersectionObserver((e) => {
+      if (!e[0].isIntersectin && e[0].boundingClientRect.top <= 0) {
+        headerEl.classList.add("navbar--sticked");
+      } else {
+        headerEl.classList.remove("navbar--sticked");
+      }
+    });
+    observer.observe(sentinalEl);
+  }
+
+  function removeNavObserver() {
+    if (observer) observer.disconnect();
+    observer = null;
+  }
+
+  document.addEventListener(
+    "astro:page-load",
+    () => {
+      addNavObserver();
+    },
+    { once: false },
+  );
+
+  document.addEventListener(
+    "astro:before-swap",
+    () => {
+      removeNavObserver();
+    },
+    { once: false },
+  );
+</script>  <main class="page"> <section class="page__section page__section--at-top"> <!-- {
+        article.cover && (
+          <a href={article.cover} data-fancybox data-caption={article.title}>
+            <img
+              src={article.cover}
+              alt={article.title}
+              title={article.title}
+              class="page__cover mb-8"
+            />
+          </a>
+        )
+      } --> <h1 class="page__heading">从零实现mini-react(6)：实现useEffect</h1> <p class="page__meta"> <i class="ri-calendar-line"></i> <span>2024 年 3 月 24 日 02:38</span> </p> <hr class="page__divide"> <article class="content"> <h2><a id="文章目录" class="content__heading-anchor"></a>文章目录</h2>
+<ul>
+<li><a href="#%E4%BB%8E%E9%9B%B6%E5%AE%9E%E7%8E%B0mini-react6%E5%AE%9E%E7%8E%B0useeffect">从零实现mini-react(6)：实现useEffect</a>
+<ul>
+<li><a href="#useeffect-%E5%88%9D%E5%A7%8B%E5%8C%96%E5%8A%A0%E8%BD%BD">useEffect 初始化加载</a></li>
+<li><a href="#%E5%AE%9E%E7%8E%B0useeffect%E7%9A%84update">实现useEffect的update</a></li>
+<li><a href="#%E5%AE%9E%E7%8E%B0%E5%A4%9A%E4%B8%AA-useeffect">实现多个 useEffect</a></li>
+<li><a href="#%E5%AE%9E%E7%8E%B0useeffect%E7%9A%84cleanup">实现useEffect的cleanup</a></li>
+</ul></li>
+</ul>
+<h1><a id="从零实现mini-react6实现useeffect" class="content__heading-anchor"></a>从零实现mini-react(6)：实现useEffect</h1>
+<ul>
+<li>useEffect 是一个比较重要的 hook，它和 useState 一样，也是用来处理副作用的，它的作用是用来在函数组件中执行。</li>
+<li>useEffect 在代码逻辑上和useState 相似。</li>
+<li>调用时机：在React完成对Dom树的渲染后，并在浏览器完成绘制之前。</li>
+</ul>
+<h2><a id="useeffect-初始化加载" class="content__heading-anchor"></a>useEffect 初始化加载</h2>
+<pre><code class="language-javascript"><span class="hljs-title function_">useEffect</span>(<span class="hljs-function">() =&gt;</span> {
+  <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-number">1</span>)
+}, [])
+</code></pre>
+<p>useEffect的初始化加载 =&gt; Vue3-&gt;onMounted<br>
+<br></p>
+<ul>
+<li>useEffect是用在state数据是否发生改变时执行,当deps为空时，应在组件初始化时执行。</li>
+<li>commitEffect在应在构建完dom树结构之后进行执行，即在commitRoot之后执行。</li>
+<li>执行useEffect逻辑与useState类型,进行数据的采集,并将相应的数据保存在fiber上,在commitEffect时,与之前历史fiber上保存的effectHook进行对比,如果存在差异,则执行对应的effectHook。</li>
+</ul>
+<pre><code class="language-javascript"><span class="hljs-keyword">const</span> <span class="hljs-title function_">useEffect</span> = (<span class="hljs-params">callback, deps</span>) =&gt; {
+  <span class="hljs-keyword">const</span> effectHook = {
+    callback,
+    deps
+  }
+  <span class="hljs-comment">// 这里之所以用 wipFiber 因为它只有在每次有函数组件的时候才会调用，所以它肯定是一个函数组件</span>
+  wipFiber.<span class="hljs-property">effectHook</span> = effectHook
+}
+
+  <span class="hljs-keyword">if</span> (!nextWorkOfUnit &amp;&amp; wipRoot) {
+    <span class="hljs-title function_">commitRoot</span>()
+    <span class="hljs-title function_">commitEffectHook</span>()
+  }
+
+<span class="hljs-keyword">const</span> <span class="hljs-title function_">commitEffectHook</span> = (<span class="hljs-params"></span>) =&gt; {
+  <span class="hljs-keyword">const</span> <span class="hljs-title function_">run</span> = (<span class="hljs-params">fiber</span>) =&gt; {
+    <span class="hljs-keyword">if</span> (!fiber) <span class="hljs-keyword">return</span>
+     fiber.<span class="hljs-property">effectHook</span>?.<span class="hljs-title function_">callback</span>()
+    <span class="hljs-comment">// 这里为啥要递归child 和 sibling</span>
+    <span class="hljs-title function_">run</span>(fiber.<span class="hljs-property">child</span>)
+    <span class="hljs-title function_">run</span>(fiber.<span class="hljs-property">sibling</span>)
+  }
+
+  <span class="hljs-title function_">run</span>(wipFiber)
+}
+</code></pre>
+<h2><a id="实现useeffect的update" class="content__heading-anchor"></a>实现useEffect的update</h2>
+<pre><code class="language-javascript">  <span class="hljs-keyword">const</span> [count, setCount] = <span class="hljs-title class_">React</span>.<span class="hljs-title function_">useState</span>(<span class="hljs-number">0</span>)
+  <span class="hljs-keyword">const</span> <span class="hljs-title function_">handleClick</span> = (<span class="hljs-params"></span>) =&gt; {
+    <span class="hljs-title function_">setCount</span>(<span class="hljs-function">(<span class="hljs-params">count</span>) =&gt;</span> count + <span class="hljs-number">1</span>)
+  }
+  <span class="hljs-title class_">React</span>.<span class="hljs-title function_">useEffect</span>(<span class="hljs-function">() =&gt;</span> {
+    <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-number">11111</span>)
+  }, [count])
+</code></pre>
+<p>实现方式：</p>
+<ul>
+<li>实现我们需要区分初始化和 update</li>
+<li>这个我们可以通过我们的 alternate 指针来区分
+<ul>
+<li>没有就是初始化
+<ul>
+<li>然后需要对比老的新的依赖项的每一项和老的依赖项的对应的项值有没有变化</li>
+<li>只要有一个值不一样我们就要重新调用</li>
+</ul></li>
+</ul></li>
+</ul>
+<pre><code class="language-javascript"><span class="hljs-keyword">const</span> <span class="hljs-title function_">commitEffectHook</span> = (<span class="hljs-params"></span>) =&gt; {
+  <span class="hljs-keyword">const</span> <span class="hljs-title function_">run</span> = (<span class="hljs-params">fiber</span>) =&gt; {
+    <span class="hljs-keyword">if</span> (!fiber) <span class="hljs-keyword">return</span>
+    <span class="hljs-keyword">if</span> (!fiber.<span class="hljs-property">alternate</span>) {
+      <span class="hljs-comment">// init</span>
+      fiber.<span class="hljs-property">effectHook</span>?.<span class="hljs-title function_">callback</span>()
+    } <span class="hljs-keyword">else</span> {
+      <span class="hljs-comment">// update</span>
+      <span class="hljs-keyword">const</span> oldEffect = fiber.<span class="hljs-property">alternate</span>?.<span class="hljs-property">effectHook</span>
+      <span class="hljs-keyword">const</span> needUpdate = fiber.<span class="hljs-property">effectHook</span>?.<span class="hljs-property">deps</span>.<span class="hljs-title function_">some</span>(<span class="hljs-function">(<span class="hljs-params">dep, index</span>) =&gt;</span> {
+        <span class="hljs-keyword">return</span> dep !== oldEffect.<span class="hljs-property">deps</span>[index]
+      })
+
+      needUpdate &amp;&amp; fiber.<span class="hljs-property">effectHook</span>?.<span class="hljs-title function_">callback</span>()
+    }
+    <span class="hljs-comment">// 这里为啥要递归child 和 sibling</span>
+    <span class="hljs-title function_">run</span>(fiber.<span class="hljs-property">child</span>)
+    <span class="hljs-title function_">run</span>(fiber.<span class="hljs-property">sibling</span>)
+  }
+
+  <span class="hljs-title function_">run</span>(wipFiber)
+}
+</code></pre>
+<h2><a id="实现多个-useeffect" class="content__heading-anchor"></a>实现多个 useEffect</h2>
+<p>这里和useState逻辑相似，都是通过effectHooks数组来保存多个useEffect的逻辑。</p>
+<pre><code class="language-javascript"><span class="hljs-keyword">let</span> effectHooks = []
+<span class="hljs-keyword">const</span> <span class="hljs-title function_">useEffect</span> = (<span class="hljs-params">callback, deps</span>) =&gt; {
+  <span class="hljs-keyword">const</span> effectHook = {
+    callback,
+    deps
+  }
+  effectHooks.<span class="hljs-title function_">push</span>(effectHook)
+  wipFiber.<span class="hljs-property">effectHooks</span> = effectHooks
+}
+
+<span class="hljs-keyword">const</span> <span class="hljs-title function_">commitEffectHooks</span> = (<span class="hljs-params"></span>) =&gt; {
+  <span class="hljs-keyword">const</span> <span class="hljs-title function_">run</span> = (<span class="hljs-params">fiber</span>) =&gt; {
+    <span class="hljs-keyword">if</span> (!fiber) <span class="hljs-keyword">return</span>
+    <span class="hljs-keyword">if</span> (!fiber.<span class="hljs-property">alternate</span>) {
+      <span class="hljs-comment">// init</span>
+      fiber.<span class="hljs-property">effectHooks</span>?.<span class="hljs-title function_">forEach</span>(<span class="hljs-function"><span class="hljs-params">hook</span> =&gt;</span> hook?.<span class="hljs-title function_">callback</span>())
+    } <span class="hljs-keyword">else</span> {
+      <span class="hljs-comment">// update</span>
+      fiber.<span class="hljs-property">effectHooks</span>?.<span class="hljs-title function_">forEach</span>(<span class="hljs-function">(<span class="hljs-params">newHook, index</span>) =&gt;</span> {
+        <span class="hljs-keyword">const</span> oldEffect = fiber.<span class="hljs-property">alternate</span>?.<span class="hljs-property">effectHooks</span>[index]
+        <span class="hljs-keyword">const</span> needUpdate = newHook?.<span class="hljs-property">deps</span>.<span class="hljs-title function_">some</span>(<span class="hljs-function">(<span class="hljs-params">dep, i</span>) =&gt;</span> {
+          <span class="hljs-keyword">return</span> dep !== oldEffect.<span class="hljs-property">deps</span>[i]
+        })
+
+        needUpdate &amp;&amp; newHook?.<span class="hljs-title function_">callback</span>()
+      })
+    }
+  
+    <span class="hljs-title function_">run</span>(fiber.<span class="hljs-property">child</span>)
+    <span class="hljs-title function_">run</span>(fiber.<span class="hljs-property">sibling</span>)
+  }
+
+  <span class="hljs-title function_">run</span>(wipFiber)
+}
+</code></pre>
+<h2><a id="实现useeffect的cleanup" class="content__heading-anchor"></a>实现useEffect的cleanup</h2>
+<ol>
+<li>存下useEffect 返回的 cleanup 函数，也就是调用useEffect 的 callback 把返回值存下来</li>
+</ol>
+<pre><code class="language-javascript"><span class="hljs-keyword">const</span> <span class="hljs-title function_">useEffect</span> = (<span class="hljs-params">callback, deps</span>) =&gt; {
+  <span class="hljs-keyword">const</span> effectHook = {
+    callback,
+    deps,
+    <span class="hljs-attr">cleanup</span>: <span class="hljs-literal">undefined</span>
+  }
+  effectHooks.<span class="hljs-title function_">push</span>(effectHook)
+  wipFiber.<span class="hljs-property">effectHooks</span> = effectHooks
+}
+  <span class="hljs-keyword">const</span> <span class="hljs-title function_">run</span> = (<span class="hljs-params">fiber</span>) =&gt; {
+    <span class="hljs-keyword">if</span> (!fiber) <span class="hljs-keyword">return</span>
+    <span class="hljs-keyword">if</span> (!fiber.<span class="hljs-property">alternate</span>) {
+      <span class="hljs-comment">// init</span>
+      fiber.<span class="hljs-property">effectHooks</span>?.<span class="hljs-title function_">forEach</span>(<span class="hljs-function"><span class="hljs-params">hook</span> =&gt;</span> (hook.<span class="hljs-property">cleanup</span> = hook?.<span class="hljs-title function_">callback</span>()))
+    } <span class="hljs-keyword">else</span> {
+      <span class="hljs-comment">// update</span>
+      fiber.<span class="hljs-property">effectHooks</span>?.<span class="hljs-title function_">forEach</span>(<span class="hljs-function">(<span class="hljs-params">newHook, index</span>) =&gt;</span> {
+        <span class="hljs-keyword">if</span> (newHook.<span class="hljs-property">deps</span>.<span class="hljs-property">length</span> &gt; <span class="hljs-number">0</span>) {
+          <span class="hljs-keyword">const</span> oldEffect = fiber.<span class="hljs-property">alternate</span>?.<span class="hljs-property">effectHooks</span>[index]
+          <span class="hljs-keyword">const</span> needUpdate = newHook?.<span class="hljs-property">deps</span>.<span class="hljs-title function_">some</span>(<span class="hljs-function">(<span class="hljs-params">dep, i</span>) =&gt;</span> {
+            <span class="hljs-keyword">return</span> dep !== oldEffect.<span class="hljs-property">deps</span>[i]
+          })
+
+          needUpdate &amp;&amp; (newHook.<span class="hljs-property">cleanup</span> = newHook?.<span class="hljs-title function_">callback</span>())
+        }
+      })
+    }
+  }
+</code></pre>
+<ol start="2">
+<li>在执行当前所有的 useEffect 之前调用</li>
+</ol>
+<pre><code class="language-javascript">  <span class="hljs-keyword">const</span> <span class="hljs-title function_">runCleanup</span> = (<span class="hljs-params">fiber</span>) =&gt; {
+    <span class="hljs-keyword">if</span> (!fiber) <span class="hljs-keyword">return</span>
+    <span class="hljs-comment">// 取上一次的 effectHooks</span>
+    fiber.<span class="hljs-property">alternate</span>?.<span class="hljs-property">effectHooks</span>?.<span class="hljs-title function_">forEach</span>(<span class="hljs-function"><span class="hljs-params">hook</span> =&gt;</span> {
+      <span class="hljs-comment">// [] 不应该执行</span>
+      <span class="hljs-keyword">if</span> (hook.<span class="hljs-property">deps</span>.<span class="hljs-property">length</span> &gt; <span class="hljs-number">0</span>) {
+      hook.<span class="hljs-property">cleanup</span>?.()
+      }
+    })
+    <span class="hljs-title function_">runCleanup</span>(fiber.<span class="hljs-property">child</span>)
+    <span class="hljs-title function_">runCleanup</span>(fiber.<span class="hljs-property">sibling</span>)
+}
+
+<span class="hljs-title function_">runCleanup</span>(wipFiber)
+<span class="hljs-title function_">run</span>(wipFiber)
+</code></pre>
+ </article> </section> </main>  <footer class="footer"> <hr class="footer__divide"> <div class="footer__row"> <p class="m-2">
+&#169; 2017-2024 <a href="/" class="link">9Sky 九天</a> </p> <div class="m-2"> <ul data-astro-cid-tfcnbjmv> <li data-astro-cid-tfcnbjmv> <a class="link" href="/" data-astro-cid-tfcnbjmv> 
+主页
+</a> </li> <li data-astro-cid-tfcnbjmv> <a class="link" href="/blog" data-astro-cid-tfcnbjmv>  文章 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/projects" data-astro-cid-tfcnbjmv>  项目 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/lab" data-astro-cid-tfcnbjmv>  实验室 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/about" data-astro-cid-tfcnbjmv>  关于 </a> </li> </ul>  </div> </div> </footer> </body></html> 

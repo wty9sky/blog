@@ -1,0 +1,147 @@
+<!DOCTYPE html><html> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width"><title>从零实现mini-react(7)：实现TodoList检验MiniReact</title><link rel="icon" type="image/vnd.microsoft.icon" href="/favicon.ico"><link rel="sitemap" href="/sitemap-index.xml"><title>从零实现mini-react(7)：实现TodoList检验MiniReact</title><link rel="canonical" href="https://wty9sky.github.io/blog/detail/7/"><meta name="description" content="使用mini-react实现TodoList功能，并检验MiniReact是否满足要求。"><meta name="robots" content="index, follow"><meta property="og:title" content="从零实现mini-react(7)：实现TodoList检验MiniReact"><meta property="og:type" content="article"><meta property="og:image" content="/og.svg"><meta property="og:url" content="https://wty9sky.github.io/blog/detail/7/"><meta property="og:locale" content="zh_CN"><meta property="og:locale:alternate" content="zh_TW"><meta property="og:locale:alternate" content="en_US"><meta property="og:site_name" content="9Sky 九天"><link rel="shortcut icon" href="/favicon.ico"><link rel="bookmark" href="/favicon.ico"><link rel="apple-touch-icon" href="/avatar.png"><meta name="generator" content="Astro v4.16.7"><meta name="keywords" content="详情"><meta name="astro-view-transitions-enabled" content="true"><meta name="astro-view-transitions-fallback" content="animate"><link rel="stylesheet" href="/_astro/about.CkC6PiIh.css">
+<link rel="stylesheet" href="/_astro/about.D3zQv4Ly.css"><script type="module" src="/_astro/hoisted.HO6_Fzad.js"></script></head> <body> <header class="header"> <h5 class="header__heading"> <a href="/" class="link">9Sky 九天</a> <span>
+/
+<a href="/blog" class="link"> 博客 </a> </span><span>
+/
+从零实现mini-react(7)：实现TodoList检验MiniReact </span> </h5> </header> <div id="navbar-sentinal"></div> <nav class="navbar" id="navbar-wrapper"> <div class="navbar__content"> <h5 class="navbar__path"> <a href="/" class="link">9Sky 九天</a> <span>
+/
+<a href="/blog" class="link"> 博客 </a> </span><span>
+/
+从零实现mini-react(7)：实现TodoList检验MiniReact </span> </h5> <div class="navbar__menu"> <ul data-astro-cid-tfcnbjmv> <li data-astro-cid-tfcnbjmv> <a class="link" href="/" data-astro-cid-tfcnbjmv> <i class="ri-home-line" data-astro-cid-tfcnbjmv></i>
+主页
+</a> </li> <li data-astro-cid-tfcnbjmv> <a class="link" href="/blog" data-astro-cid-tfcnbjmv> <i class="ri-newspaper-line" data-astro-cid-tfcnbjmv></i> 文章 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/projects" data-astro-cid-tfcnbjmv> <i class="ri-server-line" data-astro-cid-tfcnbjmv></i> 项目 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/lab" data-astro-cid-tfcnbjmv> <i class="ri-server-line" data-astro-cid-tfcnbjmv></i> 实验室 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/about" data-astro-cid-tfcnbjmv> <i class="ri-cup-line" data-astro-cid-tfcnbjmv></i> 关于 </a> </li> </ul>  </div> </div> </nav> <script>
+  // 使用 ViewTransition 后，所有 DOM 操作的 js 都有一堆问题
+  // 这里用了极不优雅的 var，有待改进
+  var observer;
+  function addNavObserver() {
+    const headerEl = document.querySelector("#navbar-wrapper");
+    const sentinalEl = document.querySelector("#navbar-sentinal");
+    if (!sentinalEl || !headerEl) return;
+    observer = new window.IntersectionObserver((e) => {
+      if (!e[0].isIntersectin && e[0].boundingClientRect.top <= 0) {
+        headerEl.classList.add("navbar--sticked");
+      } else {
+        headerEl.classList.remove("navbar--sticked");
+      }
+    });
+    observer.observe(sentinalEl);
+  }
+
+  function removeNavObserver() {
+    if (observer) observer.disconnect();
+    observer = null;
+  }
+
+  document.addEventListener(
+    "astro:page-load",
+    () => {
+      addNavObserver();
+    },
+    { once: false },
+  );
+
+  document.addEventListener(
+    "astro:before-swap",
+    () => {
+      removeNavObserver();
+    },
+    { once: false },
+  );
+</script>  <main class="page"> <section class="page__section page__section--at-top"> <!-- {
+        article.cover && (
+          <a href={article.cover} data-fancybox data-caption={article.title}>
+            <img
+              src={article.cover}
+              alt={article.title}
+              title={article.title}
+              class="page__cover mb-8"
+            />
+          </a>
+        )
+      } --> <h1 class="page__heading">从零实现mini-react(7)：实现TodoList检验MiniReact</h1> <p class="page__meta"> <i class="ri-calendar-line"></i> <span>2024 年 3 月 26 日 02:41</span> </p> <hr class="page__divide"> <article class="content"> <h2><a id="文章目录" class="content__heading-anchor"></a>文章目录</h2>
+<ul>
+<li><a href="#%E4%BB%8E%E9%9B%B6%E5%AE%9E%E7%8E%B0mini-react7%E5%AE%9E%E7%8E%B0todolist%E6%A3%80%E9%AA%8Cminireact">从零实现mini-react(7)：实现TodoList检验MiniReact</a>
+<ul>
+<li><a href="#%E5%AE%9E%E7%8E%B0todolist%E5%8A%9F%E8%83%BD">实现TodoList功能</a></li>
+<li><a href="#%E9%81%87%E5%88%B0%E9%97%AE%E9%A2%98">遇到问题</a>
+<ul>
+<li><a href="#%E5%9C%A8-useeffect-%E9%87%8C%E4%BF%AE%E6%94%B9-state-%E9%A1%B5%E9%9D%A2%E6%B2%A1%E6%9B%B4%E6%96%B0">在 useEffect 里修改 state 页面没更新</a></li>
+<li><a href="#style%E6%A0%B7%E5%BC%8F%E4%B8%8D%E6%B8%B2%E6%9F%93%E9%97%AE%E9%A2%98">style样式不渲染问题</a></li>
+</ul></li>
+</ul></li>
+</ul>
+<h1><a id="从零实现mini-react7实现todolist检验minireact" class="content__heading-anchor"></a>从零实现mini-react(7)：实现TodoList检验MiniReact</h1>
+<p>使用mini-react实现TodoList功能，并检验MiniReact是否满足要求。</p>
+<h2><a id="实现todolist功能" class="content__heading-anchor"></a>实现TodoList功能</h2>
+<ul>
+<li>[x] 列表展示</li>
+<li>[x] 添加todo</li>
+<li>[x] 点击添加按钮</li>
+<li>[x] 删除todo</li>
+<li>[x] 完成todo</li>
+<li>[x] 本地存储</li>
+<li>[x] 刷新页面时，读取本地存储的数据，并渲染到页面上</li>
+<li>[x] filter
+<ul>
+<li>[x] 显示所有的todos</li>
+<li>[x] 显示已完成的todos</li>
+<li>[x] 显示未完成的todos</li>
+</ul></li>
+</ul>
+<h2><a id="遇到问题" class="content__heading-anchor"></a>遇到问题</h2>
+<h3><a id="在-useeffect-里修改-state-页面没更新" class="content__heading-anchor"></a>在 useEffect 里修改 state 页面没更新</h3>
+<pre><code class="language-javascript">  <span class="hljs-title class_">React</span>.<span class="hljs-title function_">useEffect</span>(<span class="hljs-function">() =&gt;</span> {
+    <span class="hljs-keyword">if</span> (checkedValue === <span class="hljs-string">&#x27;all&#x27;</span>) {
+      <span class="hljs-title function_">setDisplayList</span>(list)
+    } <span class="hljs-keyword">else</span> {
+      <span class="hljs-keyword">const</span> newList = list.<span class="hljs-title function_">filter</span>(<span class="hljs-function"><span class="hljs-params">item</span> =&gt;</span> item.<span class="hljs-property">status</span> === checkedValue)
+      <span class="hljs-title function_">setDisplayList</span>(newList)
+    }
+    <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(list, <span class="hljs-string">&#x27;hhhhdd&#x27;</span>)
+  }, [list, checkedValue])
+
+</code></pre>
+<pre><code class="language-jsx"><span class="hljs-keyword">const</span> div = <span class="language-xml"><span class="hljs-tag">&lt;<span class="hljs-name">div</span>&gt;</span>{ ...displayList.map((item) =&gt; (...)}<span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span></span>;
+</code></pre>
+<p><br></p>
+<ul>
+<li>问题原因：我们先去调用了 commitWork 将视图更新完，再调用 commitEffectHooks，所以虽然我们的数据变了但是视图没有改变</li>
+<li>解决方案：
+<ul>
+<li>在 commitEffectHooks 后重新调用 commitWork</li>
+<li>useState 在 setState 后会重新修改 wipRoot 和 nextWorkOfUnit 赋值</li>
+<li>只要它有值了说明我们在 effectHooks 又改变了我们的 state，我们就应该重新执行 commitRoot</li>
+</ul></li>
+</ul>
+<pre><code class="language-javascript">  <span class="hljs-keyword">if</span> (!nextWorkOfUnit &amp;&amp; wipRoot) {
+    <span class="hljs-title function_">commitRoot</span>()
+  }
+  <span class="hljs-keyword">if</span> (nextWorkOfUnit &amp;&amp; !wipRoot) {
+    wipRoot = currentRoot
+  }
+</code></pre>
+<h3><a id="style样式不渲染问题" class="content__heading-anchor"></a>style样式不渲染问题</h3>
+<pre><code class="language-javascript">  <span class="hljs-title class_">Object</span>.<span class="hljs-title function_">keys</span>(nextProps).<span class="hljs-title function_">forEach</span>(<span class="hljs-function"><span class="hljs-params">key</span> =&gt;</span> {
+    <span class="hljs-keyword">if</span> (key !== <span class="hljs-string">&#x27;children&#x27;</span>) {
+      <span class="hljs-keyword">if</span> (nextProps[key] !== prevProps[key]) {
+        <span class="hljs-comment">// 不相等进行更新赋值</span>
+        <span class="hljs-keyword">const</span> isEvent = key.<span class="hljs-title function_">startsWith</span>(<span class="hljs-string">&#x27;on&#x27;</span>)
+        <span class="hljs-keyword">if</span> (isEvent) {
+          <span class="hljs-keyword">const</span> eventType = key.<span class="hljs-title function_">slice</span>(<span class="hljs-number">2</span>).<span class="hljs-title function_">toLocaleLowerCase</span>()
+          dom.<span class="hljs-title function_">removeEventListener</span>(eventType, prevProps[key])
+          dom.<span class="hljs-title function_">addEventListener</span>(eventType, nextProps[key])
+        } <span class="hljs-keyword">else</span> {
+          <span class="hljs-keyword">if</span> (key === <span class="hljs-string">&#x27;style&#x27;</span>) {
+            <span class="hljs-title class_">Object</span>.<span class="hljs-title function_">assign</span>(dom[key], nextProps[key])
+          } <span class="hljs-keyword">else</span> {
+            dom[key] = nextProps[key]
+          }
+        }
+      }
+    }
+  })
+</code></pre>
+ </article> </section> </main>  <footer class="footer"> <hr class="footer__divide"> <div class="footer__row"> <p class="m-2">
+&#169; 2017-2024 <a href="/" class="link">9Sky 九天</a> </p> <div class="m-2"> <ul data-astro-cid-tfcnbjmv> <li data-astro-cid-tfcnbjmv> <a class="link" href="/" data-astro-cid-tfcnbjmv> 
+主页
+</a> </li> <li data-astro-cid-tfcnbjmv> <a class="link" href="/blog" data-astro-cid-tfcnbjmv>  文章 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/projects" data-astro-cid-tfcnbjmv>  项目 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/lab" data-astro-cid-tfcnbjmv>  实验室 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/about" data-astro-cid-tfcnbjmv>  关于 </a> </li> </ul>  </div> </div> </footer> </body></html> 

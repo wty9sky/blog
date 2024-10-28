@@ -1,0 +1,374 @@
+<!DOCTYPE html><html> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width"><title>Vite实现原理与简单实现</title><link rel="icon" type="image/vnd.microsoft.icon" href="/favicon.ico"><link rel="sitemap" href="/sitemap-index.xml"><title>Vite实现原理与简单实现</title><link rel="canonical" href="https://wty9sky.github.io/blog/detail/13/"><meta name="description" content="vite是下一代前端开发与构建工具。Vite意在提供开箱即用的配置，同时它的插件API和JavaScript API 带来了高度的可扩展性，并有完整的类型支持。
+
+"><meta name="robots" content="index, follow"><meta property="og:title" content="Vite实现原理与简单实现"><meta property="og:type" content="article"><meta property="og:image" content="/og.svg"><meta property="og:url" content="https://wty9sky.github.io/blog/detail/13/"><meta property="og:locale" content="zh_CN"><meta property="og:locale:alternate" content="zh_TW"><meta property="og:locale:alternate" content="en_US"><meta property="og:site_name" content="9Sky 九天"><link rel="shortcut icon" href="/favicon.ico"><link rel="bookmark" href="/favicon.ico"><link rel="apple-touch-icon" href="/avatar.png"><meta name="generator" content="Astro v4.16.7"><meta name="keywords" content="详情"><meta name="astro-view-transitions-enabled" content="true"><meta name="astro-view-transitions-fallback" content="animate"><link rel="stylesheet" href="/_astro/about.CkC6PiIh.css">
+<link rel="stylesheet" href="/_astro/about.D3zQv4Ly.css"><script type="module" src="/_astro/hoisted.HO6_Fzad.js"></script></head> <body> <header class="header"> <h5 class="header__heading"> <a href="/" class="link">9Sky 九天</a> <span>
+/
+<a href="/blog" class="link"> 博客 </a> </span><span>
+/
+Vite实现原理与简单实现 </span> </h5> </header> <div id="navbar-sentinal"></div> <nav class="navbar" id="navbar-wrapper"> <div class="navbar__content"> <h5 class="navbar__path"> <a href="/" class="link">9Sky 九天</a> <span>
+/
+<a href="/blog" class="link"> 博客 </a> </span><span>
+/
+Vite实现原理与简单实现 </span> </h5> <div class="navbar__menu"> <ul data-astro-cid-tfcnbjmv> <li data-astro-cid-tfcnbjmv> <a class="link" href="/" data-astro-cid-tfcnbjmv> <i class="ri-home-line" data-astro-cid-tfcnbjmv></i>
+主页
+</a> </li> <li data-astro-cid-tfcnbjmv> <a class="link" href="/blog" data-astro-cid-tfcnbjmv> <i class="ri-newspaper-line" data-astro-cid-tfcnbjmv></i> 文章 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/projects" data-astro-cid-tfcnbjmv> <i class="ri-server-line" data-astro-cid-tfcnbjmv></i> 项目 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/lab" data-astro-cid-tfcnbjmv> <i class="ri-server-line" data-astro-cid-tfcnbjmv></i> 实验室 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/about" data-astro-cid-tfcnbjmv> <i class="ri-cup-line" data-astro-cid-tfcnbjmv></i> 关于 </a> </li> </ul>  </div> </div> </nav> <script>
+  // 使用 ViewTransition 后，所有 DOM 操作的 js 都有一堆问题
+  // 这里用了极不优雅的 var，有待改进
+  var observer;
+  function addNavObserver() {
+    const headerEl = document.querySelector("#navbar-wrapper");
+    const sentinalEl = document.querySelector("#navbar-sentinal");
+    if (!sentinalEl || !headerEl) return;
+    observer = new window.IntersectionObserver((e) => {
+      if (!e[0].isIntersectin && e[0].boundingClientRect.top <= 0) {
+        headerEl.classList.add("navbar--sticked");
+      } else {
+        headerEl.classList.remove("navbar--sticked");
+      }
+    });
+    observer.observe(sentinalEl);
+  }
+
+  function removeNavObserver() {
+    if (observer) observer.disconnect();
+    observer = null;
+  }
+
+  document.addEventListener(
+    "astro:page-load",
+    () => {
+      addNavObserver();
+    },
+    { once: false },
+  );
+
+  document.addEventListener(
+    "astro:before-swap",
+    () => {
+      removeNavObserver();
+    },
+    { once: false },
+  );
+</script>  <main class="page"> <section class="page__section page__section--at-top"> <!-- {
+        article.cover && (
+          <a href={article.cover} data-fancybox data-caption={article.title}>
+            <img
+              src={article.cover}
+              alt={article.title}
+              title={article.title}
+              class="page__cover mb-8"
+            />
+          </a>
+        )
+      } --> <h1 class="page__heading">Vite实现原理与简单实现</h1> <p class="page__meta"> <i class="ri-calendar-line"></i> <span>2024 年 6 月 8 日 09:19</span> </p> <hr class="page__divide"> <article class="content"> <h2><a id="文章目录" class="content__heading-anchor"></a>文章目录</h2>
+<ul>
+<li><a href="#vite%E7%9A%84%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86%E5%8F%8A%E7%AE%80%E5%8D%95%E5%AE%9E%E7%8E%B0">vite的实现原理及简单实现</a>
+<ul>
+<li><a href="#vite%E7%9A%84%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86">vite的实现原理</a></li>
+<li><a href="#%E7%AE%80%E5%8D%95%E5%AE%9E%E7%8E%B0-vite">简单实现 vite</a>
+<ul>
+<li><a href="#%E5%AE%89%E8%A3%85%E4%BE%9D%E8%B5%96">安装依赖</a></li>
+<li><a href="#%E9%9D%99%E6%80%81%E6%9C%8D%E5%8A%A1%E9%85%8D%E7%BD%AE">静态服务配置</a></li>
+<li><a href="#%E9%87%8D%E5%86%99%E6%A8%A1%E5%9D%97%E8%B7%AF%E5%BE%84">重写模块路径</a></li>
+<li><a href="#%E8%A7%A3%E6%9E%90-modules-%E5%BC%95%E5%85%A5%E7%9A%84%E6%96%87%E4%BB%B6">解析 /@modules 引入的文件</a></li>
+</ul></li>
+</ul></li>
+</ul>
+<h1><a id="vite的实现原理及简单实现" class="content__heading-anchor"></a>vite的实现原理及简单实现</h1>
+<h2><a id="vite的实现原理" class="content__heading-anchor"></a>vite的实现原理</h2>
+<p>vite 在浏览器端使用ES6的 export、import 的方式导入、导出模块，同时实现了按需加载。vite 高度依赖 module script 特性。</p>
+<p>处理步骤如下:</p>
+<ul>
+<li>使用 koa 的中间件里获取请求 body 数据返回给浏览器</li>
+<li>通过 es-module-lexer 解析源源文件资源，生成 AST，从而获取到 import 的内容</li>
+<li>判断 import 的资源是否是 npm 模块</li>
+<li>返回处理后的处理资源路径为：&quot;xxx&quot; =&gt; &quot;/@modules/xxx&quot; 如：import { createApp } from '/@modules/vue'</li>
+<li>将处理的 template, script, style 等内容所需的依赖以 http 请求的形式，通过 query 参数形式区分并加载SFC文件各个模块内容。</li>
+</ul>
+<h2><a id="简单实现-vite" class="content__heading-anchor"></a>简单实现 vite</h2>
+<h3><a id="安装依赖" class="content__heading-anchor"></a>安装依赖</h3>
+<pre><code class="language-bash">npm install es-module-lexer koa koa-static magic-string
+</code></pre>
+<ul>
+<li>koa、koa-static 是vite的内部做服务开发</li>
+<li>es-module-lexer 分析 ES6import语法</li>
+<li>magic-string 实现重写字符串内容</li>
+</ul>
+<pre><code class="language-js">入口文件
+<span class="hljs-comment">// vite/src/server.js</span>
+
+<span class="hljs-keyword">const</span> <span class="hljs-title class_">Koa</span> = <span class="hljs-built_in">require</span>(<span class="hljs-string">&#x27;koa&#x27;</span>);
+
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">createServer</span>(<span class="hljs-params"></span>) {
+    <span class="hljs-keyword">const</span> app = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Koa</span>();
+    <span class="hljs-keyword">const</span> root = process.<span class="hljs-title function_">cwd</span>(); <span class="hljs-comment">// 当前命令执行的路径</span>
+
+    <span class="hljs-comment">// 构建上下文对象</span>
+    <span class="hljs-keyword">const</span> context = { app, root };
+    <span class="hljs-comment">// 插件集合</span>
+    <span class="hljs-keyword">const</span> resolvedPlugins = [];
+
+    app.<span class="hljs-title function_">use</span>(<span class="hljs-function">(<span class="hljs-params">ctx, next</span>) =&gt;</span> {
+        <span class="hljs-comment">// 扩展 ctx 属性</span>
+        <span class="hljs-title class_">Object</span>.<span class="hljs-title function_">assign</span>(ctx, context);
+        <span class="hljs-keyword">return</span> <span class="hljs-title function_">next</span>();
+    });
+
+    <span class="hljs-comment">// 依次注册所有插件</span>
+    resolvedPlugins.<span class="hljs-title function_">forEach</span>(<span class="hljs-function"><span class="hljs-params">plugin</span> =&gt;</span> <span class="hljs-title function_">plugin</span>(context));
+    <span class="hljs-keyword">return</span> app;
+}
+
+<span class="hljs-title function_">createServer</span>().<span class="hljs-title function_">listen</span>(<span class="hljs-number">9999</span>, <span class="hljs-function">() =&gt;</span> {
+    <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">&#x27;Vite Serve Start Port: 9999&#x27;</span>);
+});
+</code></pre>
+<h3><a id="静态服务配置" class="content__heading-anchor"></a>静态服务配置</h3>
+<pre><code class="language-js">引入中间插件
+<span class="hljs-comment">// vite/src/server.js</span>
+
+<span class="hljs-keyword">const</span> serveStaticPlugin = <span class="hljs-built_in">require</span>(<span class="hljs-string">&#x27;./serverPluginServeStatic&#x27;</span>);
+<span class="hljs-comment">// 插件集合</span>
+<span class="hljs-keyword">const</span> resolvedPlugins = [
+    serveStaticPlugin
+];
+</code></pre>
+<p>指定当前目录下的文件和 public 目录下的文件可以直接被访问</p>
+<pre><code class="language-bash">// vite/src/serverPluginServeStatic.js
+
+const static = require(<span class="hljs-string">&#x27;koa-static&#x27;</span>);
+const path = require(<span class="hljs-string">&#x27;path&#x27;</span>);
+
+<span class="hljs-keyword">function</span> serveStaticPlugin ({app, root}) {
+    // 以当前根目录作为静态目录
+    app.use(static(root));
+    // 以 public 目录作为根目录
+    app.use(static(path.resolve(root, <span class="hljs-string">&#x27;public&#x27;</span>)))
+}
+
+
+module.exports = serveStaticPlugin;
+</code></pre>
+<h3><a id="重写模块路径" class="content__heading-anchor"></a>重写模块路径</h3>
+<p>ES6 模块会自动发送请求查找到响应文件，比如：import App from '/App.vue' 、import App from './App.vue'、import App from '../App.vue'</p>
+<p>注意： import { createApp } from 'vue' 引入方式会报错：</p>
+<p>Uncaught TypeError: Failed to resolve module specifier &quot;vue&quot;. Relative references must start with either &quot;/&quot;, &quot;./&quot;, or &quot;../&quot;.</p>
+<p>vite的解决方案是: /@modules/xxx</p>
+<p>比如： import { createApp } from '/@modules/vue'</p>
+<p>引入中间插件</p>
+<pre><code class="language-js"><span class="hljs-comment">// vite/src/server.js</span>
+
+<span class="hljs-keyword">const</span> serveStaticPlugin = <span class="hljs-built_in">require</span>(<span class="hljs-string">&#x27;./serverPluginServeStatic&#x27;</span>);
+<span class="hljs-keyword">const</span> moduleRewritePlugin = <span class="hljs-built_in">require</span>(<span class="hljs-string">&#x27;./serverPluginModuleRewrite&#x27;</span>);
+<span class="hljs-comment">// 插件集合</span>
+<span class="hljs-keyword">const</span> resolvedPlugins = [
+    moduleRewritePlugin,
+    serveStaticPlugin
+];
+</code></pre>
+<p>对js文件中的 import 语法进行路径的重写，改写后的路径会再次向服务器拦截请求</p>
+<pre><code class="language-js"><span class="hljs-comment">// vite/src/serverPluginModuleRewrite.js</span>
+
+<span class="hljs-keyword">const</span> { parse } = <span class="hljs-built_in">require</span>(<span class="hljs-string">&#x27;es-module-lexer&#x27;</span>);
+<span class="hljs-keyword">const</span> <span class="hljs-title class_">MagicString</span> = <span class="hljs-built_in">require</span>(<span class="hljs-string">&#x27;magic-string&#x27;</span>);
+
+<span class="hljs-keyword">const</span> { readBody } = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;./utils&quot;</span>);
+
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">serverPluginModuleRewrite</span>(<span class="hljs-params">{ app, root }</span>) {
+    app.<span class="hljs-title function_">use</span>(<span class="hljs-title function_">async</span> (ctx, next) =&gt; {
+
+        <span class="hljs-keyword">await</span> <span class="hljs-title function_">next</span>();
+
+        <span class="hljs-comment">// 对类型是 js 的文件进行拦截处理</span>
+        <span class="hljs-keyword">if</span> (ctx.<span class="hljs-property">body</span> &amp;&amp; ctx.<span class="hljs-property">response</span>.<span class="hljs-title function_">is</span>(<span class="hljs-string">&#x27;js&#x27;</span>)) {
+            <span class="hljs-comment">// 读取文件中的内容</span>
+            <span class="hljs-keyword">const</span> content = <span class="hljs-keyword">await</span> <span class="hljs-title function_">readBody</span>(ctx.<span class="hljs-property">body</span>);
+            <span class="hljs-comment">// 重写 import 中无法识别的路径返回处理后的文件内容</span>
+            <span class="hljs-keyword">const</span> rc = <span class="hljs-title function_">rewriteImports</span>(content);
+
+            <span class="hljs-comment">/*
+            rc就是修改后的内容：
+            + import { createApp } from &#x27;/@modules/vue&#x27;
+            // ....
+            */</span>
+            ctx.<span class="hljs-property">body</span> = rc;
+        }
+    })
+}
+
+<span class="hljs-comment">// 重写请求路径 /@modules/xxx</span>
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">rewriteImports</span>(<span class="hljs-params">source</span>) {
+    <span class="hljs-keyword">const</span> imports = <span class="hljs-title function_">parse</span>(source)[<span class="hljs-number">0</span>];
+    <span class="hljs-keyword">const</span> magicString = <span class="hljs-keyword">new</span> <span class="hljs-title class_">MagicString</span>(source);
+
+    <span class="hljs-keyword">if</span> (imports.<span class="hljs-property">length</span>) {
+        <span class="hljs-keyword">for</span> (<span class="hljs-keyword">let</span> i = <span class="hljs-number">0</span>; i &lt; imports.<span class="hljs-property">length</span>; i++) {
+            <span class="hljs-keyword">const</span> { s, e } = imports[i];
+            <span class="hljs-keyword">let</span> id = source.<span class="hljs-title function_">substring</span>(s, e);
+            <span class="hljs-keyword">if</span> (<span class="hljs-regexp">/^[^\/\.]/</span>.<span class="hljs-title function_">test</span>(id)) {
+                id = <span class="hljs-string">`/@modules/<span class="hljs-subst">${id}</span>`</span>;
+                <span class="hljs-comment">// 修改路径增加 /@modules 前缀</span>
+                magicString.<span class="hljs-title function_">overwrite</span>(s, e, id);
+            }
+        }
+    }
+    <span class="hljs-keyword">return</span> magicString.<span class="hljs-title function_">toString</span>();
+}
+
+<span class="hljs-variable language_">module</span>.<span class="hljs-property">exports</span> = serverPluginModuleRewrite;
+</code></pre>
+<p>utils.js</p>
+<pre><code class="language-js"><span class="hljs-comment">// vite/src/utils.js</span>
+
+<span class="hljs-keyword">const</span> { <span class="hljs-title class_">Readable</span> } = <span class="hljs-built_in">require</span>(<span class="hljs-string">&#x27;stream&#x27;</span>);
+
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">readBody</span>(<span class="hljs-params">stream</span>) {
+    <span class="hljs-keyword">if</span> (stream <span class="hljs-keyword">instanceof</span> <span class="hljs-title class_">Readable</span>) {
+        <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Promise</span>(<span class="hljs-function">(<span class="hljs-params">resolve, reject</span>) =&gt;</span> {
+            <span class="hljs-keyword">try</span> {
+                <span class="hljs-keyword">let</span> res = <span class="hljs-string">&#x27;&#x27;</span>;
+                stream
+                    .<span class="hljs-title function_">on</span>(<span class="hljs-string">&#x27;data&#x27;</span>, <span class="hljs-function">(<span class="hljs-params">chunk</span>) =&gt;</span> res += chunk)
+                    .<span class="hljs-title function_">on</span>(<span class="hljs-string">&#x27;end&#x27;</span>, <span class="hljs-function">() =&gt;</span> <span class="hljs-title function_">resolve</span>(res));
+            } <span class="hljs-keyword">catch</span> (error) {
+                <span class="hljs-title function_">reject</span>(error);
+            }
+        })
+    } <span class="hljs-keyword">else</span> {
+        <span class="hljs-keyword">return</span> stream.<span class="hljs-title function_">toString</span>();
+    }
+}
+
+<span class="hljs-built_in">exports</span>.<span class="hljs-property">readBody</span> = readBody;
+</code></pre>
+<h3><a id="解析-modules-引入的文件" class="content__heading-anchor"></a>解析 /@modules 引入的文件</h3>
+<ul>
+<li>引入中间插件</li>
+</ul>
+<pre><code class="language-js"><span class="hljs-comment">// vite/src/server.js</span>
+
+<span class="hljs-keyword">const</span> moduleResolvePlugin = <span class="hljs-built_in">require</span>(<span class="hljs-string">&#x27;./serverPluginModuleResolve&#x27;</span>);
+
+<span class="hljs-keyword">const</span> resolvedPlugins = [
+    moduleRewritePlugin,
+    moduleResolvePlugin,
+    serveStaticPlugin
+];
+</code></pre>
+<ul>
+<li>将 /@modules 开头的路径解析成对应的真实文件，返回给浏览器，这样请求的路径对应文件就正确了</li>
+</ul>
+<pre><code class="language-js"><span class="hljs-comment">// vite/src/serverPluginModuleResolve.js</span>
+
+<span class="hljs-keyword">const</span> fs = <span class="hljs-built_in">require</span>(<span class="hljs-string">&#x27;fs&#x27;</span>).<span class="hljs-property">promises</span>;
+
+<span class="hljs-keyword">const</span> { resolveVue } = <span class="hljs-built_in">require</span>(<span class="hljs-string">&#x27;./utils&#x27;</span>);
+
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">serverPluginModuleResolve</span>(<span class="hljs-params">{ app, root }</span>) {
+    <span class="hljs-keyword">const</span> moduleRE = <span class="hljs-regexp">/^\/@modules\//</span>;
+
+    <span class="hljs-comment">// 编译的模块使用commonjs规范,其他文件均使用es6模块</span>
+    <span class="hljs-keyword">const</span> vueResolved = <span class="hljs-title function_">resolveVue</span>(root);
+
+    app.<span class="hljs-title function_">use</span>(<span class="hljs-title function_">async</span> (ctx, next) =&gt; {
+        <span class="hljs-comment">// 对 /@modules 开头的路径进行映射</span>
+        <span class="hljs-keyword">if</span> (!moduleRE.<span class="hljs-title function_">test</span>(ctx.<span class="hljs-property">path</span>)) {
+            <span class="hljs-keyword">return</span> <span class="hljs-title function_">next</span>();
+        }
+        <span class="hljs-comment">// 去掉 /@modules/路径</span>
+        <span class="hljs-keyword">const</span> id = ctx.<span class="hljs-property">path</span>.<span class="hljs-title function_">replace</span>(moduleRE, <span class="hljs-string">&#x27;&#x27;</span>);
+        ctx.<span class="hljs-property">type</span> = <span class="hljs-string">&#x27;js&#x27;</span>;
+        <span class="hljs-keyword">const</span> content = <span class="hljs-keyword">await</span> fs.<span class="hljs-title function_">readFile</span>(vueResolved[id], <span class="hljs-string">&#x27;utf8&#x27;</span>);
+        ctx.<span class="hljs-property">body</span> = content;
+    });
+}
+
+<span class="hljs-variable language_">module</span>.<span class="hljs-property">exports</span> = serverPluginModuleResolve;
+</code></pre>
+<p>utils.js</p>
+<pre><code class="language-js"><span class="hljs-comment">// vite/src/utils.js</span>
+
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">resolveVue</span>(<span class="hljs-params">root</span>) {
+    <span class="hljs-keyword">const</span> compilerPkgPath = path.<span class="hljs-title function_">resolve</span>(root, <span class="hljs-string">&#x27;node_modules&#x27;</span>, <span class="hljs-string">&#x27;@vue/compiler-sfc/package.json&#x27;</span>);
+    <span class="hljs-keyword">const</span> compilerPkg = <span class="hljs-built_in">require</span>(compilerPkgPath);
+    <span class="hljs-comment">// 编译模块的路径 node 中编译</span>
+    <span class="hljs-keyword">const</span> compilerPath = path.<span class="hljs-title function_">join</span>(path.<span class="hljs-title function_">dirname</span>(compilerPkgPath), compilerPkg.<span class="hljs-property">main</span>);
+    <span class="hljs-keyword">const</span> <span class="hljs-title function_">resolvePath</span> = (<span class="hljs-params">name</span>) =&gt; path.<span class="hljs-title function_">resolve</span>(root, <span class="hljs-string">&#x27;node_modules&#x27;</span>, <span class="hljs-string">`@vue/<span class="hljs-subst">${name}</span>/dist/<span class="hljs-subst">${name}</span>.esm-bundler.js`</span>);
+    <span class="hljs-comment">// dom 运行</span>
+    <span class="hljs-keyword">const</span> runtimeDomPath = <span class="hljs-title function_">resolvePath</span>(<span class="hljs-string">&#x27;runtime-dom&#x27;</span>);
+    <span class="hljs-comment">// 核心运行</span>
+    <span class="hljs-keyword">const</span> runtimeCorePath = <span class="hljs-title function_">resolvePath</span>(<span class="hljs-string">&#x27;runtime-core&#x27;</span>);
+    <span class="hljs-comment">// 响应式模块</span>
+    <span class="hljs-keyword">const</span> reactivityPath = <span class="hljs-title function_">resolvePath</span>(<span class="hljs-string">&#x27;reactivity&#x27;</span>);
+    <span class="hljs-comment">// 共享模块</span>
+    <span class="hljs-keyword">const</span> sharedPath = <span class="hljs-title function_">resolvePath</span>(<span class="hljs-string">&#x27;shared&#x27;</span>);
+    <span class="hljs-keyword">return</span> {
+        <span class="hljs-attr">vue</span>: runtimeDomPath,
+        <span class="hljs-string">&#x27;@vue/runtime-dom&#x27;</span>: runtimeDomPath,
+        <span class="hljs-string">&#x27;@vue/runtime-core&#x27;</span>: runtimeCorePath,
+        <span class="hljs-string">&#x27;@vue/reactivity&#x27;</span>: reactivityPath,
+        <span class="hljs-string">&#x27;@vue/shared&#x27;</span>: sharedPath,
+        <span class="hljs-attr">compiler</span>: compilerPath,
+    }
+}
+
+<span class="hljs-built_in">exports</span>.<span class="hljs-property">resolveVue</span> = resolveVue;
+</code></pre>
+<p>解析浏览器认识 .vue 的文件</p>
+<p>调用 @vue/compiler-sfc 来编译</p>
+<pre><code class="language-js"><span class="hljs-keyword">const</span> path = <span class="hljs-built_in">require</span>(<span class="hljs-string">&#x27;path&#x27;</span>);
+<span class="hljs-keyword">const</span> fs = <span class="hljs-built_in">require</span>(<span class="hljs-string">&#x27;fs&#x27;</span>).<span class="hljs-property">promises</span>;
+
+<span class="hljs-keyword">const</span> { resolveVue } = <span class="hljs-built_in">require</span>(<span class="hljs-string">&#x27;./utils&#x27;</span>);
+
+<span class="hljs-keyword">const</span> defaultExportRE = <span class="hljs-regexp">/((?:^|\n|;)\s*)export default/</span>;
+
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">serverPluginVue</span>(<span class="hljs-params">{ app, root }</span>) {
+    app.<span class="hljs-title function_">use</span>(<span class="hljs-title function_">async</span> (ctx, next) =&gt; {
+        <span class="hljs-keyword">if</span> (!ctx.<span class="hljs-property">path</span>.<span class="hljs-title function_">endsWith</span>(<span class="hljs-string">&#x27;.vue&#x27;</span>)) {
+            <span class="hljs-keyword">return</span> <span class="hljs-title function_">next</span>();
+        }
+        <span class="hljs-comment">// .vue 文件路径处理</span>
+        <span class="hljs-keyword">const</span> filePath = path.<span class="hljs-title function_">join</span>(root, ctx.<span class="hljs-property">path</span>);
+        <span class="hljs-comment">// 获取文件内容</span>
+        <span class="hljs-keyword">const</span> content = <span class="hljs-keyword">await</span> fs.<span class="hljs-title function_">readFile</span>(filePath, <span class="hljs-string">&#x27;utf8&#x27;</span>);
+        
+        <span class="hljs-comment">// 获取文件内容 （拿到 @vue/compiler-sfc 来编译 .vue 的文件）</span>
+        <span class="hljs-keyword">const</span> { parse, compileTemplate } = <span class="hljs-built_in">require</span>(<span class="hljs-title function_">resolveVue</span>(root).<span class="hljs-property">compiler</span>);
+        <span class="hljs-comment">// 使用 @vue/compiler-sfc来编译 .vue 的文件</span>
+        <span class="hljs-keyword">const</span> { descriptor } = <span class="hljs-title function_">parse</span>(content); <span class="hljs-comment">// 解析文件内容</span>
+        
+        <span class="hljs-keyword">if</span> (!ctx.<span class="hljs-property">query</span>.<span class="hljs-property">type</span>) {
+            <span class="hljs-keyword">let</span> code = <span class="hljs-string">``</span>;
+            <span class="hljs-keyword">if</span> (descriptor.<span class="hljs-property">script</span>) {
+                <span class="hljs-keyword">const</span> content = descriptor.<span class="hljs-property">script</span>.<span class="hljs-property">content</span>;
+                <span class="hljs-keyword">const</span> replaced = content.<span class="hljs-title function_">replace</span>(defaultExportRE, <span class="hljs-string">&#x27;$1const __script =&#x27;</span>);
+                code += replaced;
+            }
+            <span class="hljs-keyword">if</span> (descriptor.<span class="hljs-property">template</span>) {
+                <span class="hljs-keyword">const</span> templateRequest = ctx.<span class="hljs-property">path</span> + <span class="hljs-string">`?type=template`</span>;
+                code += <span class="hljs-string">`\nimport { render as __render } from <span class="hljs-subst">${<span class="hljs-built_in">JSON</span>.stringify(templateRequest)}</span>`</span>;
+                code += <span class="hljs-string">`\n__script.render = __render`</span>;
+            }
+            ctx.<span class="hljs-property">type</span> = <span class="hljs-string">&#x27;js&#x27;</span>;
+            code += <span class="hljs-string">`\nexport default __script`</span>;
+
+            ctx.<span class="hljs-property">body</span> = code;
+        }
+        <span class="hljs-keyword">if</span> (ctx.<span class="hljs-property">query</span>.<span class="hljs-property">type</span> == <span class="hljs-string">&#x27;template&#x27;</span>) {
+            ctx.<span class="hljs-property">type</span> = <span class="hljs-string">&#x27;js&#x27;</span>;
+            <span class="hljs-keyword">const</span> content = descriptor.<span class="hljs-property">template</span>.<span class="hljs-property">content</span>;
+            <span class="hljs-comment">// 将文件中的引入的模板再次解析</span>
+            <span class="hljs-keyword">const</span> { code } = <span class="hljs-title function_">compileTemplate</span>({ <span class="hljs-attr">source</span>: content });
+
+            ctx.<span class="hljs-property">body</span> = code;
+        }
+    })
+}
+
+<span class="hljs-variable language_">module</span>.<span class="hljs-property">exports</span> = serverPluginVue;
+</code></pre>
+ </article> </section> </main>  <footer class="footer"> <hr class="footer__divide"> <div class="footer__row"> <p class="m-2">
+&#169; 2017-2024 <a href="/" class="link">9Sky 九天</a> </p> <div class="m-2"> <ul data-astro-cid-tfcnbjmv> <li data-astro-cid-tfcnbjmv> <a class="link" href="/" data-astro-cid-tfcnbjmv> 
+主页
+</a> </li> <li data-astro-cid-tfcnbjmv> <a class="link" href="/blog" data-astro-cid-tfcnbjmv>  文章 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/projects" data-astro-cid-tfcnbjmv>  项目 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/lab" data-astro-cid-tfcnbjmv>  实验室 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/about" data-astro-cid-tfcnbjmv>  关于 </a> </li> </ul>  </div> </div> </footer> </body></html> 

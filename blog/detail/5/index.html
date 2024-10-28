@@ -1,0 +1,193 @@
+<!DOCTYPE html><html> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width"><title>从零实现 mini-react(5)：实现useState</title><link rel="icon" type="image/vnd.microsoft.icon" href="/favicon.ico"><link rel="sitemap" href="/sitemap-index.xml"><title>从零实现 mini-react(5)：实现useState</title><link rel="canonical" href="https://wty9sky.github.io/blog/detail/5/"><meta name="description" content="实现React中的useState（Hook），useState允许在函数组件中添加状态，使得状态管理和组件逻辑可以在同一个函数中进行，而不是分散在类组件的多个生命周期方法中。
+
+"><meta name="robots" content="index, follow"><meta property="og:title" content="从零实现 mini-react(5)：实现useState"><meta property="og:type" content="article"><meta property="og:image" content="/og.svg"><meta property="og:url" content="https://wty9sky.github.io/blog/detail/5/"><meta property="og:locale" content="zh_CN"><meta property="og:locale:alternate" content="zh_TW"><meta property="og:locale:alternate" content="en_US"><meta property="og:site_name" content="9Sky 九天"><link rel="shortcut icon" href="/favicon.ico"><link rel="bookmark" href="/favicon.ico"><link rel="apple-touch-icon" href="/avatar.png"><meta name="generator" content="Astro v4.16.7"><meta name="keywords" content="详情"><meta name="astro-view-transitions-enabled" content="true"><meta name="astro-view-transitions-fallback" content="animate"><link rel="stylesheet" href="/_astro/about.CkC6PiIh.css">
+<link rel="stylesheet" href="/_astro/about.D3zQv4Ly.css"><script type="module" src="/_astro/hoisted.HO6_Fzad.js"></script></head> <body> <header class="header"> <h5 class="header__heading"> <a href="/" class="link">9Sky 九天</a> <span>
+/
+<a href="/blog" class="link"> 博客 </a> </span><span>
+/
+从零实现 mini-react(5)：实现useState </span> </h5> </header> <div id="navbar-sentinal"></div> <nav class="navbar" id="navbar-wrapper"> <div class="navbar__content"> <h5 class="navbar__path"> <a href="/" class="link">9Sky 九天</a> <span>
+/
+<a href="/blog" class="link"> 博客 </a> </span><span>
+/
+从零实现 mini-react(5)：实现useState </span> </h5> <div class="navbar__menu"> <ul data-astro-cid-tfcnbjmv> <li data-astro-cid-tfcnbjmv> <a class="link" href="/" data-astro-cid-tfcnbjmv> <i class="ri-home-line" data-astro-cid-tfcnbjmv></i>
+主页
+</a> </li> <li data-astro-cid-tfcnbjmv> <a class="link" href="/blog" data-astro-cid-tfcnbjmv> <i class="ri-newspaper-line" data-astro-cid-tfcnbjmv></i> 文章 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/projects" data-astro-cid-tfcnbjmv> <i class="ri-server-line" data-astro-cid-tfcnbjmv></i> 项目 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/lab" data-astro-cid-tfcnbjmv> <i class="ri-server-line" data-astro-cid-tfcnbjmv></i> 实验室 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/about" data-astro-cid-tfcnbjmv> <i class="ri-cup-line" data-astro-cid-tfcnbjmv></i> 关于 </a> </li> </ul>  </div> </div> </nav> <script>
+  // 使用 ViewTransition 后，所有 DOM 操作的 js 都有一堆问题
+  // 这里用了极不优雅的 var，有待改进
+  var observer;
+  function addNavObserver() {
+    const headerEl = document.querySelector("#navbar-wrapper");
+    const sentinalEl = document.querySelector("#navbar-sentinal");
+    if (!sentinalEl || !headerEl) return;
+    observer = new window.IntersectionObserver((e) => {
+      if (!e[0].isIntersectin && e[0].boundingClientRect.top <= 0) {
+        headerEl.classList.add("navbar--sticked");
+      } else {
+        headerEl.classList.remove("navbar--sticked");
+      }
+    });
+    observer.observe(sentinalEl);
+  }
+
+  function removeNavObserver() {
+    if (observer) observer.disconnect();
+    observer = null;
+  }
+
+  document.addEventListener(
+    "astro:page-load",
+    () => {
+      addNavObserver();
+    },
+    { once: false },
+  );
+
+  document.addEventListener(
+    "astro:before-swap",
+    () => {
+      removeNavObserver();
+    },
+    { once: false },
+  );
+</script>  <main class="page"> <section class="page__section page__section--at-top"> <!-- {
+        article.cover && (
+          <a href={article.cover} data-fancybox data-caption={article.title}>
+            <img
+              src={article.cover}
+              alt={article.title}
+              title={article.title}
+              class="page__cover mb-8"
+            />
+          </a>
+        )
+      } --> <h1 class="page__heading">从零实现 mini-react(5)：实现useState</h1> <p class="page__meta"> <i class="ri-calendar-line"></i> <span>2024 年 3 月 23 日 02:37</span> </p> <hr class="page__divide"> <article class="content"> <h2><a id="文章目录" class="content__heading-anchor"></a>文章目录</h2>
+<ul>
+<li><a href="#%E4%BB%8E%E9%9B%B6%E5%AE%9E%E7%8E%B0-mini-react5%E5%AE%9E%E7%8E%B0usestate">从零实现 mini-react(5)：实现useState</a>
+<ul>
+<li><a href="#usestate-%E7%9A%84%E5%AE%9E%E7%8E%B0">useState 的实现</a></li>
+<li><a href="#%E6%89%B9%E9%87%8F-action-%E5%A4%84%E7%90%86">批量 action 处理</a></li>
+<li><a href="#%E4%BC%98%E5%8C%96%E6%9B%B4%E6%96%B0">优化更新</a></li>
+</ul></li>
+</ul>
+<h1><a id="从零实现-mini-react5实现usestate" class="content__heading-anchor"></a>从零实现 mini-react(5)：实现useState</h1>
+<p>1.实现useState的实现，多个state需要用数组存起来，配合对应index，依次配合action执行才能正确获取值。</p>
+<h2><a id="usestate-的实现" class="content__heading-anchor"></a>useState 的实现</h2>
+<p>首先拿到当前的 fiber，保存起来</p>
+<p>内部初始化一个 stateHook 对象，他的 value 保存对应值 (即初始值)</p>
+<pre><code class="language-js"><span class="hljs-keyword">function</span> <span class="hljs-title function_">useState</span>(<span class="hljs-params">initial</span>) {
+  <span class="hljs-keyword">const</span> currentFiber = wipFiber
+  <span class="hljs-keyword">const</span> stateHook = {
+    <span class="hljs-attr">value</span>: initial
+  }
+
+  <span class="hljs-keyword">function</span> <span class="hljs-title function_">setState</span>(<span class="hljs-params">action</span>) {
+    <span class="hljs-comment">// todo:</span>
+  }
+
+  <span class="hljs-keyword">return</span> [stateHook.<span class="hljs-property">value</span>, setState]
+}
+</code></pre>
+<p>然后 <code>setState</code> 内部取更新 <code>value</code>，触发更新：</p>
+<pre><code class="language-js"><span class="hljs-keyword">function</span> <span class="hljs-title function_">setState</span>(<span class="hljs-params">action</span>) {
+  stateHook.<span class="hljs-property">value</span> = <span class="hljs-title function_">action</span>(stateHook.<span class="hljs-property">value</span>)
+
+  wipFiber = {
+    ...currentFiber,
+    <span class="hljs-attr">alternate</span>: currrentFiber
+  }
+
+  <span class="hljs-title function_">requestIdleCallback</span>(loop)
+}
+</code></pre>
+<p>然后触发更新后，会重新调用到该 <code>useState</code>，但是这时候 <code>value</code> 还是 initial 就不对了，应该是上一次运行时创建的 <code>stateHook</code> 的 value</p>
+<p>因此我们需要把每次 <code>useState</code> 中创建的 <code>stateHook</code> 存起来，我们可以做个全局变量</p>
+<pre><code class="language-js"><span class="hljs-comment">// eslint-disable-next-line prefer-const</span>
+<span class="hljs-keyword">let</span> stateHooks = []
+<span class="hljs-comment">// eslint-disable-next-line prefer-const</span>
+<span class="hljs-keyword">let</span> stateHookIndex = <span class="hljs-number">0</span>
+</code></pre>
+<p>因为有多个 useState，所以用一个数组来存，然后按序号取，<strong>这也是为什么 <code>useState</code> 只能再函数顶部</strong></p>
+<p>然后我们在更新函数组件时，重置他们</p>
+<pre><code class="language-js"><span class="hljs-keyword">function</span> <span class="hljs-title function_">updateFunctionComponent</span>(<span class="hljs-params">fiber</span>) {
+  <span class="hljs-comment">// ...</span>
+  stateHooks = []
+  stateHookIndex = <span class="hljs-number">0</span>
+}
+</code></pre>
+<p>然后在 <code>useState</code> 内去存储他们：</p>
+<pre><code class="language-js"><span class="hljs-keyword">function</span> <span class="hljs-title function_">useState</span>(<span class="hljs-params">initial</span>) {
+  <span class="hljs-keyword">const</span> currentFiber = wipFiber
+  <span class="hljs-comment">// 3 尝试拿到 1 存起来的 stateHook</span>
+  <span class="hljs-keyword">const</span> oldStateHook = currentFiber?.<span class="hljs-property">stateHooks</span>?.[stateHookIndex]
+
+  <span class="hljs-keyword">const</span> stateHook = {
+    <span class="hljs-comment">// 4. 拿到 2 更新的值</span>
+    <span class="hljs-attr">value</span>: oldStateHook ? oldStatHook.<span class="hljs-property">value</span> : initial
+  }
+
+  <span class="hljs-comment">// 按执行顺序，放到数组里</span>
+  stateHooks.<span class="hljs-title function_">push</span>(stateHook)
+
+  <span class="hljs-comment">// 1. 存好</span>
+  currentFiber.<span class="hljs-property">stateHooks</span> = stateHooks
+
+  <span class="hljs-keyword">function</span> <span class="hljs-title function_">setState</span>(<span class="hljs-params">action</span>) {
+    <span class="hljs-comment">// 2. 更新好值</span>
+    stateHook.<span class="hljs-property">value</span> = <span class="hljs-title function_">action</span>(stateHook.<span class="hljs-property">value</span>)
+
+    <span class="hljs-comment">// ... 开始更新</span>
+  }
+}
+</code></pre>
+<h2><a id="批量-action-处理" class="content__heading-anchor"></a>批量 action 处理</h2>
+<p>我们没必要在 <code>setState</code> 内就做 action 的调用，可以在 <code>useState</code> 调用时，再将之前存起来的 <code>action</code> 全调用完</p>
+<pre><code class="language-javascript"><span class="hljs-keyword">function</span> <span class="hljs-title function_">useState</span>(<span class="hljs-params">initial</span>) {
+  <span class="hljs-keyword">const</span> currentFiber = wipFiber
+  <span class="hljs-comment">// 3 尝试拿到 1 存起来的 stateHook</span>
+  <span class="hljs-keyword">const</span> oldStateHook = currentFiber?.<span class="hljs-property">stateHooks</span>?.[stateHookIndex]
+
+  <span class="hljs-keyword">const</span> stateHook = {
+    <span class="hljs-comment">// 4. 拿到 2 更新的值</span>
+    <span class="hljs-attr">value</span>: oldStateHook ? oldStatHook.<span class="hljs-property">value</span> : initial
+   <span class="hljs-attr">queue</span>: oldStateHook ? oldStatHook.<span class="hljs-property">queue</span> : []
+  }
+
+  stateHook.<span class="hljs-property">queue</span>.<span class="hljs-title function_">forEach</span>(<span class="hljs-function">(<span class="hljs-params">action</span>) =&gt;</span> {
+   <span class="hljs-comment">// 更新，方便下一次更新的时候，从 alternate 中的stateHooks获取到</span>
+   stateHook.<span class="hljs-property">value</span> = <span class="hljs-title function_">action</span>(stateHook.<span class="hljs-property">value</span>)
+  })
+ <span class="hljs-comment">// 清空</span>
+ stateHook.<span class="hljs-property">queue</span> = []
+
+  <span class="hljs-comment">// 按执行顺序，放到数组里</span>
+  stateHooks.<span class="hljs-title function_">push</span>(stateHook)
+
+  <span class="hljs-comment">// 1. 存好</span>
+  currentFiber.<span class="hljs-property">stateHooks</span> = stateHooks
+
+  <span class="hljs-keyword">function</span> <span class="hljs-title function_">setState</span>(<span class="hljs-params">action</span>) {
+    <span class="hljs-comment">// 2. 更新好值</span>
+   stateHook.<span class="hljs-property">queue</span>.<span class="hljs-title function_">push</span>(action)
+
+    <span class="hljs-comment">// ... 开始更新</span>
+  }
+}
+</code></pre>
+<p>当前这里的 <code>action</code> 只支持函数，我们可以做个判断，支持值得传入</p>
+<pre><code class="language-js"><span class="hljs-keyword">const</span> normalAction = <span class="hljs-keyword">typeof</span> action === <span class="hljs-string">&#x27;function&#x27;</span> ? action : <span class="hljs-function">() =&gt;</span> action
+</code></pre>
+<h2><a id="优化更新" class="content__heading-anchor"></a>优化更新</h2>
+<p>如果说更新后得值和原来的值不变，则没必要去更新了，因此我们可以先执行下 <code>action</code></p>
+<pre><code class="language-js"><span class="hljs-keyword">function</span> <span class="hljs-title function_">setState</span>(<span class="hljs-params">action</span>) {
+  <span class="hljs-keyword">const</span> eager = <span class="hljs-title function_">action</span>(stateHook.<span class="hljs-property">value</span>)
+
+  <span class="hljs-keyword">if</span> (eager === stateHook)
+    <span class="hljs-keyword">return</span>
+
+  <span class="hljs-comment">// ...更新</span>
+}
+</code></pre>
+ </article> </section> </main>  <footer class="footer"> <hr class="footer__divide"> <div class="footer__row"> <p class="m-2">
+&#169; 2017-2024 <a href="/" class="link">9Sky 九天</a> </p> <div class="m-2"> <ul data-astro-cid-tfcnbjmv> <li data-astro-cid-tfcnbjmv> <a class="link" href="/" data-astro-cid-tfcnbjmv> 
+主页
+</a> </li> <li data-astro-cid-tfcnbjmv> <a class="link" href="/blog" data-astro-cid-tfcnbjmv>  文章 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/projects" data-astro-cid-tfcnbjmv>  项目 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/lab" data-astro-cid-tfcnbjmv>  实验室 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/about" data-astro-cid-tfcnbjmv>  关于 </a> </li> </ul>  </div> </div> </footer> </body></html> 

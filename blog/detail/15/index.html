@@ -1,0 +1,276 @@
+<!DOCTYPE html><html> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width"><title>公众号定时发送模板消息的技术探索</title><link rel="icon" type="image/vnd.microsoft.icon" href="/favicon.ico"><link rel="sitemap" href="/sitemap-index.xml"><title>公众号定时发送模板消息的技术探索</title><link rel="canonical" href="https://wty9sky.github.io/blog/detail/15/"><meta name="description" content="公众号定时发送模板消息的技术探索"><meta name="robots" content="index, follow"><meta property="og:title" content="公众号定时发送模板消息的技术探索"><meta property="og:type" content="article"><meta property="og:image" content="/og.svg"><meta property="og:url" content="https://wty9sky.github.io/blog/detail/15/"><meta property="og:locale" content="zh_CN"><meta property="og:locale:alternate" content="zh_TW"><meta property="og:locale:alternate" content="en_US"><meta property="og:site_name" content="9Sky 九天"><link rel="shortcut icon" href="/favicon.ico"><link rel="bookmark" href="/favicon.ico"><link rel="apple-touch-icon" href="/avatar.png"><meta name="generator" content="Astro v4.16.7"><meta name="keywords" content="详情"><meta name="astro-view-transitions-enabled" content="true"><meta name="astro-view-transitions-fallback" content="animate"><link rel="stylesheet" href="/_astro/about.CkC6PiIh.css">
+<link rel="stylesheet" href="/_astro/about.D3zQv4Ly.css"><script type="module" src="/_astro/hoisted.HO6_Fzad.js"></script></head> <body> <header class="header"> <h5 class="header__heading"> <a href="/" class="link">9Sky 九天</a> <span>
+/
+<a href="/blog" class="link"> 博客 </a> </span><span>
+/
+公众号定时发送模板消息的技术探索 </span> </h5> </header> <div id="navbar-sentinal"></div> <nav class="navbar" id="navbar-wrapper"> <div class="navbar__content"> <h5 class="navbar__path"> <a href="/" class="link">9Sky 九天</a> <span>
+/
+<a href="/blog" class="link"> 博客 </a> </span><span>
+/
+公众号定时发送模板消息的技术探索 </span> </h5> <div class="navbar__menu"> <ul data-astro-cid-tfcnbjmv> <li data-astro-cid-tfcnbjmv> <a class="link" href="/" data-astro-cid-tfcnbjmv> <i class="ri-home-line" data-astro-cid-tfcnbjmv></i>
+主页
+</a> </li> <li data-astro-cid-tfcnbjmv> <a class="link" href="/blog" data-astro-cid-tfcnbjmv> <i class="ri-newspaper-line" data-astro-cid-tfcnbjmv></i> 文章 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/projects" data-astro-cid-tfcnbjmv> <i class="ri-server-line" data-astro-cid-tfcnbjmv></i> 项目 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/lab" data-astro-cid-tfcnbjmv> <i class="ri-server-line" data-astro-cid-tfcnbjmv></i> 实验室 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/about" data-astro-cid-tfcnbjmv> <i class="ri-cup-line" data-astro-cid-tfcnbjmv></i> 关于 </a> </li> </ul>  </div> </div> </nav> <script>
+  // 使用 ViewTransition 后，所有 DOM 操作的 js 都有一堆问题
+  // 这里用了极不优雅的 var，有待改进
+  var observer;
+  function addNavObserver() {
+    const headerEl = document.querySelector("#navbar-wrapper");
+    const sentinalEl = document.querySelector("#navbar-sentinal");
+    if (!sentinalEl || !headerEl) return;
+    observer = new window.IntersectionObserver((e) => {
+      if (!e[0].isIntersectin && e[0].boundingClientRect.top <= 0) {
+        headerEl.classList.add("navbar--sticked");
+      } else {
+        headerEl.classList.remove("navbar--sticked");
+      }
+    });
+    observer.observe(sentinalEl);
+  }
+
+  function removeNavObserver() {
+    if (observer) observer.disconnect();
+    observer = null;
+  }
+
+  document.addEventListener(
+    "astro:page-load",
+    () => {
+      addNavObserver();
+    },
+    { once: false },
+  );
+
+  document.addEventListener(
+    "astro:before-swap",
+    () => {
+      removeNavObserver();
+    },
+    { once: false },
+  );
+</script>  <main class="page"> <section class="page__section page__section--at-top"> <!-- {
+        article.cover && (
+          <a href={article.cover} data-fancybox data-caption={article.title}>
+            <img
+              src={article.cover}
+              alt={article.title}
+              title={article.title}
+              class="page__cover mb-8"
+            />
+          </a>
+        )
+      } --> <h1 class="page__heading">公众号定时发送模板消息的技术探索</h1> <p class="page__meta"> <i class="ri-calendar-line"></i> <span>2020 年 12 月 5 日 10:08</span> </p> <hr class="page__divide"> <article class="content"> <h2><a id="文章目录" class="content__heading-anchor"></a>文章目录</h2>
+<ul>
+<li><a href="#%E5%85%AC%E4%BC%97%E5%8F%B7%E5%AE%9A%E6%97%B6%E5%8F%91%E9%80%81%E6%A8%A1%E6%9D%BF%E6%B6%88%E6%81%AF%E7%9A%84%E6%8A%80%E6%9C%AF%E6%8E%A2%E7%B4%A2">公众号定时发送模板消息的技术探索</a>
+<ul>
+<li><a href="#%E9%97%AE%E9%A2%98%E5%BC%95%E5%85%A5">问题引入</a></li>
+<li><a href="#%E6%8A%80%E6%9C%AF%E9%9A%BE%E7%82%B9">技术难点</a></li>
+<li><a href="#%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88">解决方案</a>
+<ul>
+<li><a href="#%E5%BB%BA%E7%AB%8B%E5%AE%9A%E6%97%B6%E4%BB%BB%E5%8A%A1%E9%98%9F%E5%88%97">建立定时任务队列</a></li>
+<li><a href="#%E4%BF%9D%E5%AD%98%E5%AE%9A%E6%97%B6%E4%BB%BB%E5%8A%A1%E9%98%9F%E5%88%97">保存定时任务队列</a>
+<ul>
+<li><a href="#%E6%96%B9%E6%A1%88%E4%B8%80">方案一</a></li>
+<li><a href="#%E6%96%B9%E6%A1%88%E4%BA%8C">方案二</a></li>
+</ul></li>
+</ul></li>
+<li><a href="#%E6%8A%80%E6%9C%AF%E7%BB%86%E8%8A%82">技术细节</a>
+<ul>
+<li><a href="#node-schedule">node-schedule</a></li>
+<li><a href="#redis-%E6%8C%81%E4%B9%85%E5%8C%96%E7%9A%84%E6%96%B9%E6%A1%88">Redis 持久化的方案</a></li>
+</ul></li>
+</ul></li>
+</ul>
+<h1><a id="公众号定时发送模板消息的技术探索" class="content__heading-anchor"></a>公众号定时发送模板消息的技术探索</h1>
+<h2><a id="问题引入" class="content__heading-anchor"></a>问题引入</h2>
+<p>在开发纽澜教务系统的时候，根据甲方需求，需要实现学生在使用小程序的日程和课表以及教务老师在后端发布课程时，根据课程和日程时间定时发送模板消息提醒学生，由于工期原因，一期的开发是基于 Koa 开发，发送模板消息的实现很简单，难点则是在于如何实现定时发送，且将定时队列保存，即使服务器故障关闭重启后依然能够恢复定时任务队列。在实现这个功能的过程中，遇到了一些问题，这些问题在经历了一段时间的学习研究之后得以解决，将此次解决问题的思路记录下来。</p>
+<h2><a id="技术难点" class="content__heading-anchor"></a>技术难点</h2>
+<p>主要的技术难点就是如何实现建立定时任务队列，并将定时任务队列保存，即使服务器故障关闭重启后依然能够恢复定时任务队列。</p>
+<h2><a id="解决方案" class="content__heading-anchor"></a>解决方案</h2>
+<p>首先确定需求有：</p>
+<ul>
+<li>建立定时任务队列</li>
+<li>保存定时任务队列</li>
+</ul>
+<h3><a id="建立定时任务队列" class="content__heading-anchor"></a>建立定时任务队列</h3>
+<p>NodeJS 下实现建立定时任务队列的方案主要有：</p>
+<ul>
+<li><p>通过自带的定时器 setTimeout 和 setInterval 来实现</p>
+<ul>
+<li>需要计算时间差，会造成消耗大量性能</li>
+<li>可能会堵塞进程</li>
+<li>重启后原有的队列会失效</li>
+<li>会出现执行时间并不完全按照设定的精确时间而调用</li>
+</ul></li>
+<li><p>通过 node-schedule 来实现</p>
+<ul>
+<li>可以设置一次性的定时任务和多次定时任务</li>
+<li>开启多线程模式就会执行多次，可能会导致重复执行任务</li>
+</ul></li>
+<li><p>通过 Redis 的过期事件通知来实现</p>
+<p>以上三个方案都有服务器重启后会丢失定时任务队列的问题。</p></li>
+</ul>
+<h3><a id="保存定时任务队列" class="content__heading-anchor"></a>保存定时任务队列</h3>
+<p>保存任务队列的目的是即使在服务器或者 redis 故障重启时，也能通过获取之前保存的任务队列来恢复定时任务队列并执行。<br>
+NodeJS 下实现保存定时任务队列的方案主要有：</p>
+<ul>
+<li>通过 Redis 持久化存储定时任务队列，服务器重启后，通过恢复日志备份等实现恢复相关数据。</li>
+<li>将定时任务队列存储到 Mysql 数据库，服务器重启后，重新从数据库获取相应定时任务加入定时任务队列。</li>
+</ul>
+<p>综合以上需求和方案，细化出以下两种方案：</p>
+<h4><a id="方案一" class="content__heading-anchor"></a>方案一</h4>
+<p>方案思路：<br>
+通过 Redis 的&quot;过期事件通知&quot;功能，当 redis 中的 key 值过期后，触发通知事件通知到服务器，服务器进行下一步处理。通过开启 Redis 持久化，在 Redis 或服务器故障的时候，通过持久化方案保证定时任务队列不会随着故障而消失。</p>
+<ul>
+<li>正常使用时：每次建立定时任务时，都将定时任务存储到 redis，设置过期时间，当达到指定定时任务时间后，redis 通过过期事件通知给服务器，服务器进行下一步处理。</li>
+<li>redis 重启：如果 Redis 没有开启持久化的话，一旦服务器或 Redis 因故障重启，则会导致所有定时任务丢失，因此需要启用 redis 的持久化功能，redis 持久化有两种方案，RDB 机制和 AOF 机制</li>
+</ul>
+<p>思路：</p>
+<ul>
+<li>正常使用时：redis 默认不开启键空间通知，需要修改配置文件开启，新增定时任务时，将相关数据存储到 redis，设置过期时间，当到达定时任务过期时间的时候，redis 发送过期通知，触发发送模板消息的任务。</li>
+<li>Redis 或服务器重启：redis 开启持久化方案，当 redis 或服务器重启后，通过 RDB 机制或 AOF 机制实现恢复相关数据，然后继续执行。</li>
+</ul>
+<p>该方案优缺点：<br>
+优点：redis 存储到内存，占用存储空间少，操作更快，过时执行完自动删除，无需额外删除操作，无需提前获取定时任务队列进行等待。<br>
+缺点：redis 持久化可能存在丢失数据的可能性，RDB 机制会阻塞当前 redis，直到 RDB 过程完成为止，且可能会丢失数据，AOF 机制产生的日志文件可能会占用较大的存储空间，以及 AOF 机制可能会产生 bug 导致无法完整恢复，对 node 服务器的性能和存储都有一定的要求。</p>
+<h4><a id="方案二" class="content__heading-anchor"></a>方案二</h4>
+<p>node-schedule<br>
+方案思路：<br>
+该方案从数据库获取定时任务，通过 node-schedule 批量建立定时任务。</p>
+<ul>
+<li>正常使用时：<br><br>
+创建定时任务后，将定时任务的相关信息存储在数据库里，当达到定时任务需要执行的时间后，执行相应的定时任务，然后从数据库中删除。<br><br>
+为了避免定时任务堆积过多，采取每日定时获取当天定时任务队列，若有新增定时任务，判断是否为当天执行的定时任务，若为当天执行，则创建定时任务加入到队列，否则存储至数据库继续等待。<br><br>
+当需要修改定时任务时间时，将需要定时修改的定时任务对应的 ID 与已存储定时任务队列进行对比，然后取消原定时任务，创建新的定时任务。<br></li>
+<li>服务器重启：<br><br>
+服务器因某些原因重启后，node-schedule 建立的原有定时任务队列就会丢失，为了恢复定时任务，会自动从数据库获取当前定时任务列表，然后处理定时任务列表 ，如果存在已过时但未执行的任务，则先删除过时定时任务，然后再将未过时的定时任务循环加入到定时任务队列。</li>
+</ul>
+<p>该方案优缺点：</p>
+<ul>
+<li>优点：定时任务可以存储到数据库，降低丢失定时任务数据的概率，即使服务器重启也不会造成定时任务丢失，可以重新创建定时任务并执行。</li>
+<li>缺点：需要占用数据库空间，需要提前建立定时任务队列然后进行等待，调用数据库后建立队列时间存在一定延时，当用户越来越多的时候，所需要的的定时任务也会越来越多，定时任务过多会造成服务器的负担。修改定时任务时的流程也很繁琐。</li>
+</ul>
+<p>根据目前的工期和方案来讲，考虑到一期阶段涉及用户不多，优先选择 node-schedule 方案，后续二期开发阶段，用户群体增加以及功能扩展时，选择 Redis 方案或者寻求更好的方案。</p>
+<h2><a id="技术细节" class="content__heading-anchor"></a>技术细节</h2>
+<h3><a id="node-schedule" class="content__heading-anchor"></a>node-schedule</h3>
+<p>传入 Cron 风格的值：<br>
+var schedule = require('node-schedule');</p>
+<p>var timeScedule = schedule.scheduleJob('42 * * * *', function(){<br>
+//执行内容<br>
+});</p>
+<pre><code>Cron风格格式说明：
+*    *    *    *    *    *
+┬    ┬    ┬    ┬    ┬    ┬
+│    │    │    │    │    │
+│    │    │    │    │    └ day of week (0 - 7) (0 or 7 is Sun)
+│    │    │    │    └───── month (1 - 12)
+│    │    │    └────────── day of month (1 - 31)
+│    │    └─────────────── hour (0 - 23)
+│    └──────────────────── minute (0 - 59)
+└───────────────────────── second (0 - 59, OPTIONAL)
+</code></pre>
+<p>传入参数为对象：<br>
+//传入参数为对象</p>
+<pre><code class="language-js"><span class="hljs-keyword">var</span> schedule = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;node-schedule&quot;</span>);
+<span class="hljs-keyword">let</span> second = <span class="hljs-number">30</span>,
+  minute = <span class="hljs-number">30</span>,
+  hour = <span class="hljs-number">12</span>,
+  date = <span class="hljs-number">12</span>,
+  month = <span class="hljs-number">9</span>,
+  year = <span class="hljs-number">2020</span>,
+  dayOfWeek = <span class="hljs-number">0</span>;
+
+<span class="hljs-keyword">var</span> timeScedule = schedule.<span class="hljs-title function_">scheduleJob</span>(
+  { second, minute, hour, date, month, year, dayOfWeek },
+  <span class="hljs-keyword">function</span> (<span class="hljs-params"></span>) {
+    <span class="hljs-comment">//执行内容</span>
+  }
+);
+</code></pre>
+<p>传入参数为对象：<br>
+//传入参数为对象</p>
+<pre><code class="language-js"><span class="hljs-keyword">var</span> schedule = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;node-schedule&quot;</span>);
+<span class="hljs-keyword">let</span> second = <span class="hljs-number">30</span>,
+  minute = <span class="hljs-number">30</span>,
+  hour = <span class="hljs-number">12</span>,
+  date = <span class="hljs-number">12</span>,
+  month = <span class="hljs-number">9</span>,
+  year = <span class="hljs-number">2020</span>,
+  dayOfWeek = <span class="hljs-number">0</span>;
+
+<span class="hljs-keyword">var</span> timeScedule = schedule.<span class="hljs-title function_">scheduleJob</span>(
+  { second, minute, hour, date, month, year, dayOfWeek },
+  <span class="hljs-keyword">function</span> (<span class="hljs-params"></span>) {
+    <span class="hljs-comment">//执行内容</span>
+  }
+);
+</code></pre>
+<p>指定时间范围的定时任务：</p>
+<pre><code class="language-js"><span class="hljs-keyword">let</span> startTime = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Date</span>(<span class="hljs-title class_">Date</span>.<span class="hljs-title function_">now</span>() + <span class="hljs-number">5000</span>);
+<span class="hljs-keyword">let</span> endTime = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Date</span>(startTime.<span class="hljs-title function_">getTime</span>() + <span class="hljs-number">5000</span>);
+<span class="hljs-keyword">var</span> timeScedule = schedule.<span class="hljs-title function_">scheduleJob</span>(
+  { <span class="hljs-attr">start</span>: startTime, <span class="hljs-attr">end</span>: endTime, <span class="hljs-attr">rule</span>: <span class="hljs-string">&quot;_/1 _ * * * *&quot;</span> },
+  <span class="hljs-keyword">function</span> (<span class="hljs-params"></span>) {
+    <span class="hljs-comment">//执行内容</span>
+  }
+);
+</code></pre>
+<p>传入参数为时间对象：</p>
+<pre><code class="language-js"><span class="hljs-keyword">let</span> date = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Date</span>(<span class="hljs-number">2012</span>, <span class="hljs-number">11</span>, <span class="hljs-number">21</span>, <span class="hljs-number">5</span>, <span class="hljs-number">30</span>, <span class="hljs-number">0</span>);
+<span class="hljs-keyword">var</span> timeScedule = schedule.<span class="hljs-title function_">scheduleJob</span>(date, <span class="hljs-keyword">function</span> (<span class="hljs-params"></span>) {
+  <span class="hljs-comment">//执行内容</span>
+});
+</code></pre>
+<p>定期规则：</p>
+<pre><code class="language-js"><span class="hljs-keyword">var</span> rule = <span class="hljs-keyword">new</span> schedule.<span class="hljs-title class_">RecurrenceRule</span>();
+rule.<span class="hljs-property">dayOfWeek</span> = [<span class="hljs-number">0</span>, <span class="hljs-keyword">new</span> schedule.<span class="hljs-title class_">Range</span>(<span class="hljs-number">4</span>, <span class="hljs-number">6</span>)];
+rule.<span class="hljs-property">hour</span> = <span class="hljs-number">17</span>;
+rule.<span class="hljs-property">minute</span> = <span class="hljs-number">0</span>;
+
+<span class="hljs-keyword">var</span> timeScedule = schedule.<span class="hljs-title function_">scheduleJob</span>(rule, <span class="hljs-keyword">function</span> (<span class="hljs-params"></span>) {
+  <span class="hljs-comment">//执行内容</span>
+});
+</code></pre>
+<p>停止定时任务：</p>
+<pre><code class="language-js"><span class="hljs-keyword">let</span> date = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Date</span>(<span class="hljs-number">2012</span>, <span class="hljs-number">11</span>, <span class="hljs-number">21</span>, <span class="hljs-number">5</span>, <span class="hljs-number">30</span>, <span class="hljs-number">0</span>);
+<span class="hljs-keyword">var</span> timeScedule = schedule.<span class="hljs-title function_">scheduleJob</span>(date, <span class="hljs-keyword">function</span> (<span class="hljs-params"></span>) {
+  <span class="hljs-comment">//执行内容</span>
+});
+
+<span class="hljs-comment">//停止定时内容</span>
+timeScedule.<span class="hljs-title function_">cancel</span>();
+</code></pre>
+<h3><a id="redis-持久化的方案" class="content__heading-anchor"></a>Redis 持久化的方案</h3>
+<p>Redis 持久化方案有两种：RDB 机制和 AOF 机制。</p>
+<p>RDB 机制：<br>
+RDB 机制是 Redis 通过配置文件，按照一定的时间周期将目前服务中的所有数据全部备份写入到磁盘中实现周期性的持久化。</p>
+<p>优点：</p>
+<ul>
+<li>RDB 会生成多个备份文件，每个备份文件都代表了某一个时刻中 redis 的数据，这种多个数据文件的方式，非常适合做冷备份。</li>
+<li>RDB 对 redis 对外提供的读写服务，影响非常小，可以让 redis 保持高性能，因为 redis 主进程只需要 fork 一个子进程，让子进程执行磁盘 IO 操作来进行 RDB 持久化即可</li>
+<li>相对于 AOF 持久化机制来说，直接基于 RDB 数据文件来重启和恢复 redis 进程，更加快速。</li>
+</ul>
+<p>缺点</p>
+<ul>
+<li>redis 故障时，如果想要尽可能少丢失数据，那么 RDB 没有 AOF 好。一般来说，RDB 数据快照文件，都是每隔 5 分钟，或者更长时间生成一次，这个时候就得接受一旦 redis 进程宕机，那么会丢失最近 5 分钟的数据。这个问题，也是 rdb 最大的缺点，就是不适合做第一优先的恢复方案，如果你依赖 RDB 做第一优先恢复方案，会导致数据丢失的比较多。</li>
+<li>RDB 每次在 fork 子进程来执行 RDB 快照数据文件生成的时候，如果数据文件特别大，可能会导致对客户端提供的服务暂停数毫秒，或者甚至数秒一般不要让 RDB 的间隔太长，否则每次生成的 RDB 文件太大了，对 redis 本身的性能可能会有影响的。</li>
+</ul>
+<p>AOF 机制：<br>
+AOF 机制将每条写入命令作为日志记录，以 append-only 的模式写入日志文件中，在 redis 重启的时候，可以通过回放 AOF 日志中的写入指令来重新构建整个数据集。</p>
+<p>优点：</p>
+<ul>
+<li>AOF 可以更好的保护数据不丢失，每新增一条数据，都会写入 os cache，然后 linux 会每隔 1 秒，通过一个后台线程执行一次 fsync 操作（fsync 的功能是确保所有已修改的内容已经正确同步到硬盘上，该调用会阻塞等待直到设备报告 IO 完成。），最多丢失 1 秒钟的数据（机器宕机，如果只是 redis 奔溃，数据也不会丢失）。</li>
+<li>AOF 日志文件以 append-only 模式写入，所以没有任何磁盘寻址的开销，写入性能非常高，而且文件不容易破损，即使文件尾部破损，也很容易修复。</li>
+<li>AOF 日志文件即使过大的时候，出现后台重写操作，也不会影响客户端的读写。因为在 rewritelog 的时候，会对其中的指导进行压缩，创建出一份需要恢复数据的最小日志出来。再创建新日志文件的时候，老的日志文件还是照常写入。当新的 merge 后的日志文件 ready 的时候，再交换新老日志文件即可。</li>
+<li>AOF 日志文件的命令通过非常可读的方式进行记录，这个特性非常适合做灾难性的误删除的紧急恢复。比如某人不小心用 flushall 命令清空了所有数据，只要这个时候后台 rewrite 还没有发生，那么就可以立即拷贝 AOF 文件，将最后一条 flushall 命令给删了，然后再将该 AOF 文件放回去，就可以通过恢复机制，自动恢复所有数据。</li>
+</ul>
+<p>缺点：</p>
+<ul>
+<li>对于同一份数据来说，AOF 日志文件通常比 RDB 数据快照文件更大。</li>
+<li>AOF 开启后，支持的写 QPS 会比 RDB 支持的写 QPS 低，因为 AOF 一般会配置成每秒 fsync 一次日志文件。尽管每秒一次 fsync，性能也还是很高的，如果你要保证一条数据都不丢，也是可以的，AOF 的 fsync 设置成没写入一条数据，fsync 一次，那就完蛋了，redis 的 QPS 将会更低。</li>
+<li>以前 AOF 发生过 bug，就是通过 AOF 记录的日志，进行数据恢复的时候，没有恢复一模一样的数据出来。所以说，类似 AOF 这种较为复杂的基于命令日志/merge/回放的方式，比基于 RDB 每次持久化一份完整的数据快照文件的方式，更加脆弱一些，容易有 bug。不过 AOF 就是为了避免 rewrite 过程导致的 bug，因此每次 rewrite 并不是基于旧的指令日志进行 merge 的，而是基于当时内存中的数据进行指令的重新构建，这样健壮性会好很多。</li>
+<li>唯一的比较大的缺点，其实就是做数据恢复的时候，会比较慢，还有做冷备，定期的备份，不太方便，可能要自己手写复杂的脚本去做，做冷备不太合适。RDB 恢复日志，就是一份数据文件，恢复的时候，直接加载到内存中即可。而 AOF 则不同，做数据恢复的时候，其实是要回放和执行所有的指令日志，来恢复出来内存中的所有数据的。</li>
+</ul>
+ </article> </section> </main>  <footer class="footer"> <hr class="footer__divide"> <div class="footer__row"> <p class="m-2">
+&#169; 2017-2024 <a href="/" class="link">9Sky 九天</a> </p> <div class="m-2"> <ul data-astro-cid-tfcnbjmv> <li data-astro-cid-tfcnbjmv> <a class="link" href="/" data-astro-cid-tfcnbjmv> 
+主页
+</a> </li> <li data-astro-cid-tfcnbjmv> <a class="link" href="/blog" data-astro-cid-tfcnbjmv>  文章 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/projects" data-astro-cid-tfcnbjmv>  项目 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/lab" data-astro-cid-tfcnbjmv>  实验室 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/about" data-astro-cid-tfcnbjmv>  关于 </a> </li> </ul>  </div> </div> </footer> </body></html> 

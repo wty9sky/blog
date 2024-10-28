@@ -1,0 +1,229 @@
+<!DOCTYPE html><html> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width"><title>从零实现mini-react(1)：实现最简mini-react</title><link rel="icon" type="image/vnd.microsoft.icon" href="/favicon.ico"><link rel="sitemap" href="/sitemap-index.xml"><title>从零实现mini-react(1)：实现最简mini-react</title><link rel="canonical" href="https://wty9sky.github.io/blog/detail/1/"><meta name="description" content="从零开始实现一个简化版的React，并使用原生DOM API将虚拟DOM（VDOM）渲染到浏览器页面中。
+
+"><meta name="robots" content="index, follow"><meta property="og:title" content="从零实现mini-react(1)：实现最简mini-react"><meta property="og:type" content="article"><meta property="og:image" content="/og.svg"><meta property="og:url" content="https://wty9sky.github.io/blog/detail/1/"><meta property="og:locale" content="zh_CN"><meta property="og:locale:alternate" content="zh_TW"><meta property="og:locale:alternate" content="en_US"><meta property="og:site_name" content="9Sky 九天"><link rel="shortcut icon" href="/favicon.ico"><link rel="bookmark" href="/favicon.ico"><link rel="apple-touch-icon" href="/avatar.png"><meta name="generator" content="Astro v4.16.7"><meta name="keywords" content="详情"><meta name="astro-view-transitions-enabled" content="true"><meta name="astro-view-transitions-fallback" content="animate"><link rel="stylesheet" href="/_astro/about.CkC6PiIh.css">
+<link rel="stylesheet" href="/_astro/about.D3zQv4Ly.css"><script type="module" src="/_astro/hoisted.HO6_Fzad.js"></script></head> <body> <header class="header"> <h5 class="header__heading"> <a href="/" class="link">9Sky 九天</a> <span>
+/
+<a href="/blog" class="link"> 博客 </a> </span><span>
+/
+从零实现mini-react(1)：实现最简mini-react </span> </h5> </header> <div id="navbar-sentinal"></div> <nav class="navbar" id="navbar-wrapper"> <div class="navbar__content"> <h5 class="navbar__path"> <a href="/" class="link">9Sky 九天</a> <span>
+/
+<a href="/blog" class="link"> 博客 </a> </span><span>
+/
+从零实现mini-react(1)：实现最简mini-react </span> </h5> <div class="navbar__menu"> <ul data-astro-cid-tfcnbjmv> <li data-astro-cid-tfcnbjmv> <a class="link" href="/" data-astro-cid-tfcnbjmv> <i class="ri-home-line" data-astro-cid-tfcnbjmv></i>
+主页
+</a> </li> <li data-astro-cid-tfcnbjmv> <a class="link" href="/blog" data-astro-cid-tfcnbjmv> <i class="ri-newspaper-line" data-astro-cid-tfcnbjmv></i> 文章 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/projects" data-astro-cid-tfcnbjmv> <i class="ri-server-line" data-astro-cid-tfcnbjmv></i> 项目 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/lab" data-astro-cid-tfcnbjmv> <i class="ri-server-line" data-astro-cid-tfcnbjmv></i> 实验室 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/about" data-astro-cid-tfcnbjmv> <i class="ri-cup-line" data-astro-cid-tfcnbjmv></i> 关于 </a> </li> </ul>  </div> </div> </nav> <script>
+  // 使用 ViewTransition 后，所有 DOM 操作的 js 都有一堆问题
+  // 这里用了极不优雅的 var，有待改进
+  var observer;
+  function addNavObserver() {
+    const headerEl = document.querySelector("#navbar-wrapper");
+    const sentinalEl = document.querySelector("#navbar-sentinal");
+    if (!sentinalEl || !headerEl) return;
+    observer = new window.IntersectionObserver((e) => {
+      if (!e[0].isIntersectin && e[0].boundingClientRect.top <= 0) {
+        headerEl.classList.add("navbar--sticked");
+      } else {
+        headerEl.classList.remove("navbar--sticked");
+      }
+    });
+    observer.observe(sentinalEl);
+  }
+
+  function removeNavObserver() {
+    if (observer) observer.disconnect();
+    observer = null;
+  }
+
+  document.addEventListener(
+    "astro:page-load",
+    () => {
+      addNavObserver();
+    },
+    { once: false },
+  );
+
+  document.addEventListener(
+    "astro:before-swap",
+    () => {
+      removeNavObserver();
+    },
+    { once: false },
+  );
+</script>  <main class="page"> <section class="page__section page__section--at-top"> <!-- {
+        article.cover && (
+          <a href={article.cover} data-fancybox data-caption={article.title}>
+            <img
+              src={article.cover}
+              alt={article.title}
+              title={article.title}
+              class="page__cover mb-8"
+            />
+          </a>
+        )
+      } --> <h1 class="page__heading">从零实现mini-react(1)：实现最简mini-react</h1> <p class="page__meta"> <i class="ri-calendar-line"></i> <span>2024 年 3 月 15 日 13:11</span> </p> <hr class="page__divide"> <article class="content"> <h2><a id="文章目录" class="content__heading-anchor"></a>文章目录</h2>
+<ul>
+<li><a href="#%E4%BB%8E%E9%9B%B6%E5%AE%9E%E7%8E%B0mini-react1%E5%AE%9E%E7%8E%B0%E6%9C%80%E7%AE%80mini-react">从零实现mini-react(1)：实现最简mini-react</a>
+<ul>
+<li><a href="#%E5%AE%9E%E7%8E%B0%E8%BF%87%E7%A8%8B">实现过程</a>
+<ul>
+<li><a href="#1-%E5%8E%9F%E7%94%9F-api-%E5%B0%86app%E5%B1%95%E7%A4%BA%E5%9C%A8%E6%B5%8F%E8%A7%88%E5%99%A8%E9%A1%B5%E9%9D%A2%E4%B8%8A">1. 原生 api 将<code>app</code>展示在浏览器页面上</a></li>
+<li><a href="#2-%E4%BD%BF%E7%94%A8-vdom-%E7%BB%93%E6%9E%84%E5%AE%9A%E4%B9%89%E9%9C%80%E8%A6%81%E5%B1%95%E7%A4%BA%E7%9A%84app">2. 使用 vdom 结构定义需要展示的<code>app</code></a></li>
+<li><a href="#3-%E7%BC%96%E5%86%99%E7%AC%A6%E5%90%88react%E7%9A%84api%E7%BB%93%E6%9E%84%E5%AE%9E%E7%8E%B0%E5%8A%9F%E8%83%BD">3. 编写符合React的api结构实现功能</a></li>
+<li><a href="#4-%E4%BD%BF%E7%94%A8-jsx-%E5%86%99%E6%B3%95%E9%AA%8C%E8%AF%81">4. 使用 jsx 写法验证</a></li>
+</ul></li>
+<li><a href="#%E6%88%91%E5%AD%A6%E5%88%B0%E4%BA%86%E4%BB%80%E4%B9%88">我学到了什么？</a></li>
+<li><a href="#%E6%88%91%E9%81%87%E5%88%B0%E4%BA%86%E4%BB%80%E4%B9%88%E9%97%AE%E9%A2%98">我遇到了什么问题？</a></li>
+<li><a href="#%E5%9C%A8vite%E9%A1%B9%E7%9B%AE%E4%B8%AD%E8%87%AA%E5%8A%A8%E5%BC%95%E5%85%A5react">在Vite项目中自动引入React</a></li>
+</ul></li>
+</ul>
+<h1><a id="从零实现mini-react1实现最简mini-react" class="content__heading-anchor"></a>从零实现mini-react(1)：实现最简mini-react</h1>
+<h2><a id="实现过程" class="content__heading-anchor"></a>实现过程</h2>
+<p>通过 dom 原生 api 实现 vdom 转换为真实 dom，在页面中展示出<code>app</code>，拆分为以及几个小步</p>
+<h3><a id="1-原生-api-将app展示在浏览器页面上" class="content__heading-anchor"></a>1. 原生 api 将<code>app</code>展示在浏览器页面上</h3>
+<p>通过调用 dom 原生 api</p>
+<pre><code class="language-js"><span class="hljs-keyword">const</span> dom = <span class="hljs-variable language_">document</span>.<span class="hljs-property">createElement</span> (<span class="hljs-string">&quot;div&quot;</span>);
+dom.<span class="hljs-property">id</span> = <span class="hljs-string">&quot;app&quot;</span>;
+<span class="hljs-variable language_">document</span>.<span class="hljs-title function_">querySelector</span>(<span class="hljs-string">&quot;#root&quot;</span>).<span class="hljs-title function_">append</span>(dom);
+<span class="hljs-keyword">const</span> textElement = <span class="hljs-variable language_">document</span>.<span class="hljs-title function_">createTextNode</span>(<span class="hljs-string">&quot;app&quot;</span>);
+dom.<span class="hljs-title function_">append</span>(textElement);
+</code></pre>
+<h3><a id="2-使用-vdom-结构定义需要展示的app" class="content__heading-anchor"></a>2. 使用 vdom 结构定义需要展示的<code>app</code></h3>
+<p>这一步需要知道 react 中 vdom 的结构是怎么样的<br>
+主要包含几个字段：</p>
+<ul>
+<li>type</li>
+<li>props</li>
+<li>key</li>
+<li>ref</li>
+<li>...</li>
+</ul>
+<p>我们需要使用的就是 type 和 props:</p>
+<ul>
+<li>type 标识当前的节点类型</li>
+<li>props 保存节点上的属性以及在 children 上保存子节点的信息</li>
+</ul>
+<p>然后就可以将 dom 进行 vdom 结构化，再进一步进行 dom 节点的处理</p>
+<pre><code class="language-js"><span class="hljs-keyword">const</span> textElementVdom = {
+  <span class="hljs-attr">type</span>: <span class="hljs-string">&quot;TEXT_ELEMENT&quot;</span>,
+  <span class="hljs-attr">props</span>: {
+    <span class="hljs-attr">nodeValue</span>: <span class="hljs-string">&quot;app&quot;</span>,
+    <span class="hljs-attr">children</span>: [],
+  },
+};
+<span class="hljs-keyword">const</span> domVdom = {
+  <span class="hljs-attr">type</span>: <span class="hljs-string">&quot;div&quot;</span>,
+  <span class="hljs-attr">props</span>: {
+    <span class="hljs-attr">id</span>: <span class="hljs-string">&quot;app&quot;</span>,
+    <span class="hljs-attr">children</span>: [textElementVdom],
+  },
+};
+
+<span class="hljs-keyword">const</span> dom = <span class="hljs-variable language_">document</span>.<span class="hljs-property">createElement</span> (domVdom.<span class="hljs-property">type</span>);
+dom.<span class="hljs-property">id</span> = domVdom.<span class="hljs-property">props</span>.<span class="hljs-property">id</span>;
+<span class="hljs-variable language_">document</span>.<span class="hljs-title function_">querySelector</span>(<span class="hljs-string">&quot;#root&quot;</span>).<span class="hljs-title function_">append</span>(dom);
+<span class="hljs-keyword">const</span> textElement = <span class="hljs-variable language_">document</span>.<span class="hljs-title function_">createTextNode</span>(textElementVdom.<span class="hljs-property">props</span>.<span class="hljs-property">nodeValue</span>);
+dom.<span class="hljs-title function_">append</span>(textElement);
+</code></pre>
+<h3><a id="3-编写符合react的api结构实现功能" class="content__heading-anchor"></a>3. 编写符合React的api结构实现功能</h3>
+<p>这一步也需要知道 react 最后提供出来的调用方法是什么，其实在<a href="https://babeljs.io/rep">babel</a>上很清晰的能看出，最终调用的结果是<code>React.createElement</code>这个方法，并且对与文本节点而言，可以单独抽离一个方法<code>createTextNode</code>进行使用；<br>
+最终实现一个<code>render</code>方法去执行渲染逻辑</p>
+<pre><code class="language-js"><span class="hljs-keyword">function</span> <span class="hljs-title function_">createTextNode</span>(<span class="hljs-params">nodeValue</span>) {
+  <span class="hljs-keyword">return</span> {
+    <span class="hljs-attr">type</span>: <span class="hljs-string">&quot;TEXT_ELEMENT&quot;</span>,
+    <span class="hljs-attr">props</span>: {
+      <span class="hljs-attr">nodeValue</span>: nodeValue,
+      <span class="hljs-attr">children</span>: [],
+    },
+  };
+}
+
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">createElement</span> (<span class="hljs-params">type, props, ...children</span>) {
+  <span class="hljs-keyword">return</span> {
+    type,
+    <span class="hljs-attr">props</span>: {
+      ...props,
+      <span class="hljs-attr">children</span>: children.<span class="hljs-title function_">map</span>(<span class="hljs-function">(<span class="hljs-params">child</span>) =&gt;</span> {
+        <span class="hljs-keyword">return</span> <span class="hljs-keyword">typeof</span> child === <span class="hljs-string">&quot;string&quot;</span> ? <span class="hljs-title function_">createTextNode</span>(child) : child;
+      }),
+    },
+  };
+}
+
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">render</span>(<span class="hljs-params">el, container</span>) {
+  <span class="hljs-comment">// 创建一个dom</span>
+  <span class="hljs-keyword">const</span> dom =
+    el.<span class="hljs-property">type</span> === <span class="hljs-string">&quot;TEXT_ELEMENT&quot;</span>
+      ? <span class="hljs-variable language_">document</span>.<span class="hljs-title function_">createTextNode</span>(el.<span class="hljs-property">props</span>.<span class="hljs-property">nodeValue</span>)
+      : <span class="hljs-variable language_">document</span>.<span class="hljs-property">createElement</span> (el.<span class="hljs-property">type</span>);
+
+  <span class="hljs-comment">// 将节点上的属性挂载上去</span>
+  <span class="hljs-title class_">Object</span>.<span class="hljs-title function_">keys</span>(el.<span class="hljs-property">props</span>).<span class="hljs-title function_">forEach</span>(<span class="hljs-function">(<span class="hljs-params">key</span>) =&gt;</span> {
+    <span class="hljs-keyword">if</span> (key !== <span class="hljs-string">&quot;children&quot;</span>) {
+      dom[key] = el.<span class="hljs-property">props</span>[key];
+    }
+  });
+
+  <span class="hljs-comment">// 将children进行递归生成节点</span>
+  el.<span class="hljs-property">props</span>.<span class="hljs-property">children</span>.<span class="hljs-title function_">forEach</span>(<span class="hljs-function">(<span class="hljs-params">child</span>) =&gt;</span> {
+    <span class="hljs-title function_">render</span>(child, dom);
+  });
+
+  <span class="hljs-comment">// 挂载节点</span>
+  container.<span class="hljs-title function_">append</span>(dom);
+}
+
+<span class="hljs-keyword">const</span> textElement = <span class="hljs-title function_">createTextNode</span>(<span class="hljs-string">&quot;app&quot;</span>);
+<span class="hljs-keyword">const</span> app = <span class="hljs-title function_">createElement</span> (<span class="hljs-string">&quot;div&quot;</span>, { <span class="hljs-attr">id</span>: <span class="hljs-string">&quot;app&quot;</span> }, <span class="hljs-string">&quot;aaa&quot;</span>, <span class="hljs-string">&quot;bbb&quot;</span>);
+
+<span class="hljs-title function_">render</span>(app, <span class="hljs-variable language_">document</span>.<span class="hljs-title function_">querySelector</span>(<span class="hljs-string">&quot;#root&quot;</span>));
+</code></pre>
+<h3><a id="4-使用-jsx-写法验证" class="content__heading-anchor"></a>4. 使用 jsx 写法验证</h3>
+<p>通过Vite转换功能，将 jsx 转换为 React.createElement的结构，从而进一步验证代码逻辑是否正确</p>
+<h2><a id="我学到了什么" class="content__heading-anchor"></a>我学到了什么？</h2>
+<ul>
+<li>从零开始实现 React 和 ReactDOM。</li>
+<li>实现 React 的 createElement 和 render 方法封装。</li>
+<li>使用Vite将.jsx文件编译城ECMAScript 模块（ES 模块）。</li>
+<li>接入vitest并编写测试用例，了解toMatchInlineSnapshot的用法。</li>
+<li>认识由繁入简的一种学习方法，有目标，但也要尽量拆解，还有一定要实操，再简单都要实操一遍。</li>
+</ul>
+<h2><a id="我遇到了什么问题" class="content__heading-anchor"></a>我遇到了什么问题？</h2>
+<ol>
+<li>使用Vite后，jsx代码<code>const div = &lt;div id=&quot;app&quot;&gt;hello&lt;/div&gt;</code>，转成<code>React.createElement()</code>形式的原因？<br></li>
+</ol>
+<ul>
+<li>这是因为使用的vite背后的esbuild具备解析jsx文件的能力，它能够根据配置将jsx转成普通函数的形式，这样就能被浏览器解析。</li>
+<li>esbuild内部是根据配置项来决定用哪个方法，一共有两个配置项jsxFactory和jsxFragmentFactory，vite这里配置的jsxFactory的值为<code>React.createElement</code>。</li>
+</ul>
+<ol start="2">
+<li><p>/** @jsx CReact.createElement */ 这段注释作用是什么？<br>
+它告诉esbuild当前的jsxFactory要使用CReact.createElement方法。</p></li>
+<li><p>为什么jsx的文件没有使用到React，但是一定要导入React？</p></li>
+</ol>
+<ul>
+<li>本质上来说JSX是React.createElement(component, props, ...children)方法的语法糖。</li>
+<li>主要是编译前后的差异原因，因为esbuild会将jsx编译成React.createElement普通函数的形式，所以需要引入 React，防止找不到 React 引起报错。</li>
+<li>写组件时，每个地方都要引入React确实很烦，新版React中，esbuild提供了自动引入React的方法autoimport配置。<a href="#在vite项目中自动引入react" >在Vite中如何自动引入React？</a></li>
+</ul>
+<ol start="4">
+<li></li>
+</ol>
+<!-- render使用递归的方式实现dom的创建，当层级非常非常深的时候可能会出现页面渲染卡顿，原因就是render 的执行时间过长，超过了浏览器一帧一帧渲染视图的时间，我们知道执行js会阻塞dom 渲染，因此会有卡顿问题出现。明天的任务调度器➕fiber 架构是要解决这个问题得 -->
+<h2><a id="在vite项目中自动引入react" class="content__heading-anchor"></a>在Vite项目中自动引入React</h2>
+<p>在Vite中自动引入React的方法主要是通过配置Vite的插件或者配置选项来实现。Vite官方提供了一个插件@vitejs/plugin-react，用于支持React项目的开发。</p>
+<pre><code class="language-bash">npm install @vitejs/plugin-react react react-dom
+</code></pre>
+<p>然后，在Vite的配置文件中,引入并使用插件：</p>
+<pre><code class="language-javascript"><span class="hljs-comment">// vite.config.js</span>
+<span class="hljs-keyword">import</span> { defineConfig } <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;vite&#x27;</span>;
+<span class="hljs-keyword">import</span> react <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;@vitejs/plugin-react&#x27;</span>;
+ 
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">default</span> <span class="hljs-title function_">defineConfig</span>({
+  <span class="hljs-attr">plugins</span>: [<span class="hljs-title function_">react</span>()],
+});
+</code></pre>
+<p>这样配置后，Vite将自动处理.jsx和.tsx文件中的React代码，包括自动引入React、JSX转换等功能。</p>
+ </article> </section> </main>  <footer class="footer"> <hr class="footer__divide"> <div class="footer__row"> <p class="m-2">
+&#169; 2017-2024 <a href="/" class="link">9Sky 九天</a> </p> <div class="m-2"> <ul data-astro-cid-tfcnbjmv> <li data-astro-cid-tfcnbjmv> <a class="link" href="/" data-astro-cid-tfcnbjmv> 
+主页
+</a> </li> <li data-astro-cid-tfcnbjmv> <a class="link" href="/blog" data-astro-cid-tfcnbjmv>  文章 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/projects" data-astro-cid-tfcnbjmv>  项目 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/lab" data-astro-cid-tfcnbjmv>  实验室 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/about" data-astro-cid-tfcnbjmv>  关于 </a> </li> </ul>  </div> </div> </footer> </body></html> 

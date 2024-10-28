@@ -1,0 +1,315 @@
+<!DOCTYPE html><html> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width"><title>从零实现mini-react(2)：任务调度器&amp;fiber架构</title><link rel="icon" type="image/vnd.microsoft.icon" href="/favicon.ico"><link rel="sitemap" href="/sitemap-index.xml"><title>从零实现mini-react(2)：任务调度器&fiber架构</title><link rel="canonical" href="https://wty9sky.github.io/blog/detail/2/"><meta name="description" content="在实现最简mini-react基础上，引入任务调度器和Fiber架构来提高渲染性能，解决渲染优化卡顿问题"><meta name="robots" content="index, follow"><meta property="og:title" content="从零实现mini-react(2)：任务调度器&#38;fiber架构"><meta property="og:type" content="article"><meta property="og:image" content="/og.svg"><meta property="og:url" content="https://wty9sky.github.io/blog/detail/2/"><meta property="og:locale" content="zh_CN"><meta property="og:locale:alternate" content="zh_TW"><meta property="og:locale:alternate" content="en_US"><meta property="og:site_name" content="9Sky 九天"><link rel="shortcut icon" href="/favicon.ico"><link rel="bookmark" href="/favicon.ico"><link rel="apple-touch-icon" href="/avatar.png"><meta name="generator" content="Astro v4.16.7"><meta name="keywords" content="详情"><meta name="astro-view-transitions-enabled" content="true"><meta name="astro-view-transitions-fallback" content="animate"><link rel="stylesheet" href="/_astro/about.CkC6PiIh.css">
+<link rel="stylesheet" href="/_astro/about.D3zQv4Ly.css"><script type="module" src="/_astro/hoisted.HO6_Fzad.js"></script></head> <body> <header class="header"> <h5 class="header__heading"> <a href="/" class="link">9Sky 九天</a> <span>
+/
+<a href="/blog" class="link"> 博客 </a> </span><span>
+/
+从零实现mini-react(2)：任务调度器&amp;fiber架构 </span> </h5> </header> <div id="navbar-sentinal"></div> <nav class="navbar" id="navbar-wrapper"> <div class="navbar__content"> <h5 class="navbar__path"> <a href="/" class="link">9Sky 九天</a> <span>
+/
+<a href="/blog" class="link"> 博客 </a> </span><span>
+/
+从零实现mini-react(2)：任务调度器&amp;fiber架构 </span> </h5> <div class="navbar__menu"> <ul data-astro-cid-tfcnbjmv> <li data-astro-cid-tfcnbjmv> <a class="link" href="/" data-astro-cid-tfcnbjmv> <i class="ri-home-line" data-astro-cid-tfcnbjmv></i>
+主页
+</a> </li> <li data-astro-cid-tfcnbjmv> <a class="link" href="/blog" data-astro-cid-tfcnbjmv> <i class="ri-newspaper-line" data-astro-cid-tfcnbjmv></i> 文章 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/projects" data-astro-cid-tfcnbjmv> <i class="ri-server-line" data-astro-cid-tfcnbjmv></i> 项目 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/lab" data-astro-cid-tfcnbjmv> <i class="ri-server-line" data-astro-cid-tfcnbjmv></i> 实验室 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/about" data-astro-cid-tfcnbjmv> <i class="ri-cup-line" data-astro-cid-tfcnbjmv></i> 关于 </a> </li> </ul>  </div> </div> </nav> <script>
+  // 使用 ViewTransition 后，所有 DOM 操作的 js 都有一堆问题
+  // 这里用了极不优雅的 var，有待改进
+  var observer;
+  function addNavObserver() {
+    const headerEl = document.querySelector("#navbar-wrapper");
+    const sentinalEl = document.querySelector("#navbar-sentinal");
+    if (!sentinalEl || !headerEl) return;
+    observer = new window.IntersectionObserver((e) => {
+      if (!e[0].isIntersectin && e[0].boundingClientRect.top <= 0) {
+        headerEl.classList.add("navbar--sticked");
+      } else {
+        headerEl.classList.remove("navbar--sticked");
+      }
+    });
+    observer.observe(sentinalEl);
+  }
+
+  function removeNavObserver() {
+    if (observer) observer.disconnect();
+    observer = null;
+  }
+
+  document.addEventListener(
+    "astro:page-load",
+    () => {
+      addNavObserver();
+    },
+    { once: false },
+  );
+
+  document.addEventListener(
+    "astro:before-swap",
+    () => {
+      removeNavObserver();
+    },
+    { once: false },
+  );
+</script>  <main class="page"> <section class="page__section page__section--at-top"> <!-- {
+        article.cover && (
+          <a href={article.cover} data-fancybox data-caption={article.title}>
+            <img
+              src={article.cover}
+              alt={article.title}
+              title={article.title}
+              class="page__cover mb-8"
+            />
+          </a>
+        )
+      } --> <h1 class="page__heading">从零实现mini-react(2)：任务调度器&amp;fiber架构</h1> <p class="page__meta"> <i class="ri-calendar-line"></i> <span>2024 年 3 月 18 日 02:25</span> </p> <hr class="page__divide"> <article class="content"> <h2><a id="文章目录" class="content__heading-anchor"></a>文章目录</h2>
+<ul>
+<li><a href="#%E4%BB%8E%E9%9B%B6%E5%AE%9E%E7%8E%B0mini-react2%E4%BB%BB%E5%8A%A1%E8%B0%83%E5%BA%A6%E5%99%A8fiber%E6%9E%B6%E6%9E%84">从零实现mini-react(2)：任务调度器&amp;fiber架构</a>
+<ul>
+<li><a href="#%E7%9B%AE%E6%A0%87">目标</a></li>
+<li><a href="#%E8%A7%A3%E5%86%B3%E6%80%9D%E8%B7%AF">解决思路</a>
+<ul>
+<li><a href="#requestidlecallback">requestIdleCallback</a></li>
+<li><a href="#%E5%AE%9E%E7%8E%B0%E4%BB%BB%E5%8A%A1%E8%B0%83%E5%BA%A6%E5%99%A8">实现任务调度器</a></li>
+<li><a href="#%E5%AE%9E%E7%8E%B0fiber%E6%9E%B6%E6%9E%84">实现fiber架构</a></li>
+</ul></li>
+<li><a href="#%E7%BB%BC%E5%90%88%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88">综合解决方案</a>
+<ul>
+<li><a href="#%E7%A1%AE%E5%AE%9A%E5%AD%90%E7%BA%A7%E5%85%B3%E7%B3%BB">确定子级关系</a></li>
+<li><a href="#%E8%BF%94%E5%9B%9E%E4%B8%8B%E4%B8%80%E4%B8%AA-fiber">返回下一个 fiber</a></li>
+<li><a href="#%E6%9C%80%E7%BB%88%E7%9A%84-performworkofunit">最终的 performWorkOfUnit</a></li>
+<li><a href="#%E5%B0%86-render-%E5%87%BD%E6%95%B0%E4%B8%8E-performworkofunit-%E5%87%BD%E6%95%B0%E8%BF%9B%E8%A1%8C%E5%90%88%E5%B9%B6">将 render 函数与 performWorkOfUnit 函数进行合并</a></li>
+</ul></li>
+</ul></li>
+</ul>
+<h1><a id="从零实现mini-react2任务调度器fiber架构" class="content__heading-anchor"></a>从零实现mini-react(2)：任务调度器&amp;fiber架构</h1>
+<h2><a id="目标" class="content__heading-anchor"></a>目标</h2>
+<p>问题：<br>
+最简mini-react的代码实现中，render使用递归渲染，而 JavaScript 在浏览器中是单线程执行的，代码默认都执行在主线程上，因此如果递归层数过多，浏览器会响应很慢，就会导致页面卡顿</p>
+<pre><code class="language-javascript"><span class="hljs-variable language_">document</span>.<span class="hljs-title function_">querySelector</span>(<span class="hljs-string">&quot;#root&quot;</span>).<span class="hljs-property">innerHTML</span> = <span class="hljs-string">&quot;Hello World&quot;</span>
+
+<span class="hljs-keyword">for</span>(<span class="hljs-keyword">let</span> i = <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">100000000000000000</span>; i++) {
+    <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(i)
+}
+</code></pre>
+<h2><a id="解决思路" class="content__heading-anchor"></a>解决思路</h2>
+<h3><a id="requestidlecallback" class="content__heading-anchor"></a>requestIdleCallback</h3>
+<p>它允许开发者在浏览器空闲时期执行一些任务，从而避免主线程被阻塞。</p>
+<p><a href="https://developer.mozilla.org/zh-CN/docs/Web/API/Window/requestIdleCallback">MDN文档说明</a></p>
+<blockquote>
+<p>window.requestIdleCallback() 方法插入一个函数，这个函数将在浏览器空闲时期被调用。这使开发者能够在主事件循环上执行后台和低优先级工作，而不会影响延迟关键事件，如动画和输入响应。函数一般会按先进先调用的顺序执行，然而，如果回调函数指定了执行超时时间timeout，则有可能为了在超时前执行函数而打乱执行顺序。</p>
+</blockquote>
+<pre><code class="language-javascript"><span class="hljs-title function_">requestIdleCallback</span>(callback, options)
+</code></pre>
+<ul>
+<li><p>requestIdleCallback的参数</p>
+<ul>
+<li>callback
+<ul>
+<li>一个在事件循环空闲时即将被调用的函数的引用。</li>
+<li>函数会接收到一个名为 IdleDeadline 的参数，这个参数可以获取当前空闲时间以及回调是否在超时时间前已经执行的状态。</li>
+<li>options.timeout
+<ul>
+<li>如果指定了 timeout，并且有一个正值，而回调在 timeout 毫秒过后还没有被调用，那么回调任务将放入事件循环中排队，即使这样做有可能对性能产生负面影响。</li>
+</ul></li>
+</ul></li>
+</ul></li>
+<li><p>浏览器空闲时期被调用</p></li>
+<li><p>主事件循环上执行后台和低优先级工作</p></li>
+<li><p>可指定超时时间timeout</p></li>
+</ul>
+<pre><code class="language-javascript"><span class="hljs-keyword">function</span> <span class="hljs-title function_">workLoop</span>(<span class="hljs-params">deadline</span>) {
+  <span class="hljs-comment">// 是否进行让步</span>
+  <span class="hljs-keyword">let</span> shouldYield = <span class="hljs-literal">false</span>;
+
+  <span class="hljs-keyword">while</span> (!shouldYield) {
+    <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">&quot;进行事件&quot;</span>);
+    shouldYield = deadline.<span class="hljs-title function_">timeRemaining</span>() &lt; <span class="hljs-number">1</span>;
+  }
+
+  <span class="hljs-title function_">requestIdleCallback</span>(workLoop);
+}
+
+<span class="hljs-title function_">requestIdleCallback</span>(workLoop);
+</code></pre>
+<h3><a id="实现任务调度器" class="content__heading-anchor"></a>实现任务调度器</h3>
+<ul>
+<li>优化render函数
+<ul>
+<li>实现任务队列化，而不是递归调用
+<ul>
+<li>基于requestIdleCallback的任务调度器</li>
+<li>基于fiber的任务队列生成</li>
+</ul></li>
+</ul></li>
+</ul>
+<pre><code class="language-javascript"><span class="hljs-keyword">let</span> nextWorkOfUnit = <span class="hljs-literal">null</span>;
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">workLoop</span>(<span class="hljs-params">deadline</span>) {
+  <span class="hljs-comment">// 是否进行让步</span>
+  <span class="hljs-keyword">let</span> shouldYield = <span class="hljs-literal">false</span>;
+
+  <span class="hljs-keyword">while</span> (!shouldYield &amp;&amp; nextWorkOfUnit) {
+    nextWorkOfUnit = performWorkOfUnit<span class="hljs-comment">/* 执行任务, 并返回下一个任务*/</span>(nextWorkOfUnit<span class="hljs-comment">/*定义一个全局变量作为当前正在执行的任务*/</span>);
+
+    shouldYield = deadline.<span class="hljs-title function_">timeRemaining</span>() &lt; <span class="hljs-number">1</span>;
+  }
+
+  <span class="hljs-title function_">requestIdleCallback</span>(workLoop);
+}
+
+<span class="hljs-title function_">requestIdleCallback</span>(workLoop);
+</code></pre>
+<h3><a id="实现fiber架构" class="content__heading-anchor"></a>实现fiber架构</h3>
+<p>Fiber 是 React 16 中引入的一种新的内部架构，旨在增强 React 应用的性能，特别是在动画、布局、手势等领域。它是对 React 核心算法的重写，让组件生成和更新的过程变得可以被中断和恢复，允许主线程去处理更紧急的任务，如响应用户的输入。</p>
+<p>Fiber 架构的优点：</p>
+<blockquote>
+<ul>
+<li><strong>增量渲染</strong>：Fiber 使 React 能够将渲染工作分割成多个块，并将这些工作块分散到多个帧上执行。</li>
+<li><strong>任务优先级</strong>：Fiber 能够根据任务的优先级进行工作，重要的更新可以优先处理，而不重要的任务可以推迟。</li>
+<li><strong>更平滑的用户界面</strong>：通过避免长时间阻塞主线程，Fiber 有助于保持应用的流畅性和响应性。</li>
+<li><strong>并发模式</strong>：Fiber 架构为 React 的未来并发模式打下基础，即使在复杂的应用中也能保持稳定的性能。</li>
+</ul>
+</blockquote>
+<blockquote>
+<p>根据分析，我们可以确定一个<code>fiber</code>需要以下属性</p>
+<ul>
+<li><code>type</code>: 当前节点的类型</li>
+<li><code>props</code>: 参数</li>
+<li><code>dom</code>: 当前节点对应的<code>真实 DOM</code></li>
+<li><code>parent</code>: 当前节点的父节点</li>
+<li><code>sibling</code>: 当前节点的兄弟节点</li>
+<li><code>children</code>: 当前节点的子节点</li>
+</ul>
+</blockquote>
+<h2><a id="综合解决方案" class="content__heading-anchor"></a>综合解决方案</h2>
+<ul>
+<li>一次闲时任务处理的粒度是一个fiber节点</li>
+<li>为了实现中断和恢复循环的效果, 将节点树转为链表来遍历
+<ul>
+<li>节点的渲染顺序
+<ul>
+<li>先渲染父节点<code>parent</code>,然后渲染子节点<code>child</code></li>
+<li>没有子节点<code>child</code>, 就渲染兄弟节点<code>sibling</code></li>
+<li>兄弟节点<code>sibling</code>渲染完成后, 最后渲染父节点<code>parent</code>的兄弟节点<code>sibling</code></li>
+</ul></li>
+</ul></li>
+<li>链表的节点是fiber节点, 一次任务做的事情：
+<ul>
+<li>创建dom, 把dom挂载到父节点上</li>
+<li>设置props</li>
+<li>记录自己的子节点的父/叔的关系<br>
+然后返回下一个任务(fiber节点)</li>
+</ul></li>
+<li>闲时任务处理交由浏览器实现的requestIdleCallback API</li>
+</ul>
+<pre><code class="language-javascript"><span class="hljs-comment">// 创建节点</span>
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">createDom</span>(<span class="hljs-params">type</span>) {
+  <span class="hljs-keyword">return</span> type === <span class="hljs-string">&quot;TEXT_ELEMENT&quot;</span>
+    ? <span class="hljs-variable language_">document</span>.<span class="hljs-title function_">createTextNode</span>(<span class="hljs-string">&quot;&quot;</span>)
+    : <span class="hljs-variable language_">document</span>.<span class="hljs-title function_">createElement</span>(type);
+}
+
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">updateProps</span>(<span class="hljs-params">dom, props</span>) {
+  <span class="hljs-comment">// 设置props</span>
+  <span class="hljs-title class_">Object</span>.<span class="hljs-title function_">keys</span>(props).<span class="hljs-title function_">forEach</span>(<span class="hljs-function">(<span class="hljs-params">key</span>) =&gt;</span> {
+    <span class="hljs-keyword">if</span> (key !== <span class="hljs-string">&quot;children&quot;</span>) {
+      dom[key] = props[key];
+    }
+  });
+}
+
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">performWorkOfUnit</span>(<span class="hljs-params">fiber</span>) {
+  <span class="hljs-keyword">const</span> { type, props, dom } = fiber;
+  <span class="hljs-keyword">if</span> (!dom) {
+    <span class="hljs-keyword">const</span> ele = (fiber.<span class="hljs-property">dom</span> = <span class="hljs-title function_">createDom</span>(type));
+    <span class="hljs-title function_">updateProps</span>(ele, props);
+    fiber.<span class="hljs-property">parent</span>.<span class="hljs-property">dom</span>.<span class="hljs-title function_">append</span>(ele);
+  }
+}
+</code></pre>
+<blockquote>
+<p>这里创建元素，并将元素绑定到 <code>fiber的dom属性</code> 上，就是为了将后续子节点添加到<code>dom树</code>上</p>
+</blockquote>
+<h4><a id="确定子级关系" class="content__heading-anchor"></a>确定子级关系</h4>
+<pre><code class="language-javascript"><span class="hljs-keyword">function</span> <span class="hljs-title function_">initChildren</span>(<span class="hljs-params">fiber</span>) {
+  <span class="hljs-keyword">let</span> prevChild = <span class="hljs-literal">null</span>;
+  fiber.<span class="hljs-property">props</span>.<span class="hljs-property">children</span>.<span class="hljs-title function_">forEach</span>(<span class="hljs-function">(<span class="hljs-params">child, index</span>) =&gt;</span> {
+    <span class="hljs-keyword">const</span> newFiber = {
+      <span class="hljs-attr">type</span>: child.<span class="hljs-property">type</span>,
+      <span class="hljs-attr">props</span>: child.<span class="hljs-property">props</span>,
+      <span class="hljs-attr">dom</span>: <span class="hljs-literal">null</span>,
+      <span class="hljs-attr">parent</span>: fiber,
+      <span class="hljs-attr">child</span>: <span class="hljs-literal">null</span>,
+      <span class="hljs-attr">sibling</span>: <span class="hljs-literal">null</span>,
+    };
+
+    <span class="hljs-keyword">if</span> (index === <span class="hljs-number">0</span>) fiber.<span class="hljs-property">child</span> = newFiber;
+    <span class="hljs-keyword">else</span> prevChild.<span class="hljs-property">sibling</span> = newFiber;
+
+    prevChild = newFiber;
+  });
+}
+</code></pre>
+<ul>
+<li>如果为<code>children</code>第一个元素，那么就是<code>fiber.child</code></li>
+<li>如果不是，那么就是上一个<code>fiber</code>的<code>sibling</code></li>
+<li>这里需要更新一下<code>prevChild</code></li>
+<li><code>type</code>: 和 <code>child</code> 的 <code>type</code> 相同</li>
+<li><code>props</code>: 和 <code>child</code> 的 <code>props</code> 相同</li>
+<li><code>dom</code>: 先设置为 <code>null</code>，因为这个时候还没有渲染</li>
+<li><code>parent</code>: 就是当前执行的<code>fiber</code></li>
+</ul>
+<h4><a id="返回下一个-fiber" class="content__heading-anchor"></a>返回下一个 fiber</h4>
+<pre><code class="language-javascript"><span class="hljs-comment">// 有子节点就返回子节点</span>
+<span class="hljs-keyword">if</span> (fiber.<span class="hljs-property">child</span>) <span class="hljs-keyword">return</span> fiber.<span class="hljs-property">child</span>;
+<span class="hljs-comment">// 如果没有子节点就返回兄弟节点</span>
+<span class="hljs-keyword">if</span> (fiber.<span class="hljs-property">sibling</span>) <span class="hljs-keyword">return</span> fiber.<span class="hljs-property">sibling</span>;
+<span class="hljs-comment">// 如果没有兄弟节点就返回父节点的子节点</span>
+<span class="hljs-keyword">return</span> fiber.<span class="hljs-property">parent</span>?.<span class="hljs-property">sibling</span>;
+</code></pre>
+<h4><a id="最终的-performworkofunit" class="content__heading-anchor"></a>最终的 performWorkOfUnit</h4>
+<pre><code class="language-javascript"><span class="hljs-keyword">function</span> <span class="hljs-title function_">performWorkOfUnit</span>(<span class="hljs-params">fiber</span>) {
+  <span class="hljs-keyword">const</span> { type, props, dom } = fiber;
+  <span class="hljs-keyword">const</span> ele = (fiber.<span class="hljs-property">dom</span> = <span class="hljs-title function_">createDom</span>(type));
+  <span class="hljs-title function_">updateProps</span>(ele, props);
+  fiber.<span class="hljs-property">parent</span>.<span class="hljs-property">dom</span>.<span class="hljs-title function_">append</span>(ele);
+
+  <span class="hljs-title function_">initChildren</span>(fiber);
+
+  <span class="hljs-keyword">if</span> (fiber.<span class="hljs-property">child</span>) <span class="hljs-keyword">return</span> fiber.<span class="hljs-property">child</span>;
+  <span class="hljs-keyword">if</span> (fiber.<span class="hljs-property">sibling</span>) <span class="hljs-keyword">return</span> fiber.<span class="hljs-property">sibling</span>;
+  <span class="hljs-keyword">return</span> fiber.<span class="hljs-property">parent</span>?.<span class="hljs-property">sibling</span>;
+}
+</code></pre>
+<h4><a id="将-render-函数与-performworkofunit-函数进行合并" class="content__heading-anchor"></a>将 render 函数与 performWorkOfUnit 函数进行合并</h4>
+<pre><code class="language-javascript"><span class="hljs-keyword">const</span> <span class="hljs-title function_">render</span> = (<span class="hljs-params">App, container</span>) =&gt; {
+  nextWorkOfUnit = {
+    <span class="hljs-attr">dom</span>: container,
+    <span class="hljs-attr">props</span>: {
+      <span class="hljs-attr">children</span>: [<span class="hljs-title class_">App</span>],
+    },
+  };
+};
+</code></pre>
+<blockquote>
+<p>这里将渲染任务作为一个 <code>fiber</code> 节点，并赋值给 <code>nextWorkOfUnit</code>，然后等待<code>performWorkOfUnit</code> 函数的调用，进行渲染。<br>
+时机：浏览器空闲的时候</p>
+</blockquote>
+<pre><code class="language-javascript"><span class="hljs-keyword">function</span> <span class="hljs-title function_">performWorkOfUnit</span>(<span class="hljs-params">fiber</span>) {
+  <span class="hljs-keyword">const</span> { type, props, dom } = fiber;
+  <span class="hljs-comment">// 判断dom是否有内容，没有内容就创建dom</span>
+  <span class="hljs-keyword">if</span> (!dom) {
+    <span class="hljs-comment">// 设置fiber的dom</span>
+    <span class="hljs-keyword">const</span> ele = (fiber.<span class="hljs-property">dom</span> = <span class="hljs-title function_">createDom</span>(type));
+    <span class="hljs-title function_">updateProps</span>(ele, props);
+    <span class="hljs-comment">// 添加到dom树中</span>
+    fiber.<span class="hljs-property">parent</span>.<span class="hljs-property">dom</span>.<span class="hljs-title function_">append</span>(ele);
+  }
+
+  <span class="hljs-title function_">initChildren</span>(fiber);
+
+  <span class="hljs-comment">// 返回新任务</span>
+  <span class="hljs-comment">// 有子节点就返回子节点</span>
+  <span class="hljs-keyword">if</span> (fiber.<span class="hljs-property">child</span>) <span class="hljs-keyword">return</span> fiber.<span class="hljs-property">child</span>;
+}
+</code></pre>
+ </article> </section> </main>  <footer class="footer"> <hr class="footer__divide"> <div class="footer__row"> <p class="m-2">
+&#169; 2017-2024 <a href="/" class="link">9Sky 九天</a> </p> <div class="m-2"> <ul data-astro-cid-tfcnbjmv> <li data-astro-cid-tfcnbjmv> <a class="link" href="/" data-astro-cid-tfcnbjmv> 
+主页
+</a> </li> <li data-astro-cid-tfcnbjmv> <a class="link" href="/blog" data-astro-cid-tfcnbjmv>  文章 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/projects" data-astro-cid-tfcnbjmv>  项目 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/lab" data-astro-cid-tfcnbjmv>  实验室 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/about" data-astro-cid-tfcnbjmv>  关于 </a> </li> </ul>  </div> </div> </footer> </body></html> 

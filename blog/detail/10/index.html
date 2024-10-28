@@ -1,0 +1,692 @@
+<!DOCTYPE html><html> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width"><title>Vue3源码解析-watch原理</title><link rel="icon" type="image/vnd.microsoft.icon" href="/favicon.ico"><link rel="sitemap" href="/sitemap-index.xml"><title>Vue3源码解析-watch原理</title><link rel="canonical" href="https://wty9sky.github.io/blog/detail/10/"><meta name="description" content="Vue3源码解析-watch原理"><meta name="robots" content="index, follow"><meta property="og:title" content="Vue3源码解析-watch原理"><meta property="og:type" content="article"><meta property="og:image" content="/og.svg"><meta property="og:url" content="https://wty9sky.github.io/blog/detail/10/"><meta property="og:locale" content="zh_CN"><meta property="og:locale:alternate" content="zh_TW"><meta property="og:locale:alternate" content="en_US"><meta property="og:site_name" content="9Sky 九天"><link rel="shortcut icon" href="/favicon.ico"><link rel="bookmark" href="/favicon.ico"><link rel="apple-touch-icon" href="/avatar.png"><meta name="generator" content="Astro v4.16.7"><meta name="keywords" content="详情"><meta name="astro-view-transitions-enabled" content="true"><meta name="astro-view-transitions-fallback" content="animate"><link rel="stylesheet" href="/_astro/about.CkC6PiIh.css">
+<link rel="stylesheet" href="/_astro/about.D3zQv4Ly.css"><script type="module" src="/_astro/hoisted.HO6_Fzad.js"></script></head> <body> <header class="header"> <h5 class="header__heading"> <a href="/" class="link">9Sky 九天</a> <span>
+/
+<a href="/blog" class="link"> 博客 </a> </span><span>
+/
+Vue3源码解析-watch原理 </span> </h5> </header> <div id="navbar-sentinal"></div> <nav class="navbar" id="navbar-wrapper"> <div class="navbar__content"> <h5 class="navbar__path"> <a href="/" class="link">9Sky 九天</a> <span>
+/
+<a href="/blog" class="link"> 博客 </a> </span><span>
+/
+Vue3源码解析-watch原理 </span> </h5> <div class="navbar__menu"> <ul data-astro-cid-tfcnbjmv> <li data-astro-cid-tfcnbjmv> <a class="link" href="/" data-astro-cid-tfcnbjmv> <i class="ri-home-line" data-astro-cid-tfcnbjmv></i>
+主页
+</a> </li> <li data-astro-cid-tfcnbjmv> <a class="link" href="/blog" data-astro-cid-tfcnbjmv> <i class="ri-newspaper-line" data-astro-cid-tfcnbjmv></i> 文章 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/projects" data-astro-cid-tfcnbjmv> <i class="ri-server-line" data-astro-cid-tfcnbjmv></i> 项目 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/lab" data-astro-cid-tfcnbjmv> <i class="ri-server-line" data-astro-cid-tfcnbjmv></i> 实验室 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/about" data-astro-cid-tfcnbjmv> <i class="ri-cup-line" data-astro-cid-tfcnbjmv></i> 关于 </a> </li> </ul>  </div> </div> </nav> <script>
+  // 使用 ViewTransition 后，所有 DOM 操作的 js 都有一堆问题
+  // 这里用了极不优雅的 var，有待改进
+  var observer;
+  function addNavObserver() {
+    const headerEl = document.querySelector("#navbar-wrapper");
+    const sentinalEl = document.querySelector("#navbar-sentinal");
+    if (!sentinalEl || !headerEl) return;
+    observer = new window.IntersectionObserver((e) => {
+      if (!e[0].isIntersectin && e[0].boundingClientRect.top <= 0) {
+        headerEl.classList.add("navbar--sticked");
+      } else {
+        headerEl.classList.remove("navbar--sticked");
+      }
+    });
+    observer.observe(sentinalEl);
+  }
+
+  function removeNavObserver() {
+    if (observer) observer.disconnect();
+    observer = null;
+  }
+
+  document.addEventListener(
+    "astro:page-load",
+    () => {
+      addNavObserver();
+    },
+    { once: false },
+  );
+
+  document.addEventListener(
+    "astro:before-swap",
+    () => {
+      removeNavObserver();
+    },
+    { once: false },
+  );
+</script>  <main class="page"> <section class="page__section page__section--at-top"> <!-- {
+        article.cover && (
+          <a href={article.cover} data-fancybox data-caption={article.title}>
+            <img
+              src={article.cover}
+              alt={article.title}
+              title={article.title}
+              class="page__cover mb-8"
+            />
+          </a>
+        )
+      } --> <h1 class="page__heading">Vue3源码解析-watch原理</h1> <p class="page__meta"> <i class="ri-calendar-line"></i> <span>2023 年 6 月 11 日 05:52</span> </p> <hr class="page__divide"> <article class="content"> <h2><a id="文章目录" class="content__heading-anchor"></a>文章目录</h2>
+<ul>
+<li><a href="#vue3-%E4%B8%AD%E7%9A%84-watch">Vue3 中的 watch</a>
+<ul>
+<li><a href="#watch">watch</a></li>
+<li><a href="#watch-%E7%9A%84%E5%87%BD%E6%95%B0%E7%AD%BE%E5%90%8D">watch 的函数签名</a>
+<ul>
+<li><a href="#%E4%BE%A6%E5%90%AC%E5%A4%9A%E4%B8%AA%E6%BA%90">侦听多个源</a></li>
+<li><a href="#%E4%BE%A6%E5%90%AC%E5%8D%95%E4%B8%80%E6%BA%90">侦听单一源</a></li>
+</ul></li>
+<li><a href="#watch-%E7%9A%84%E5%AE%9E%E7%8E%B0">watch 的实现</a>
+<ul>
+<li><a href="#watch-%E5%87%BD%E6%95%B0">watch 函数</a></li>
+<li><a href="#dowatch-%E5%87%BD%E6%95%B0">doWatch 函数</a></li>
+</ul></li>
+<li><a href="#%E6%80%BB%E7%BB%93">总结</a></li>
+</ul></li>
+</ul>
+<h1><a id="vue3-中的-watch" class="content__heading-anchor"></a>Vue3 中的 watch</h1>
+<h2><a id="watch" class="content__heading-anchor"></a>watch</h2>
+<ul>
+<li>本质就是观测一个响应式数据</li>
+<li>当数据发生变化时通知并执行相应的回调函数</li>
+<li>watch 的实现本质就是利用了
+<ul>
+<li>effect</li>
+<li>options.scheduler</li>
+</ul></li>
+</ul>
+<pre><code class="language-javascript"><span class="hljs-comment">// watch 函数接收两个参数，source 是响应式数据，cb 是回调函数</span>
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">watch</span>(<span class="hljs-params">source, cb</span>) {
+  <span class="hljs-title function_">effect</span>(
+    <span class="hljs-comment">// 触发读取操作，从而建立联系</span>
+    <span class="hljs-function">() =&gt;</span> source.<span class="hljs-property">foo</span>,
+    {
+      <span class="hljs-title function_">scheduler</span>(<span class="hljs-params"></span>) {
+        <span class="hljs-comment">// 当数据变化时，调用回调函数 cb</span>
+        <span class="hljs-title function_">cb</span>();
+      },
+    }
+  );
+}
+</code></pre>
+<p>上述代码中，source 是响应式数据，cb 是回调函数。</p>
+<ul>
+<li>如果副作用函数中存在 scheduler 选项
+<ul>
+<li>则当响应式数据发生变化时，会触发 scheduler 函数执行，而不是直接触发副作用函数执行。</li>
+<li>scheduler 调度函数就相当于是一个回调函数，而 watch 的实现就是利用了这点。</li>
+</ul></li>
+</ul>
+<h2><a id="watch-的函数签名" class="content__heading-anchor"></a>watch 的函数签名</h2>
+<h3><a id="侦听多个源" class="content__heading-anchor"></a>侦听多个源</h3>
+<ul>
+<li>侦听的数据源可以是一个数组，如下面的函数签名所示：</li>
+</ul>
+<pre><code class="language-javascript"><span class="hljs-comment">// packages/runtime-core/src/apiWatch.ts</span>
+
+<span class="hljs-comment">// 数据源是一个数组</span>
+<span class="hljs-comment">// overload: array of multiple sources + cb</span>
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">function</span> watch&lt;
+T <span class="hljs-keyword">extends</span> <span class="hljs-title class_">MultiWatchSources</span>,
+<span class="hljs-title class_">Immediate</span> <span class="hljs-keyword">extends</span> <span class="hljs-title class_">Readonly</span>&lt;boolean&gt; = <span class="hljs-literal">false</span>
+
+&gt; (
+&gt; <span class="hljs-attr">sources</span>: [...T],
+&gt; <span class="hljs-attr">cb</span>: <span class="hljs-title class_">WatchCallback</span>&lt;<span class="hljs-title class_">MapSources</span>&lt;T, <span class="hljs-literal">false</span>&gt;, <span class="hljs-title class_">MapSources</span>&lt;T, <span class="hljs-title class_">Immediate</span>&gt;&gt;,
+&gt; options?: <span class="hljs-title class_">WatchOptions</span>&lt;<span class="hljs-title class_">Immediate</span>&gt;
+&gt; ): <span class="hljs-title class_">WatchStopHandle</span>
+
+</code></pre>
+<ul>
+<li>也可以使用数组同时侦听多个源，如下面的函数签名所示：</li>
+</ul>
+<pre><code class="language-javascript"><span class="hljs-comment">// packages/runtime-core/src/apiWatch.ts</span>
+
+<span class="hljs-comment">// 使用数组同时侦听多个源</span>
+<span class="hljs-comment">// overload: multiple sources w/ `as const`</span>
+<span class="hljs-comment">// watch([foo, bar] as const, () =&gt; {})</span>
+<span class="hljs-comment">// somehow [...T] breaks when the type is readonly</span>
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">function</span> watch&lt;
+T <span class="hljs-keyword">extends</span> <span class="hljs-title class_">Readonly</span>&lt;<span class="hljs-title class_">MultiWatchSources</span>&gt;,
+<span class="hljs-title class_">Immediate</span> <span class="hljs-keyword">extends</span> <span class="hljs-title class_">Readonly</span>&lt;boolean&gt; = <span class="hljs-literal">false</span>
+
+&gt; (
+&gt; <span class="hljs-attr">source</span>: T,
+&gt; <span class="hljs-attr">cb</span>: <span class="hljs-title class_">WatchCallback</span>&lt;<span class="hljs-title class_">MapSources</span>&lt;T, <span class="hljs-literal">false</span>&gt;, <span class="hljs-title class_">MapSources</span>&lt;T, <span class="hljs-title class_">Immediate</span>&gt;&gt;,
+&gt; options?: <span class="hljs-title class_">WatchOptions</span>&lt;<span class="hljs-title class_">Immediate</span>&gt;
+&gt; ): <span class="hljs-title class_">WatchStopHandle</span>
+
+</code></pre>
+<h3><a id="侦听单一源" class="content__heading-anchor"></a>侦听单一源</h3>
+<ul>
+<li>侦听的数据源是一个 ref 类型的数据 或者是一个具有返回值的 getter 函数，如下面的函数签名所示：</li>
+</ul>
+<pre><code class="language-javascript"><span class="hljs-comment">// packages/runtime-core/src/apiWatch.ts</span>
+
+<span class="hljs-comment">// 数据源是一个 ref 类型的数据 或者是一个具有返回值的 getter 函数</span>
+<span class="hljs-comment">// overload: single source + cb</span>
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">function</span> watch&lt;T, <span class="hljs-title class_">Immediate</span> <span class="hljs-keyword">extends</span> <span class="hljs-title class_">Readonly</span>&lt;boolean&gt; = <span class="hljs-literal">false</span>&gt;(
+<span class="hljs-attr">source</span>: <span class="hljs-title class_">WatchSource</span>&lt;T&gt;,
+<span class="hljs-attr">cb</span>: <span class="hljs-title class_">WatchCallback</span>&lt;T, <span class="hljs-title class_">Immediate</span> <span class="hljs-keyword">extends</span> <span class="hljs-literal">true</span> ? T | <span class="hljs-literal">undefined</span> : T&gt;,
+options?: <span class="hljs-title class_">WatchOptions</span>&lt;<span class="hljs-title class_">Immediate</span>&gt;
+): <span class="hljs-title class_">WatchStopHandle</span>
+
+<span class="hljs-keyword">export</span> type <span class="hljs-title class_">WatchSource</span>&lt;T = any&gt; = <span class="hljs-title class_">Ref</span>&lt;T&gt; | <span class="hljs-title class_">ComputedRef</span>&lt;T&gt; | (<span class="hljs-function">() =&gt;</span> T)
+
+</code></pre>
+<ul>
+<li>侦听的数据源是一个响应式的 obj 对象，如下面的函数签名所示：</li>
+</ul>
+<pre><code class="language-javascript"><span class="hljs-comment">// packages/runtime-core/src/apiWatch.ts</span>
+
+<span class="hljs-comment">// 数据源是一个响应式的 obj 对象</span>
+<span class="hljs-comment">// overload: watching reactive object w/ cb</span>
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">function</span> watch&lt;
+T <span class="hljs-keyword">extends</span> object,
+<span class="hljs-title class_">Immediate</span> <span class="hljs-keyword">extends</span> <span class="hljs-title class_">Readonly</span>&lt;boolean&gt; = <span class="hljs-literal">false</span>
+
+&gt; (
+&gt; <span class="hljs-attr">source</span>: T,
+&gt; <span class="hljs-attr">cb</span>: <span class="hljs-title class_">WatchCallback</span>&lt;T, <span class="hljs-title class_">Immediate</span> <span class="hljs-keyword">extends</span> <span class="hljs-literal">true</span> ? T | <span class="hljs-literal">undefined</span> : T&gt;,
+&gt; options?: <span class="hljs-title class_">WatchOptions</span>&lt;<span class="hljs-title class_">Immediate</span>&gt;
+&gt; ): <span class="hljs-title class_">WatchStopHandle</span>
+
+</code></pre>
+<h2><a id="watch-的实现" class="content__heading-anchor"></a>watch 的实现</h2>
+<h3><a id="watch-函数" class="content__heading-anchor"></a>watch 函数</h3>
+<pre><code class="language-javascript"><span class="hljs-comment">// packages/runtime-core/src/apiWatch.ts</span>
+<span class="hljs-comment">// implementation</span>
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">function</span> watch&lt;T = any, <span class="hljs-title class_">Immediate</span> <span class="hljs-keyword">extends</span> <span class="hljs-title class_">Readonly</span>&lt;boolean&gt; = <span class="hljs-literal">false</span>&gt;(
+<span class="hljs-attr">source</span>: T | <span class="hljs-title class_">WatchSource</span>&lt;T&gt;,
+<span class="hljs-attr">cb</span>: any,
+options?: <span class="hljs-title class_">WatchOptions</span>&lt;<span class="hljs-title class_">Immediate</span>&gt;
+): <span class="hljs-title class_">WatchStopHandle</span> {
+<span class="hljs-keyword">if</span> (**<span class="hljs-variable constant_">DEV</span>** &amp;&amp; !<span class="hljs-title function_">isFunction</span>(cb)) {
+<span class="hljs-title function_">warn</span>(<span class="hljs-string">`watch(fn, options?)`</span> signature has been moved to a separate <span class="hljs-variable constant_">API</span>. <span class="hljs-string">`+
+       `</span><span class="hljs-title class_">Use</span> <span class="hljs-string">`watchEffect(fn, options?)`</span> instead. <span class="hljs-string">`watch`</span> now only <span class="hljs-string">`+
+       `</span>supports <span class="hljs-string">`watch(source, cb, options?) signature.`</span>)
+}
+<span class="hljs-keyword">return</span> <span class="hljs-title function_">doWatch</span>(source <span class="hljs-keyword">as</span> any, cb, options)
+}
+</code></pre>
+<ul>
+<li><p>watch 函数接收 3 个参数</p>
+<ul>
+<li>source 侦听的数据源</li>
+<li>cb 回调函数</li>
+<li>options 侦听选项。</li>
+</ul></li>
+<li><p>source 参数</p>
+<ul>
+<li>从 watch 的函数重载中可以知道，当侦听的是单一源时，source 可以是一个 ref 类型的数据，或者是一个具有返回值的 getter 函数，也可以是一个响应式的 obj 对象。当侦听的是多个源时，source 可以是一个数组。</li>
+</ul></li>
+<li><p>cb 参数<br>
+在 cb 回调函数中，给开发者提供了最新的 value，旧的 value 以及 onCleanup 函数用与清除副作用。<br>
+如下面的类型定义所示：</p></li>
+</ul>
+<pre><code class="language-javascript"><span class="hljs-keyword">export</span> type <span class="hljs-title class_">WatchCallback</span>&lt;V = any, <span class="hljs-variable constant_">OV</span> = any&gt; = <span class="hljs-function">(<span class="hljs-params">
+  value: V,
+  oldValue: OV,
+  onCleanup: OnCleanup
+</span>) =&gt;</span> any;
+</code></pre>
+<ul>
+<li>options 参数<br>
+options 选项可以控制 watch 的行为，例如通过 options 的选项参数 immediate 来控制 watch 的回调是否立即执行，通过 options 的选项参数来控制 watch 的回调函数是同步执行还是异步执行。options 参数的类型定义如下：</li>
+</ul>
+<pre><code class="language-javascript"><span class="hljs-keyword">export</span> interface <span class="hljs-title class_">WatchOptionsBase</span> <span class="hljs-keyword">extends</span> <span class="hljs-title class_">DebuggerOptions</span> {
+flush?: <span class="hljs-string">&#x27;pre&#x27;</span> | <span class="hljs-string">&#x27;post&#x27;</span> | <span class="hljs-string">&#x27;sync&#x27;</span>
+}
+
+<span class="hljs-keyword">export</span> interface <span class="hljs-title class_">WatchOptions</span>&lt;<span class="hljs-title class_">Immediate</span> = boolean&gt; <span class="hljs-keyword">extends</span> <span class="hljs-title class_">WatchOptionsBase</span> {
+immediate?: <span class="hljs-title class_">Immediate</span>
+deep?: boolean
+}
+</code></pre>
+<ul>
+<li>options 的类型定义 WatchOptions 继承了 WatchOptionsBase。
+<ul>
+<li>watch 的 options 中有 immediate 和 deep 这两个特有的参数</li>
+<li>还可以传递 WatchOptionsBase 中的所有参数以控制副作用执行的行为</li>
+<li>在 watch 的函数体中调用了 doWatch 函数，我们来看看它的实现。</li>
+</ul></li>
+</ul>
+<h3><a id="dowatch-函数" class="content__heading-anchor"></a>doWatch 函数</h3>
+<ul>
+<li><p>实际上，无论是 watch 函数，还是 watchEffect 函数，在执行时最终调用的都是 doWatch 函数。</p></li>
+<li><p>doWatch 函数签名</p></li>
+</ul>
+<pre><code class="language-javascript"><span class="hljs-keyword">function</span> <span class="hljs-title function_">doWatch</span>(<span class="hljs-params">
+source: WatchSource | WatchSource[] | WatchEffect | object,
+cb: WatchCallback | <span class="hljs-literal">null</span>,
+{ immediate, deep, flush, onTrack, onTrigger }: WatchOptions = EMPTY_OBJ
+</span>): <span class="hljs-title class_">WatchStopHandle</span>
+</code></pre>
+<ul>
+<li><p>doWatch 的函数签名与 watch 的函数签名基本一致，也是接收三个参数。</p>
+<ul>
+<li>在 doWatch 函数中，为了便于 options 选项的使用，对 options 进行了解构。</li>
+</ul></li>
+<li><p>初始化变量<br>
+首先从 component 中获取当前的组件实例，然后分别定义三个变量。其中 getter 是一个函数，它或作为副作用的函数参数传入到副作用函数中。forceTrigger 变量是一个布尔值，用来标识是否需要强制触发副作用函数执行。isMultiSource 变量同样也是一个布尔值，用来标记侦听的数据源是单一源还是以数组形式传入的多个源，初始值为 false，表示侦听的是单一源。</p></li>
+</ul>
+<pre><code class="language-javascript"><span class="hljs-keyword">const</span> instance = currentInstance;
+<span class="hljs-keyword">let</span> <span class="hljs-attr">getter</span>: <span class="hljs-function">() =&gt;</span> any;
+<span class="hljs-comment">// 是否需要强制触发副作用函数执行</span>
+<span class="hljs-keyword">let</span> forceTrigger = <span class="hljs-literal">false</span>;
+<span class="hljs-comment">// 侦听的是否是多个源</span>
+<span class="hljs-keyword">let</span> isMultiSource = <span class="hljs-literal">false</span>;
+</code></pre>
+<ul>
+<li><p>接下来根据侦听的数据源来初始化这三个变量。</p></li>
+<li><p>侦听的数据源是一个 ref 类型的数据</p>
+<ul>
+<li>当侦听的数据源是一个 ref 类型的数据时
+<ul>
+<li>通过返回 source.value 来初始化 getter(如果接收到的数据是 ref 类型的数据，则会获取 value 值)，</li>
+<li>当 getter 函数被触发时，会通过 source.value 获取到实际侦听的数据</li>
+<li>然后通过 isShallow 函数来判断侦听的数据源是否是浅响应</li>
+<li>并将其结果赋值给 forceTrigger，完成 forceTrigger 变量的初始化。</li>
+</ul></li>
+</ul></li>
+</ul>
+<pre><code class="language-javascript"><span class="hljs-keyword">if</span> (<span class="hljs-title function_">isRef</span>(source)) {
+  <span class="hljs-comment">// 侦听的数据源是 ref</span>
+  getter = <span class="hljs-function">() =&gt;</span> source.<span class="hljs-property">value</span>;
+  <span class="hljs-comment">// 判断数据源是否是浅响应</span>
+  forceTrigger = <span class="hljs-title function_">isShallow</span>(source);
+}
+</code></pre>
+<ul>
+<li>侦听的数据源是一个响应式数据
+<ul>
+<li>当侦听的数据源是一个响应式数据时
+<ul>
+<li>直接返回 source 来初始化 getter ，即 getter 函数被触发时直接返回侦听的数据源。</li>
+<li>由于响应式数据中可能会是一个 object 对象，因此将 deep 设置为 true，在触发 getter 函数时可以递归地读取对象的属性值。</li>
+</ul></li>
+</ul></li>
+</ul>
+<pre><code class="language-javascript"> <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (<span class="hljs-title function_">isReactive</span>(source)) {
+<span class="hljs-comment">// 侦听的数据源是响应式数据</span>
+getter = <span class="hljs-function">() =&gt;</span> source
+deep = <span class="hljs-literal">true</span>
+}
+
+</code></pre>
+<ul>
+<li>侦听的数据源是一个数组
+<ul>
+<li>当侦听的数据源是一个数组，即同时侦听多个源。
+<ul>
+<li>此时直接将 isMultiSource 变量设置为 true，表示侦听的是多个源。</li>
+<li>接着通过数组的 some 方法来检测侦听的多个源中是否存在响应式对象，将其结果赋值给 forceTrigger 。</li>
+<li>然后遍历数组，判断每个源的类型，从而完成 getter 函数的初始化。</li>
+</ul></li>
+</ul></li>
+</ul>
+<pre><code class="language-javascript"> <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (<span class="hljs-title function_">isArray</span>(source)) {
+<span class="hljs-comment">// 侦听的数据源是一个数组，即同时侦听多个源</span>
+isMultiSource = <span class="hljs-literal">true</span>
+forceTrigger = source.<span class="hljs-title function_">some</span>(isReactive)
+getter = <span class="hljs-function">() =&gt;</span>
+<span class="hljs-comment">// 遍历数组，判断每个源的类型</span>
+source.<span class="hljs-title function_">map</span>(<span class="hljs-function"><span class="hljs-params">s</span> =&gt;</span> {
+<span class="hljs-keyword">if</span> (<span class="hljs-title function_">isRef</span>(s)) {
+<span class="hljs-comment">// 侦听的数据源是 ref</span>
+ <span class="hljs-keyword">return</span> s.<span class="hljs-property">value</span>
+} <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (<span class="hljs-title function_">isReactive</span>(s)) {
+<span class="hljs-comment">// 侦听的数据源是响应式数据</span>
+<span class="hljs-keyword">return</span> <span class="hljs-title function_">traverse</span>(s)
+} <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (<span class="hljs-title function_">isFunction</span>(s)) {
+<span class="hljs-comment">// 侦听的数据源是一个具有返回值的 getter 函数</span>
+<span class="hljs-keyword">return</span> <span class="hljs-title function_">callWithErrorHandling</span>(s, instance, <span class="hljs-title class_">ErrorCodes</span>.<span class="hljs-property">WATCH_GETTER</span>)
+} <span class="hljs-keyword">else</span> {
+**<span class="hljs-variable constant_">DEV</span>** &amp;&amp; <span class="hljs-title function_">warnInvalidSource</span>(s)
+}
+})
+}
+
+</code></pre>
+<ul>
+<li>侦听的数据源是一个函数
+<ul>
+<li>当侦听的数据源是一个具有返回值的 getter 函数时，判断 doWatch 函数的第二个参数 cb 是否有传入。
+<ul>
+<li>如果有传入，则处理的是 watch 函数的场景，此时执行 source 函数，将执行结果赋值给 getter 。</li>
+<li>如果没有传入，则处理的是 watchEffect 函数的场景。在该场景下，如果组件实例已经卸载，则直接返回，不执行 source 函数。</li>
+<li>否则就执行 cleanup 清除依赖，然后执行 source 函数，将执行结果赋值给 getter 。</li>
+</ul></li>
+</ul></li>
+</ul>
+<pre><code class="language-javascript"> <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (<span class="hljs-title function_">isFunction</span>(source)) {
+
+<span class="hljs-comment">// 处理 watch 和 watchEffect 的场景</span>
+<span class="hljs-comment">// watch 的第二个参数可以是一个具有返回值的 getter 参数，第二个参数是一个回调函数</span>
+<span class="hljs-comment">// watchEffect 的参数是一个 函数</span>
+
+<span class="hljs-comment">// 侦听的数据源是一个具有返回值的 getter 函数</span>
+<span class="hljs-keyword">if</span> (cb) {
+<span class="hljs-comment">// getter with cb</span>
+<span class="hljs-comment">// 处理的是 watch 的场景</span>
+<span class="hljs-comment">// 执行 source 函数，将执行结果赋值给 getter</span>
+ getter = <span class="hljs-function">() =&gt;</span>
+<span class="hljs-title function_">callWithErrorHandling</span>(source, instance, <span class="hljs-title class_">ErrorCodes</span>.<span class="hljs-property">WATCH_GETTER</span>)
+} <span class="hljs-keyword">else</span> {
+<span class="hljs-comment">// no cb -&gt; simple effect</span>
+<span class="hljs-comment">// 没有回调，即为 watchEffect 的场景</span>
+ getter = <span class="hljs-function">() =&gt;</span> {
+<span class="hljs-comment">// 件实例已经卸载，则不执行，直接返回</span>
+<span class="hljs-keyword">if</span> (instance &amp;&amp; instance.<span class="hljs-property">isUnmounted</span>) {
+<span class="hljs-keyword">return</span>
+}
+<span class="hljs-comment">// 清除依赖</span>
+<span class="hljs-keyword">if</span> (cleanup) {
+<span class="hljs-title function_">cleanup</span>()
+}
+<span class="hljs-comment">// 执行 source 函数</span>
+<span class="hljs-keyword">return</span> <span class="hljs-title function_">callWithAsyncErrorHandling</span>(
+source,
+instance,
+<span class="hljs-title class_">ErrorCodes</span>.<span class="hljs-property">WATCH_CALLBACK</span>,
+[onCleanup]
+)
+}
+}
+}
+
+</code></pre>
+<ul>
+<li>递归读取响应式数据
+<ul>
+<li>如果侦听的数据源是一个响应式数据，需要递归读取响应式数据中的属性值。</li>
+</ul></li>
+</ul>
+<pre><code class="language-javascript"><span class="hljs-comment">// 处理的是 watch 的场景</span>
+<span class="hljs-comment">// 递归读取对象的属性值</span>
+<span class="hljs-keyword">if</span> (cb &amp;&amp; deep) {
+  <span class="hljs-keyword">const</span> baseGetter = getter;
+  getter = <span class="hljs-function">() =&gt;</span> <span class="hljs-title function_">traverse</span>(<span class="hljs-title function_">baseGetter</span>());
+}
+</code></pre>
+<p>doWatch 函数的第二个参数 cb 有传入，说明处理的是 watch 中的场景。<br>
+deep 变量为 true ，说明此时侦听的数据源是一个响应式数据，因此需要调用 traverse 函数来递归读取数据源中的每个属性，对其进行监听，从而当任意属性发生变化时都能够触发回调函数执行。</p>
+<ul>
+<li>定义清除副作用函数
+<ul>
+<li>声明 cleanup 和 onCleanup 函数</li>
+<li>并在 onCleanup 函数的执行过程中给 cleanup 函数赋值</li>
+<li>当副作用函数执行一些异步的副作用时，这些响应需要在其失效是清除。</li>
+</ul></li>
+</ul>
+<pre><code class="language-javascript"><span class="hljs-comment">// 清除副作用函数</span>
+<span class="hljs-keyword">let</span> <span class="hljs-attr">cleanup</span>: <span class="hljs-function">() =&gt;</span> <span class="hljs-keyword">void</span>;
+<span class="hljs-keyword">let</span> <span class="hljs-attr">onCleanup</span>: <span class="hljs-title class_">OnCleanup</span> = <span class="hljs-function">(<span class="hljs-params">fn: () =&gt; <span class="hljs-keyword">void</span></span>) =&gt;</span> {
+  cleanup = effect.<span class="hljs-property">onStop</span> = <span class="hljs-function">() =&gt;</span> {
+    <span class="hljs-title function_">callWithErrorHandling</span>(fn, instance, <span class="hljs-title class_">ErrorCodes</span>.<span class="hljs-property">WATCH_CLEANUP</span>);
+  };
+};
+</code></pre>
+<ul>
+<li>封装 scheduler 调度函数
+<ul>
+<li>为了便于控制 watch 的回调函数 cb 的执行时机，需要将 scheduler 调度函数封装为一个独立的 job 函数，</li>
+</ul></li>
+</ul>
+<pre><code class="language-javascript"><span class="hljs-comment">// 将 scheduler 调度函数封装为一个独立的 job 函数，便于在初始化和变更时执行它</span>
+<span class="hljs-keyword">const</span> <span class="hljs-attr">job</span>: <span class="hljs-title class_">SchedulerJob</span> = <span class="hljs-function">() =&gt;</span> {
+<span class="hljs-keyword">if</span> (!effect.<span class="hljs-property">active</span>) {
+<span class="hljs-keyword">return</span>
+}
+<span class="hljs-comment">// watch</span>
+<span class="hljs-keyword">if</span> (cb) {
+<span class="hljs-comment">// 处理 watch 的场景</span>
+<span class="hljs-comment">// watch(source, cb)</span>
+
+    <span class="hljs-comment">// 执行副作用函数获取新值</span>
+    <span class="hljs-keyword">const</span> newValue = effect.<span class="hljs-title function_">run</span>()
+
+    <span class="hljs-comment">// 如果数据源是响应式数据或者需要强制触发副作用函数执行或者新旧值发生了变化</span>
+    <span class="hljs-comment">// 则执行回调函数，并更新旧值</span>
+    <span class="hljs-keyword">if</span> (
+      deep ||
+      forceTrigger ||
+      (isMultiSource
+        ? (newValue <span class="hljs-keyword">as</span> any[]).<span class="hljs-title function_">some</span>(<span class="hljs-function">(<span class="hljs-params">v, i</span>) =&gt;</span>
+            <span class="hljs-title function_">hasChanged</span>(v, (oldValue <span class="hljs-keyword">as</span> any[])[i])
+          )
+        : <span class="hljs-title function_">hasChanged</span>(newValue, oldValue)) ||
+      (__COMPAT__ &amp;&amp;
+        <span class="hljs-title function_">isArray</span>(newValue) &amp;&amp;
+        <span class="hljs-title function_">isCompatEnabled</span>(<span class="hljs-title class_">DeprecationTypes</span>.<span class="hljs-property">WATCH_ARRAY</span>, instance))
+    ) {
+
+      <span class="hljs-comment">// 当回调再次执行前先清除副作用</span>
+      <span class="hljs-comment">// cleanup before running cb again</span>
+      <span class="hljs-keyword">if</span> (cleanup) {
+        <span class="hljs-title function_">cleanup</span>()
+      }
+
+      <span class="hljs-comment">// 执行watch 函数的回调函数 cb，将旧值和新值作为回调函数的参数</span>
+      <span class="hljs-title function_">callWithAsyncErrorHandling</span>(cb, instance, <span class="hljs-title class_">ErrorCodes</span>.<span class="hljs-property">WATCH_CALLBACK</span>, [
+        newValue,
+
+        <span class="hljs-comment">// 首次调用时，将 oldValue 的值设置为 undefined</span>
+        <span class="hljs-comment">// pass undefined as the old value when it&#x27;s changed for the first time</span>
+        oldValue === <span class="hljs-variable constant_">INITIAL_WATCHER_VALUE</span> ? <span class="hljs-literal">undefined</span> : oldValue,
+        onCleanup
+      ])
+      <span class="hljs-comment">// 更新旧值，不然下一次会得到错误的旧值</span>
+      oldValue = newValue
+    }
+
+} <span class="hljs-keyword">else</span> {
+<span class="hljs-comment">// watchEffect</span>
+<span class="hljs-comment">// 处理 watchEffect 的场景</span>
+effect.<span class="hljs-title function_">run</span>()
+}
+}
+</code></pre>
+<ul>
+<li><p>在 job 函数中</p>
+<ul>
+<li>判断回调函数 cb 是否传入
+<ul>
+<li>如果有传入，那么是 watch 函数被调用的场景
+<ul>
+<li>首先执行副作用函数，将执行结果赋值给 newValue 变量，作为最新的值。</li>
+<li>然后判断需要执行回调函数 cb 的情况
+<ul>
+<li>如果侦听的数据源是响应式数据，需要深度侦听，即 deep 为 true</li>
+<li>如果需要强制触发副作用函数执行，即 forceTrigger 为 true</li>
+<li>如果新旧值发生了变化</li>
+<li>只要满足上面三种情况中的其中一种
+<ul>
+<li>就需要执行 watch 函数的回调函数 cb。</li>
+</ul></li>
+<li>如果回调函数 cb 是再次执行，在执行之前需要先清除副作用
+<ul>
+<li>然后调用 callWithAsyncErrorHandling 函数执行回调函数 cb``</li>
+<li>并将新值 newValue 和旧值 oldValue 传入回调函数 cb 中</li>
+<li>在回调函数 cb 执行后，更新旧值 oldValue，避免在下一次执行回调函数 cb 时获取到错误的旧值。</li>
+</ul></li>
+</ul></li>
+</ul></li>
+<li>否则就是 watchEffect 函数被调用的场景。
+<ul>
+<li>则直接执行副作用函数即可。</li>
+</ul></li>
+</ul></li>
+</ul></li>
+<li><p>设置 job 的 allowRecurse 属性</p>
+<ul>
+<li>根据是否传入回调函数 cb，设置 job 函数的 allowRecurse 属性</li>
+<li>这个设置十分重要，它能够让 job 作为侦听器的回调，这样调度器就能知道它允许调用自身。</li>
+</ul></li>
+</ul>
+<pre><code class="language-javascript"><span class="hljs-comment">// important: mark the job as a watcher callback so that scheduler knows</span>
+<span class="hljs-comment">// it is allowed to self-trigger (#1727)</span>
+<span class="hljs-comment">// 打个标记：让调度器任务作为侦听器的回调，这样调度器就能知道允许自己派发更新</span>
+job.<span class="hljs-property">allowRecurse</span> = !!cb;
+</code></pre>
+<ul>
+<li>flush 选项指定回调函数的执行时机</li>
+<li>在调用 watch 函数时，可以通过 options 的 flush 选项来指定回调函数的执行时机：
+<ul>
+<li>当 flush 的值为 sync 时，代表调度器函数是同步执行，此时直接将 job 赋值给 scheduler，这样调度器函数就会直接执行。</li>
+<li>当 flush 的值为 post 时，代表调度函数需要将副作用函数放到一个微任务队列中，并等待 DOM 更新结束后再执行。</li>
+<li>当 flush 的值为 pre 时，即调度器函数默认的执行方式，这时调度器会区分组件是否已经挂载。如果组件未挂载，则先执行一次调度函数，即执行回调函数 cb。在组件挂载之后，将调度函数推入一个优先执行时机的队列中。</li>
+</ul></li>
+</ul>
+<pre><code class="language-javascript"><span class="hljs-comment">// 这里处理的是回调函数的执行时机</span>
+<span class="hljs-keyword">let</span> <span class="hljs-attr">scheduler</span>: <span class="hljs-title class_">EffectScheduler</span>
+<span class="hljs-keyword">if</span> (flush === <span class="hljs-string">&#x27;sync&#x27;</span>) {
+<span class="hljs-comment">// 同步执行，将 job 直接赋值给调度器</span>
+scheduler = job <span class="hljs-keyword">as</span> any <span class="hljs-comment">// the scheduler function gets called directly</span>
+} <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (flush === <span class="hljs-string">&#x27;post&#x27;</span>) {
+<span class="hljs-comment">// 将调度函数 job 添加到微任务队列中执行</span>
+scheduler = <span class="hljs-function">() =&gt;</span> <span class="hljs-title function_">queuePostRenderEffect</span>(job, instance &amp;&amp; instance.<span class="hljs-property">suspense</span>)
+} <span class="hljs-keyword">else</span> {
+<span class="hljs-comment">// default: &#x27;pre&#x27;</span>
+<span class="hljs-comment">// 调度器函数默认的执行模式</span>
+scheduler = <span class="hljs-function">() =&gt;</span> {
+<span class="hljs-keyword">if</span> (!instance || instance.<span class="hljs-property">isMounted</span>) {
+<span class="hljs-comment">// 组件挂载后将 job 推入一个优先执行时机的队列中</span>
+<span class="hljs-title function_">queuePreFlushCb</span>(job)
+} <span class="hljs-keyword">else</span> {
+<span class="hljs-comment">// 在 pre 选型中，第一次调用必须发生在组件挂载之前</span>
+<span class="hljs-comment">// 所以这次调用是同步的</span>
+<span class="hljs-title function_">job</span>()
+}
+}
+}
+
+</code></pre>
+<ul>
+<li>创建副作用函数</li>
+<li>初始化完 getter 函数和调度器函数 scheduler 后，调用 ReactiveEffect 类来创建一个副作用函数</li>
+</ul>
+<pre><code class="language-javascript"><span class="hljs-comment">// 创建一个副作用函数</span>
+<span class="hljs-keyword">const</span> effect = <span class="hljs-keyword">new</span> <span class="hljs-title class_">ReactiveEffect</span>(getter, scheduler);
+</code></pre>
+<ul>
+<li>执行副作用函数
+<ul>
+<li>在执行副作用函数之前，首先判断是否传入了回调函数 cb
+<ul>
+<li>如果有传入，则根据 options 的 immediate 选项来判断是否需要立即执行回调函数 cb
+<ul>
+<li>如果指定了 immediate 选项，则立即执行 job 函数，即 watch 的回调函数会在 watch 创建时立即执行一次</li>
+<li>否则就手动调用副作用函数，并将返回值作为旧值，赋值给 oldValue。</li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul>
+<pre><code class="language-javascript"><span class="hljs-keyword">if</span> (cb) {
+  <span class="hljs-comment">// 选项参数 immediate 来指定回调是否需要立即执行</span>
+  <span class="hljs-keyword">if</span> (immediate) {
+    <span class="hljs-comment">// 回调函数会在 watch 创建时立即执行一次</span>
+    <span class="hljs-title function_">job</span>();
+  } <span class="hljs-keyword">else</span> {
+    <span class="hljs-comment">// 手动调用副作用函数，拿到的就是旧值</span>
+    oldValue = effect.<span class="hljs-title function_">run</span>();
+  }
+}
+</code></pre>
+<ul>
+<li>如果 options 的 flush 选项的值为 post
+<ul>
+<li>需要将副作用函数放入到微任务队列中，等待组件挂载完成后再执行副作用函数。</li>
+</ul></li>
+</ul>
+<pre><code class="language-javascript"> <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (flush === <span class="hljs-string">&#x27;post&#x27;</span>) {
+<span class="hljs-comment">// 在调度器函数中判断 flush 是否为 &#x27;post&#x27;，如果是，将其放到微任务队列中执行</span>
+<span class="hljs-title function_">queuePostRenderEffect</span>(
+effect.<span class="hljs-property">run</span>.<span class="hljs-title function_">bind</span>(effect),
+instance &amp;&amp; instance.<span class="hljs-property">suspense</span>
+)
+}
+
+</code></pre>
+<ul>
+<li>其余情况都是立即执行副作用函数。</li>
+</ul>
+<pre><code class="language-javascript"> <span class="hljs-keyword">else</span> {
+<span class="hljs-comment">// 其余情况立即执行副作用</span>
+effect.<span class="hljs-title function_">run</span>()
+}
+
+</code></pre>
+<ul>
+<li>flush: 'post' 业务场景：
+<ul>
+<li>如果需要在 DOM 更新之后执行获取 dom 元素信息的情况。</li>
+<li>在某个组件中，需要在 DOM 更新之后获取某个元素的尺寸信息，然后根据尺寸信息进行一些操作。</li>
+<li>可以使用 watch 监听数据变化，并在回调函数中获取元素尺寸信息，然后在 flush: 'post' 的情况下执行操作。</li>
+</ul></li>
+</ul>
+<pre><code class="language-vue">&lt;template&gt;
+  &lt;div id=&quot;myDiv&quot;&gt;{{ message }}&lt;/div&gt;
+&lt;/template&gt;
+
+&lt;script setup lang=&quot;ts&quot;&gt;
+import { ref, watch, nextTick } from &quot;vue&quot;;
+
+export default {
+  setup() {
+    const message = ref(&quot;Hello, Vue3!&quot;);
+    const myDiv = ref&lt;HTMLDivElement | null&gt;(null);
+    watch(
+      message,
+      async (newVal, oldVal) =&gt; {
+        await nextTick();
+        const width = myDiv.value.offsetWidth;
+        const height = myDiv.value.offsetHeight;
+        console.log(`Width: ${width}, Height: ${height}`);
+      },
+      { flush: &quot;post&quot; }
+    );
+  },
+};
+&lt;/script&gt;
+</code></pre>
+<ul>
+<li>使用 watch 函数监听 message 数据的变化</li>
+<li>并在回调函数中使用 nextTick 函数获取元素尺寸信息</li>
+<li>由于添加了 { flush: 'post' }，因此回调函数会在下一次 DOM 更新循环结束之后 执行</li>
+<li>这个时候页面完成新的一轮渲染，可以获取到最新的 dom 信息。</li>
+<li>返回匿名函数，停止侦听
+<ul>
+<li>doWatch 函数最后返回了一个匿名函数，该函数用以结束数据源的侦听。</li>
+<li>因此在调用 watch 或者 watchEffect 时，可以调用其返回值来来手动结束侦听。</li>
+</ul></li>
+</ul>
+<pre><code class="language-javascript"> <span class="hljs-keyword">return</span> <span class="hljs-function">() =&gt;</span> {
+effect.<span class="hljs-title function_">stop</span>()
+<span class="hljs-keyword">if</span> (instance &amp;&amp; instance.<span class="hljs-property">scope</span>) {
+<span class="hljs-comment">// 返回一个函数，用以显式的结束侦听</span>
+<span class="hljs-title function_">remove</span>(instance.<span class="hljs-property">scope</span>.<span class="hljs-property">effects</span>!, effect)
+}
+}
+
+</code></pre>
+<h2><a id="总结" class="content__heading-anchor"></a>总结</h2>
+<ul>
+<li>watch 的本质就是观测一个响应式数据，当数据发生变化时通知并执行相应的回调函数。</li>
+<li>watch 的实现利用了 effect 和 options.scheduler 选项。</li>
+<li>watch 可以侦听单一源，也可以侦听多个源。
+<ul>
+<li>侦听单一源
+<ul>
+<li>数据源可以是一个具有返回值的 getter 函数。</li>
+<li>或者是一个 ref 对象。</li>
+<li>也可以是一个响应式的 object 对象。</li>
+</ul></li>
+<li>侦听多个源时，其数据源是一个数组。</li>
+</ul></li>
+<li>根据侦听的数据源的类型
+<ul>
+<li>初始化 getter 函数和 scheduler 调度函数，根据这两个函数创建一个副作用函数</li>
+<li>并根据 options 的 immediate 选项以及 flush 选项来指定回调函数和副作用函数的执行时机。
+<ul>
+<li>当 immediate 为 true 时，在 watch 创建时会立即执行一次回调函数。</li>
+<li>当 flush 的值为 post 时，scheduler 调度函数和副作用函数都会被添加到微任务队列中，会等待 DOM 更新结束后再执行。</li>
+</ul></li>
+</ul></li>
+</ul>
+ </article> </section> </main>  <footer class="footer"> <hr class="footer__divide"> <div class="footer__row"> <p class="m-2">
+&#169; 2017-2024 <a href="/" class="link">9Sky 九天</a> </p> <div class="m-2"> <ul data-astro-cid-tfcnbjmv> <li data-astro-cid-tfcnbjmv> <a class="link" href="/" data-astro-cid-tfcnbjmv> 
+主页
+</a> </li> <li data-astro-cid-tfcnbjmv> <a class="link" href="/blog" data-astro-cid-tfcnbjmv>  文章 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/projects" data-astro-cid-tfcnbjmv>  项目 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/lab" data-astro-cid-tfcnbjmv>  实验室 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/about" data-astro-cid-tfcnbjmv>  关于 </a> </li> </ul>  </div> </div> </footer> </body></html> 

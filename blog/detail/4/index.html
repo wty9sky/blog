@@ -1,0 +1,354 @@
+<!DOCTYPE html><html> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width"><title>从零实现 mini-react(4)：vdom 更新&amp;update children</title><link rel="icon" type="image/vnd.microsoft.icon" href="/favicon.ico"><link rel="sitemap" href="/sitemap-index.xml"><title>从零实现 mini-react(4)：vdom 更新&update children</title><link rel="canonical" href="https://wty9sky.github.io/blog/detail/4/"><meta name="description" content="实现如何绑定DOM事件，处理函数组件和更新props，包括双缓存机制，以及如何通过对比新旧Fiber树来进行高效的DOM更新和删除。
+
+"><meta name="robots" content="index, follow"><meta property="og:title" content="从零实现 mini-react(4)：vdom 更新&#38;update children"><meta property="og:type" content="article"><meta property="og:image" content="/og.svg"><meta property="og:url" content="https://wty9sky.github.io/blog/detail/4/"><meta property="og:locale" content="zh_CN"><meta property="og:locale:alternate" content="zh_TW"><meta property="og:locale:alternate" content="en_US"><meta property="og:site_name" content="9Sky 九天"><link rel="shortcut icon" href="/favicon.ico"><link rel="bookmark" href="/favicon.ico"><link rel="apple-touch-icon" href="/avatar.png"><meta name="generator" content="Astro v4.16.7"><meta name="keywords" content="详情"><meta name="astro-view-transitions-enabled" content="true"><meta name="astro-view-transitions-fallback" content="animate"><link rel="stylesheet" href="/_astro/about.CkC6PiIh.css">
+<link rel="stylesheet" href="/_astro/about.D3zQv4Ly.css"><script type="module" src="/_astro/hoisted.HO6_Fzad.js"></script></head> <body> <header class="header"> <h5 class="header__heading"> <a href="/" class="link">9Sky 九天</a> <span>
+/
+<a href="/blog" class="link"> 博客 </a> </span><span>
+/
+从零实现 mini-react(4)：vdom 更新&amp;update children </span> </h5> </header> <div id="navbar-sentinal"></div> <nav class="navbar" id="navbar-wrapper"> <div class="navbar__content"> <h5 class="navbar__path"> <a href="/" class="link">9Sky 九天</a> <span>
+/
+<a href="/blog" class="link"> 博客 </a> </span><span>
+/
+从零实现 mini-react(4)：vdom 更新&amp;update children </span> </h5> <div class="navbar__menu"> <ul data-astro-cid-tfcnbjmv> <li data-astro-cid-tfcnbjmv> <a class="link" href="/" data-astro-cid-tfcnbjmv> <i class="ri-home-line" data-astro-cid-tfcnbjmv></i>
+主页
+</a> </li> <li data-astro-cid-tfcnbjmv> <a class="link" href="/blog" data-astro-cid-tfcnbjmv> <i class="ri-newspaper-line" data-astro-cid-tfcnbjmv></i> 文章 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/projects" data-astro-cid-tfcnbjmv> <i class="ri-server-line" data-astro-cid-tfcnbjmv></i> 项目 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/lab" data-astro-cid-tfcnbjmv> <i class="ri-server-line" data-astro-cid-tfcnbjmv></i> 实验室 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/about" data-astro-cid-tfcnbjmv> <i class="ri-cup-line" data-astro-cid-tfcnbjmv></i> 关于 </a> </li> </ul>  </div> </div> </nav> <script>
+  // 使用 ViewTransition 后，所有 DOM 操作的 js 都有一堆问题
+  // 这里用了极不优雅的 var，有待改进
+  var observer;
+  function addNavObserver() {
+    const headerEl = document.querySelector("#navbar-wrapper");
+    const sentinalEl = document.querySelector("#navbar-sentinal");
+    if (!sentinalEl || !headerEl) return;
+    observer = new window.IntersectionObserver((e) => {
+      if (!e[0].isIntersectin && e[0].boundingClientRect.top <= 0) {
+        headerEl.classList.add("navbar--sticked");
+      } else {
+        headerEl.classList.remove("navbar--sticked");
+      }
+    });
+    observer.observe(sentinalEl);
+  }
+
+  function removeNavObserver() {
+    if (observer) observer.disconnect();
+    observer = null;
+  }
+
+  document.addEventListener(
+    "astro:page-load",
+    () => {
+      addNavObserver();
+    },
+    { once: false },
+  );
+
+  document.addEventListener(
+    "astro:before-swap",
+    () => {
+      removeNavObserver();
+    },
+    { once: false },
+  );
+</script>  <main class="page"> <section class="page__section page__section--at-top"> <!-- {
+        article.cover && (
+          <a href={article.cover} data-fancybox data-caption={article.title}>
+            <img
+              src={article.cover}
+              alt={article.title}
+              title={article.title}
+              class="page__cover mb-8"
+            />
+          </a>
+        )
+      } --> <h1 class="page__heading">从零实现 mini-react(4)：vdom 更新&amp;update children</h1> <p class="page__meta"> <i class="ri-calendar-line"></i> <span>2024 年 3 月 22 日 02:35</span> </p> <hr class="page__divide"> <article class="content"> <h2><a id="文章目录" class="content__heading-anchor"></a>文章目录</h2>
+<ul>
+<li><a href="#%E4%BB%8E%E9%9B%B6%E5%AE%9E%E7%8E%B0-mini-react4vdom-%E6%9B%B4%E6%96%B0update-children">从零实现 mini-react(4)：vdom 更新&amp;update children</a>
+<ul>
+<li><a href="#dom-%E4%BA%8B%E4%BB%B6%E7%BB%91%E5%AE%9A">DOM 事件绑定</a></li>
+<li><a href="#%E5%AE%9E%E7%8E%B0%E6%9B%B4%E6%96%B0-props">实现更新 props</a></li>
+<li><a href="#update-children--%E8%BE%B9%E7%95%8C%E5%A4%84%E7%90%86">update children &amp; 边界处理</a>
+<ul>
+<li><a href="#%E8%BE%B9%E7%95%8C%E5%A4%84%E7%90%86">边界处理</a></li>
+</ul></li>
+</ul></li>
+</ul>
+<h1><a id="从零实现-mini-react4vdom-更新update-children" class="content__heading-anchor"></a>从零实现 mini-react(4)：vdom 更新&amp;update children</h1>
+<h2><a id="dom-事件绑定" class="content__heading-anchor"></a>DOM 事件绑定</h2>
+<ul>
+<li>对 DOM 事件进行绑定，需要使用<code>addEventListener</code>方法。</li>
+<li>获取绑定事件的字段，然后使用<code>addEventListener</code>方法进行绑定。</li>
+<li>注册事件也是同 <code>props</code> 传下来，因此只需要在处理 <code>props</code> 的时候去判断是否为注册事件，然后进行事件的注册即可。</li>
+<li>更新注册的时候，需要注意将旧的事件删除掉，避免每次更新都加一个新事件。</li>
+</ul>
+<pre><code class="language-javascript"><span class="hljs-keyword">const</span> <span class="hljs-title function_">updateProps</span> = (<span class="hljs-params">dom, props</span>) =&gt; {
+  <span class="hljs-title class_">Object</span>.<span class="hljs-title function_">keys</span>(props).<span class="hljs-title function_">forEach</span>(<span class="hljs-function">(<span class="hljs-params">attr</span>) =&gt;</span> {
+    <span class="hljs-keyword">const</span> isEvent = attr.<span class="hljs-title function_">startsWith</span>(<span class="hljs-string">&quot;on&quot;</span>);
+    <span class="hljs-keyword">if</span> (isEvent) {
+      <span class="hljs-keyword">const</span> eventType = +attr.<span class="hljs-title function_">slice</span>(<span class="hljs-number">2</span>).<span class="hljs-title function_">toLocaleLowerCase</span>();
+      dom.<span class="hljs-title function_">addEventListener</span>(eventType, props[attr]);
+    } <span class="hljs-keyword">else</span> {
+      <span class="hljs-keyword">if</span> (attr !== <span class="hljs-string">&quot;children&quot;</span>) {
+        dom[attr] = props[attr];
+      }
+    }
+  });
+};
+</code></pre>
+<h2><a id="实现更新-props" class="content__heading-anchor"></a>实现更新 props</h2>
+<p>更新props的时候，我们需要判断新旧props的差异，然后进行更新。</p>
+<ol>
+<li>生成新Fiber树
+<ul>
+<li>通过render函数来生成Fiber树
+<ul>
+<li>使用update的函数在用户交互时调用，并生成新的Fiber树</li>
+</ul></li>
+</ul></li>
+<li>获取旧Fiber树
+<ul>
+<li>使用 <code>currentRoot</code> 在每次统一提交时保存旧的根节点</li>
+<li>然后再次更新时，将新的根节点的 <code>alternate</code> 指向旧节点</li>
+<li>更新调和 <code>children</code> 时，即从 <code>alternate.child</code> 拿到对应需要对比的第一个旧子节点</li>
+<li>此后以此通过 <code>sibiling</code> 拿到后续的旧节点比较 (关键)</li>
+</ul></li>
+<li>对比新旧Fiber树，并进行处理
+<ul>
+<li>在<code>initChildren</code>中判断新旧child的type是否一样
+<ul>
+<li>如果一样effectTag为更新update</li>
+<li>不一样则处理为新增加placement</li>
+</ul></li>
+<li>这里updateProps有几种情况要添加处理
+<ul>
+<li>旧fiber有props ，新fiber没有props=&gt;需删除</li>
+<li>旧fiber没有props ，新fiber有props=&gt;需添加</li>
+<li>旧fiber没有props ，新fiber没有props=&gt;需更新</li>
+</ul></li>
+</ul></li>
+</ol>
+<pre><code class="language-javascript"><span class="hljs-keyword">function</span> <span class="hljs-title function_">updateProps</span>(<span class="hljs-params">dom, nextProps, prevProps</span>) {
+  <span class="hljs-comment">// Object.keys(props).forEach((key) =&gt; {</span>
+  <span class="hljs-comment">//   if (key !== &quot;children&quot;) {</span>
+  <span class="hljs-comment">//     if (key.startsWith(&quot;on&quot;)) {</span>
+  <span class="hljs-comment">//       const eventType = key.slice(2).toLocaleLowerCase();</span>
+  <span class="hljs-comment">//       dom.addEventListener(eventType, props[key]);</span>
+  <span class="hljs-comment">//     } else {</span>
+  <span class="hljs-comment">//       dom[key] = props[key];</span>
+  <span class="hljs-comment">//     }</span>
+  <span class="hljs-comment">//   }</span>
+  <span class="hljs-comment">// });</span>
+  <span class="hljs-comment">//   - 3、新老节点对比</span>
+  <span class="hljs-comment">// - - 1、重构 updateProps</span>
+  <span class="hljs-comment">// - - - 1、old 有 new 没有 删除</span>
+  <span class="hljs-title class_">Object</span>.<span class="hljs-title function_">keys</span>(prevProps).<span class="hljs-title function_">forEach</span>(<span class="hljs-function">(<span class="hljs-params">key</span>) =&gt;</span> {
+    <span class="hljs-keyword">if</span> (key !== <span class="hljs-string">&quot;children&quot;</span>) {
+      <span class="hljs-keyword">if</span> (!(key <span class="hljs-keyword">in</span> nextProps)) {
+        dom.<span class="hljs-title function_">removeAttribute</span>(key);
+      }
+    }
+  });
+  <span class="hljs-comment">// - - - 2、new 有 old 没有 添加</span>
+  <span class="hljs-comment">// - - - 3、new 有 old 有 修改</span>
+  <span class="hljs-title class_">Object</span>.<span class="hljs-title function_">keys</span>(nextProps).<span class="hljs-title function_">forEach</span>(<span class="hljs-function">(<span class="hljs-params">key</span>) =&gt;</span> {
+    <span class="hljs-keyword">if</span> (key !== <span class="hljs-string">&quot;children&quot;</span>) {
+      <span class="hljs-keyword">if</span> (nextProps[key] !== prevProps[key]) {
+        <span class="hljs-keyword">if</span> (key.<span class="hljs-title function_">startsWith</span>(<span class="hljs-string">&quot;on&quot;</span>)) {
+          <span class="hljs-keyword">const</span> eventType = key.<span class="hljs-title function_">slice</span>(<span class="hljs-number">2</span>).<span class="hljs-title function_">toLocaleLowerCase</span>();
+          dom.<span class="hljs-title function_">removeEventListener</span>(eventType, prevProps[key]);
+          dom.<span class="hljs-title function_">addEventListener</span>(eventType, nextProps[key]);
+        } <span class="hljs-keyword">else</span> {
+          dom[key] = nextProps[key];
+        }
+      }
+    }
+  });
+}
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">reconcileChildren</span>(<span class="hljs-params">fiber, children</span>) {
+  <span class="hljs-keyword">let</span> oldFiber = fiber.<span class="hljs-property">alternate</span>?.<span class="hljs-property">child</span>;
+  <span class="hljs-keyword">let</span> prevChild = <span class="hljs-literal">null</span>;
+  children.<span class="hljs-title function_">forEach</span>(<span class="hljs-function">(<span class="hljs-params">child, index</span>) =&gt;</span> {
+    <span class="hljs-keyword">const</span> isSameType = oldFiber &amp;&amp; oldFiber.<span class="hljs-property">type</span> === child.<span class="hljs-property">type</span>;
+
+    <span class="hljs-keyword">if</span> (isSameType) {
+      <span class="hljs-comment">// 更新</span>
+      newFiber = {
+        <span class="hljs-attr">type</span>: child.<span class="hljs-property">type</span>,
+        <span class="hljs-attr">props</span>: child.<span class="hljs-property">props</span>,
+        <span class="hljs-attr">child</span>: <span class="hljs-literal">null</span>,
+        <span class="hljs-attr">parent</span>: fiber,
+        <span class="hljs-attr">sibling</span>: <span class="hljs-literal">null</span>,
+        <span class="hljs-attr">dom</span>: oldFiber.<span class="hljs-property">dom</span>,
+        <span class="hljs-attr">effectTag</span>: <span class="hljs-string">&quot;update&quot;</span>,
+        <span class="hljs-attr">alternate</span>: oldFiber,
+      };
+    } <span class="hljs-keyword">else</span> {
+      newFiber = {
+        <span class="hljs-attr">type</span>: child.<span class="hljs-property">type</span>,
+        <span class="hljs-attr">props</span>: child.<span class="hljs-property">props</span>,
+        <span class="hljs-attr">child</span>: <span class="hljs-literal">null</span>,
+        <span class="hljs-attr">parent</span>: fiber,
+        <span class="hljs-attr">sibling</span>: <span class="hljs-literal">null</span>,
+        <span class="hljs-attr">dom</span>: <span class="hljs-literal">null</span>,
+        <span class="hljs-attr">effectTag</span>: <span class="hljs-string">&quot;placement&quot;</span>,
+      };
+    }
+
+    <span class="hljs-keyword">if</span> (oldFiber) {
+      oldFiber = oldFiber.<span class="hljs-property">sibling</span>;
+    }
+
+    <span class="hljs-keyword">if</span> (index === <span class="hljs-number">0</span>) {
+      fiber.<span class="hljs-property">child</span> = newFiber;
+    } <span class="hljs-keyword">else</span> {
+      prevChild.<span class="hljs-property">sibling</span> = newFiber;
+    }
+    prevChild = newFiber;
+  });
+}
+
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">updateFunctionComponent</span>(<span class="hljs-params">fiber</span>) {
+  <span class="hljs-keyword">const</span> children = [fiber.<span class="hljs-title function_">type</span>(fiber.<span class="hljs-property">props</span>)];
+  <span class="hljs-title function_">reconcileChildren</span>(fiber, children);
+}
+
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">updateHostComponent</span>(<span class="hljs-params">fiber</span>) {
+  <span class="hljs-keyword">if</span> (!fiber.<span class="hljs-property">dom</span>) {
+    fiber.<span class="hljs-property">dom</span> = <span class="hljs-title function_">createDom</span>(fiber.<span class="hljs-property">type</span>);
+  }
+  <span class="hljs-title function_">updateProps</span>(fiber.<span class="hljs-property">dom</span>, fiber.<span class="hljs-property">props</span>, {});
+
+  <span class="hljs-keyword">const</span> children = fiber.<span class="hljs-property">props</span>.<span class="hljs-property">children</span>;
+  <span class="hljs-comment">// 转换链表 设置指针</span>
+  <span class="hljs-title function_">reconcileChildren</span>(fiber, children);
+}
+
+</code></pre>
+<pre><code class="language-javascript"><span class="hljs-comment">// 更新commitWork 统一提交逻辑</span>
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">commitWork</span>(<span class="hljs-params">fiber</span>) {
+  <span class="hljs-keyword">if</span> (!fiber) <span class="hljs-keyword">return</span>;
+
+  <span class="hljs-keyword">let</span> fiberParent = fiber.<span class="hljs-property">parent</span>;
+  <span class="hljs-keyword">while</span> (!fiberParent.<span class="hljs-property">dom</span>) {
+    fiberParent = fiberParent.<span class="hljs-property">parent</span>;
+  }
+
+  <span class="hljs-keyword">if</span> (fiber.<span class="hljs-property">effectTag</span> === <span class="hljs-string">&quot;update&quot;</span>) {
+    <span class="hljs-title function_">updateProps</span>(fiber.<span class="hljs-property">dom</span>, fiber.<span class="hljs-property">props</span>, fiber.<span class="hljs-property">alternate</span>?.<span class="hljs-property">props</span>);
+  } <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (fiber.<span class="hljs-property">effectTag</span> === <span class="hljs-string">&quot;placement&quot;</span>) {
+    <span class="hljs-keyword">if</span> (fiber.<span class="hljs-property">dom</span>) {
+      fiberParent.<span class="hljs-property">dom</span>.<span class="hljs-title function_">append</span>(fiber.<span class="hljs-property">dom</span>);
+    }
+  }
+
+  <span class="hljs-title function_">commitWork</span>(fiber.<span class="hljs-property">child</span>);
+  <span class="hljs-title function_">commitWork</span>(fiber.<span class="hljs-property">sibling</span>);
+}
+</code></pre>
+<blockquote>
+<p>双缓存机制：<br><br>
+为了减少页面闪烁和提高渲染效率的一种逻辑。<br><br>
+在传统的渲染中，直接在显示屏上进行 dom 的绘制和更新操作，可能会导致用户看不到完整的画面，从而产生闪烁或者撕裂效果。<br><br>
+双缓存的话是通过一个缓冲区进行绘制和修改，然后将更新后的缓冲区与显示的缓冲区进行交换，避免上述问题。 <br></p>
+</blockquote>
+<h2><a id="update-children--边界处理" class="content__heading-anchor"></a>update children &amp; 边界处理</h2>
+<ul>
+<li>通过对比新旧节点，判断isSameType为false时创建新节点
+<ul>
+<li>没有对旧的节点进行删除</li>
+<li>判断isSameType时，对旧节点进行收集</li>
+<li>commitRoot时，统一对旧节点进行删除</li>
+<li>这样的情况只在新节点不会少于旧节点的数量时才能正常显示
+<ul>
+<li>以新节点进行遍历，没有对在新节点中不存在的兄弟节点进行处理</li>
+<li>所以需要判断oldFiber并依次遍历并进行收集删除</li>
+</ul></li>
+</ul></li>
+</ul>
+<pre><code class="language-javascript"><span class="hljs-keyword">const</span> isSameType = oldFiber &amp;&amp; oldFiber.<span class="hljs-property">type</span> === child.<span class="hljs-property">type</span>;
+    <span class="hljs-keyword">let</span> newFiber = <span class="hljs-literal">null</span>;
+
+    <span class="hljs-keyword">if</span> (isSameType) {
+      newFiber = {
+        <span class="hljs-attr">type</span>: child.<span class="hljs-property">type</span>,
+        <span class="hljs-attr">props</span>: child.<span class="hljs-property">props</span>,
+        <span class="hljs-attr">parent</span>: fiber,
+        <span class="hljs-attr">sibling</span>: <span class="hljs-literal">null</span>,
+        <span class="hljs-attr">child</span>: <span class="hljs-literal">null</span>,
+        <span class="hljs-attr">dom</span>: oldFiber.<span class="hljs-property">dom</span>,
+        <span class="hljs-attr">alternate</span>: oldFiber,
+        <span class="hljs-attr">effectTag</span>: <span class="hljs-string">&quot;update&quot;</span>,
+      };
+    } <span class="hljs-keyword">else</span> {
+      newFiber = {
+        <span class="hljs-attr">type</span>: child.<span class="hljs-property">type</span>,
+        <span class="hljs-attr">props</span>: child.<span class="hljs-property">props</span>,
+        <span class="hljs-attr">parent</span>: fiber,
+        <span class="hljs-attr">sibling</span>: <span class="hljs-literal">null</span>,
+        <span class="hljs-attr">child</span>: <span class="hljs-literal">null</span>,
+        <span class="hljs-attr">dom</span>: <span class="hljs-literal">null</span>,
+        <span class="hljs-attr">effectTag</span>: <span class="hljs-string">&quot;placement&quot;</span>,
+      };
+
+      <span class="hljs-keyword">if</span> (oldFiber) {
+        deletions.<span class="hljs-title function_">push</span>(oldFiber);
+      }
+    }
+
+</code></pre>
+<pre><code class="language-javascript"><span class="hljs-keyword">function</span> <span class="hljs-title function_">commitDeletions</span>(<span class="hljs-params">fiber</span>) {
+  <span class="hljs-keyword">let</span> fiberParent = fiber.<span class="hljs-property">parent</span>;
+
+  <span class="hljs-keyword">while</span> (!fiberParent.<span class="hljs-property">dom</span>) {
+    fiberParent = fiberParent.<span class="hljs-property">parent</span>;
+  }
+
+  <span class="hljs-keyword">if</span> (fiber.<span class="hljs-property">dom</span>) {
+    fiberParent.<span class="hljs-property">dom</span>.<span class="hljs-title function_">removeChild</span>(fiber.<span class="hljs-property">dom</span>);
+  } <span class="hljs-keyword">else</span> {
+    <span class="hljs-title function_">commitDeletions</span>(fiber.<span class="hljs-property">child</span>)
+  }
+}
+</code></pre>
+<h3><a id="边界处理" class="content__heading-anchor"></a>边界处理</h3>
+<p>当使用如下表达式：</p>
+<pre><code class="language-jsx"><span class="hljs-keyword">function</span> <span class="hljs-title function_">App</span>(<span class="hljs-params"></span>) {
+  <span class="hljs-keyword">return</span> (show &amp; <span class="language-xml"><span class="hljs-tag">&lt;<span class="hljs-name">p</span>&gt;</span>hello world<span class="hljs-tag">&lt;/<span class="hljs-name">p</span>&gt;</span></span>)
+}
+</code></pre>
+<p>这时候会得到一个 <code>false</code> 的节点，因此在处理的时候，我们要跳过这个节点。<br>
+如果 <code>false</code> 是第一个节点，那么下面这行代码旧有问题了，更新时就无法更新该 fiber 的child了，child 为 null 了</p>
+<p>当节点为false时的处理如：1 === 2 &amp;&amp; <div>123</div>, 在这种情况下该节点的值为false，也应在链式结构中被忽略，不进行创建，所以需要处理newFiber没有值时的情况，并对prevFiber跳过赋值。</p>
+<ul>
+<li>节点为false的情况中存在三种类型
+<ul>
+<li>空节点在children开始</li>
+<li>空节点在children中间</li>
+<li>空节点在children结束</li>
+</ul></li>
+</ul>
+<pre><code class="language-js"><span class="hljs-keyword">if</span> (!fiber.<span class="hljs-property">child</span>)
+  fiber.<span class="hljs-property">child</span> = newFiber
+
+
+
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">update</span>(<span class="hljs-params"></span>) {
+  <span class="hljs-comment">// 记录当前的</span>
+  <span class="hljs-keyword">const</span> currentFiber = wipFiber
+
+  <span class="hljs-keyword">return</span> <span class="hljs-function">() =&gt;</span> {
+    wipRoot = {
+      ...currentFiber,
+      <span class="hljs-comment">// reconcileChildren时重新收集 child</span>
+      <span class="hljs-attr">child</span>: <span class="hljs-literal">null</span>,
+      <span class="hljs-attr">alternate</span>: currentFiber,
+    }
+
+    nextWorkOfUnit = wipRoot
+    <span class="hljs-title function_">requestIdleCallback</span>(loop)
+  }
+}
+</code></pre>
+ </article> </section> </main>  <footer class="footer"> <hr class="footer__divide"> <div class="footer__row"> <p class="m-2">
+&#169; 2017-2024 <a href="/" class="link">9Sky 九天</a> </p> <div class="m-2"> <ul data-astro-cid-tfcnbjmv> <li data-astro-cid-tfcnbjmv> <a class="link" href="/" data-astro-cid-tfcnbjmv> 
+主页
+</a> </li> <li data-astro-cid-tfcnbjmv> <a class="link" href="/blog" data-astro-cid-tfcnbjmv>  文章 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/projects" data-astro-cid-tfcnbjmv>  项目 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/lab" data-astro-cid-tfcnbjmv>  实验室 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/about" data-astro-cid-tfcnbjmv>  关于 </a> </li> </ul>  </div> </div> </footer> </body></html> 

@@ -1,0 +1,266 @@
+<!DOCTYPE html><html> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width"><title>从零开发富文本编辑器(1)-实现简单的富文本输入框</title><link rel="icon" type="image/vnd.microsoft.icon" href="/favicon.ico"><link rel="sitemap" href="/sitemap-index.xml"><title>从零开发富文本编辑器(1)-实现简单的富文本输入框</title><link rel="canonical" href="https://wty9sky.github.io/blog/detail/12/"><meta name="description" content="通过HTML的contenteditable属性实现简单的富文本输入框"><meta name="robots" content="index, follow"><meta property="og:title" content="从零开发富文本编辑器(1)-实现简单的富文本输入框"><meta property="og:type" content="article"><meta property="og:image" content="/og.svg"><meta property="og:url" content="https://wty9sky.github.io/blog/detail/12/"><meta property="og:locale" content="zh_CN"><meta property="og:locale:alternate" content="zh_TW"><meta property="og:locale:alternate" content="en_US"><meta property="og:site_name" content="9Sky 九天"><link rel="shortcut icon" href="/favicon.ico"><link rel="bookmark" href="/favicon.ico"><link rel="apple-touch-icon" href="/avatar.png"><meta name="generator" content="Astro v4.16.7"><meta name="keywords" content="详情"><meta name="astro-view-transitions-enabled" content="true"><meta name="astro-view-transitions-fallback" content="animate"><link rel="stylesheet" href="/_astro/about.CkC6PiIh.css">
+<link rel="stylesheet" href="/_astro/about.D3zQv4Ly.css"><script type="module" src="/_astro/hoisted.HO6_Fzad.js"></script></head> <body> <header class="header"> <h5 class="header__heading"> <a href="/" class="link">9Sky 九天</a> <span>
+/
+<a href="/blog" class="link"> 博客 </a> </span><span>
+/
+从零开发富文本编辑器(1)-实现简单的富文本输入框 </span> </h5> </header> <div id="navbar-sentinal"></div> <nav class="navbar" id="navbar-wrapper"> <div class="navbar__content"> <h5 class="navbar__path"> <a href="/" class="link">9Sky 九天</a> <span>
+/
+<a href="/blog" class="link"> 博客 </a> </span><span>
+/
+从零开发富文本编辑器(1)-实现简单的富文本输入框 </span> </h5> <div class="navbar__menu"> <ul data-astro-cid-tfcnbjmv> <li data-astro-cid-tfcnbjmv> <a class="link" href="/" data-astro-cid-tfcnbjmv> <i class="ri-home-line" data-astro-cid-tfcnbjmv></i>
+主页
+</a> </li> <li data-astro-cid-tfcnbjmv> <a class="link" href="/blog" data-astro-cid-tfcnbjmv> <i class="ri-newspaper-line" data-astro-cid-tfcnbjmv></i> 文章 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/projects" data-astro-cid-tfcnbjmv> <i class="ri-server-line" data-astro-cid-tfcnbjmv></i> 项目 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/lab" data-astro-cid-tfcnbjmv> <i class="ri-server-line" data-astro-cid-tfcnbjmv></i> 实验室 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/about" data-astro-cid-tfcnbjmv> <i class="ri-cup-line" data-astro-cid-tfcnbjmv></i> 关于 </a> </li> </ul>  </div> </div> </nav> <script>
+  // 使用 ViewTransition 后，所有 DOM 操作的 js 都有一堆问题
+  // 这里用了极不优雅的 var，有待改进
+  var observer;
+  function addNavObserver() {
+    const headerEl = document.querySelector("#navbar-wrapper");
+    const sentinalEl = document.querySelector("#navbar-sentinal");
+    if (!sentinalEl || !headerEl) return;
+    observer = new window.IntersectionObserver((e) => {
+      if (!e[0].isIntersectin && e[0].boundingClientRect.top <= 0) {
+        headerEl.classList.add("navbar--sticked");
+      } else {
+        headerEl.classList.remove("navbar--sticked");
+      }
+    });
+    observer.observe(sentinalEl);
+  }
+
+  function removeNavObserver() {
+    if (observer) observer.disconnect();
+    observer = null;
+  }
+
+  document.addEventListener(
+    "astro:page-load",
+    () => {
+      addNavObserver();
+    },
+    { once: false },
+  );
+
+  document.addEventListener(
+    "astro:before-swap",
+    () => {
+      removeNavObserver();
+    },
+    { once: false },
+  );
+</script>  <main class="page"> <section class="page__section page__section--at-top"> <!-- {
+        article.cover && (
+          <a href={article.cover} data-fancybox data-caption={article.title}>
+            <img
+              src={article.cover}
+              alt={article.title}
+              title={article.title}
+              class="page__cover mb-8"
+            />
+          </a>
+        )
+      } --> <h1 class="page__heading">从零开发富文本编辑器(1)-实现简单的富文本输入框</h1> <p class="page__meta"> <i class="ri-calendar-line"></i> <span>2024 年 5 月 11 日 09:08</span> </p> <hr class="page__divide"> <article class="content"> <h2><a id="文章目录" class="content__heading-anchor"></a>文章目录</h2>
+<ul>
+<li><a href="#%E5%AE%9E%E7%8E%B0%E7%AE%80%E5%8D%95%E7%9A%84%E5%AF%8C%E6%96%87%E6%9C%AC%E8%BE%93%E5%85%A5%E6%A1%86">实现简单的富文本输入框</a>
+<ul>
+<li><a href="#%E5%AF%8C%E6%96%87%E6%9C%AC%E7%BC%96%E8%BE%91%E5%99%A8%E5%8E%86%E7%A8%8B">富文本编辑器历程</a>
+<ul>
+<li><a href="#l0%E7%BA%A7%E5%AF%8C%E6%96%87%E6%9C%AC%E7%BC%96%E8%BE%91%E5%99%A8">L0级富文本编辑器</a></li>
+<li><a href="#l1%E5%AF%8C%E6%96%87%E6%9C%AC%E7%BC%96%E8%BE%91%E5%99%A8">L1富文本编辑器</a></li>
+<li><a href="#l2%E7%BA%A7%E7%BC%96%E8%BE%91%E5%99%A8">L2级编辑器</a></li>
+</ul></li>
+<li><a href="#%E7%AE%80%E5%8D%95%E7%9A%84%E5%AF%8C%E6%96%87%E6%9C%AC%E7%BC%96%E8%BE%91%E5%99%A8-%E5%AF%8C%E6%96%87%E6%9C%AC%E8%BE%93%E5%85%A5%E6%A1%86">简单的富文本编辑器-富文本输入框</a>
+<ul>
+<li><a href="#%E5%BE%AE%E5%8D%9A%E5%AE%9E%E7%8E%B0%E6%96%B9%E5%BC%8F">微博实现方式</a></li>
+<li><a href="#%E6%8E%98%E9%87%91%E6%B2%B8%E7%82%B9%E7%9A%84%E5%AE%9E%E7%8E%B0%E6%96%B9%E5%BC%8F">掘金沸点的实现方式</a>
+<ul>
+<li><a href="#%E8%AF%AD%E6%B3%95">语法</a></li>
+<li><a href="#%E5%B1%9E%E6%80%A7%E5%80%BC">属性值</a></li>
+</ul></li>
+</ul></li>
+<li><a href="#%E5%AE%9E%E7%8E%B0%E7%AE%80%E5%8D%95%E7%9A%84%E5%AF%8C%E6%96%87%E6%9C%AC%E8%BE%93%E5%85%A5%E6%A1%86-1">实现简单的富文本输入框</a>
+<ul>
+<li><a href="#contenteditable%E5%AE%9E%E7%8E%B0">contenteditable实现</a>
+<ul>
+<li><a href="#%E5%B0%86div%E5%8F%98%E4%B8%BA%E5%8F%AF%E7%BC%96%E8%BE%91%E7%8A%B6%E6%80%81">将div变为可编辑状态</a></li>
+<li><a href="#%E5%AE%9E%E7%8E%B0placeholder%E5%8D%A0%E4%BD%8D%E5%86%85%E5%AE%B9%E5%A1%AB%E5%85%85">实现placeholder占位内容填充</a></li>
+<li><a href="#%E5%AE%9E%E7%8E%B0%E6%8F%92%E5%85%A5%E6%96%87%E6%9C%AC%E5%86%85%E5%AE%B9">实现插入文本内容</a></li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul>
+<h1><a id="实现简单的富文本输入框" class="content__heading-anchor"></a>实现简单的富文本输入框</h1>
+<h2><a id="富文本编辑器历程" class="content__heading-anchor"></a>富文本编辑器历程</h2>
+<p>首先我们需要了解富文本编辑器的历程。<br>
+富文本编辑器按发展历程而言，分为 L0、L1、L2、L3三个阶段，每个阶段都比上一个阶段的定制化程度更高，浏览器兼容问题更少，同时开发难度也更大。</p>
+<h3><a id="l0级富文本编辑器" class="content__heading-anchor"></a>L0级富文本编辑器</h3>
+<p>早期时代网页的富文本能力主要依靠对DOM的contenteditable属性来渲染样式，以及依赖于浏览器的document.execCommand()方法来修改富文本内容的样式，仅提供了有限的命令，实现最简单的功能，如粗体、斜体、文字颜色等等。<br></p>
+<ul>
+<li><p>可编辑内容依赖 <code>contenteditable</code> API；</p></li>
+<li><p>编辑内容使用 <code>document.execCommand</code> API。</p></li>
+<li><p>优点</p>
+<ul>
+<li>依赖于html原生的编辑能力，实现难度较低</li>
+<li>对性能要求不高，操作起来比较流畅</li>
+</ul></li>
+<li><p>缺点</p>
+<ul>
+<li>不同浏览器对于document.execCommand()方法实现方法的不同，会导致生成的html内容会不同，兼容性较差
+<ul>
+<li>比如实现粗体效果，有些浏览器可能通过&lt;b&gt;标签实现，有些浏览器可能通过&lt;strong&gt;标签实现</li>
+<li>删除内容会导致冗余的html标签内容，如删除&lt;strong&gt;文本&lt;strong&gt;内容中的文本，会遗留&lt;strong&gt;&lt;strong&gt;标签</li>
+<li>不能实现协同编辑功能</li>
+</ul></li>
+</ul></li>
+</ul>
+<p>L0级富文本编辑器代表编辑器：Ueditor、KindEditor、summernote、CKEditor（早期版本）等。<br></p>
+<h3><a id="l1富文本编辑器" class="content__heading-anchor"></a>L1富文本编辑器</h3>
+<p>由于L0级富文本编辑器存在兼容的问题，且对文档样式的要求越来越高，L0级富文本编辑器无法满足需求，L1阶段的编辑器应运而生。<br><br>
+L1级依然使用了L0级的视线原理，通过DOM的contenteditable属性来渲染样式，不过L1级是将富文本内容抽象成数据模型，通过数据模型来管理编辑器的内容以及选区状态等，并采用<strong>自定义execCommand</strong>的方案，可以实现更加丰富的富文本功能。</p>
+<ul>
+<li>优点
+<ul>
+<li>通过抽离数据模型来管理富文本内容及状态，能够避免此前阶段同步浏览器之间对不同样式实现的差异。</li>
+<li>通过内部数据模型实现在写协作的功能。</li>
+<li>解决了富文本中脏数据、复杂功能难以实现的问题。</li>
+</ul></li>
+<li>缺点
+<ul>
+<li>实现技术门槛比较高。</li>
+<li>内部数据模型的实现依赖于对DOM的变更监听来管理数据，如存在未知操作可能会导致数据模型的错乱从而影响编辑器的功能。</li>
+<li>相比 L0 阶段，引进了一些组合输入问题，依然拥有 <code>contenteditable</code> 遗留问题，比如光标的兼容性问题等。</li>
+</ul></li>
+</ul>
+<p>L1级编辑器代表编辑器：Quill、Draft.js、CKEditor（新版）等。</p>
+<h3><a id="l2级编辑器" class="content__heading-anchor"></a>L2级编辑器</h3>
+<p>为了解决contenteditable编辑不可控的问题，以GoogleDocs为代表的编辑器通过<strong>自研排版引擎</strong> 步入了L2阶段，实现了更好的实现富文本的功能。<br><br>
+它完全不依赖contenteditable，包括选区、光标等，都是是自己绘制的，自己实现了一个基于元素和绝对定位的排版引擎，基本上脱离了浏览器自身的大部分排版规则。</p>
+<ul>
+<li>优点
+<ul>
+<li>所有浏览器无论做什么操作进行选区的选中，都能够保持一致性。</li>
+<li>不会有光标的兼容性问题。</li>
+<li>不依赖于浏览器大部分排版规则。</li>
+<li>可实现分页、标尺、脚注等高级功能。</li>
+</ul></li>
+<li>缺点
+<ul>
+<li>那肯定是代码功能更难写了！</li>
+</ul></li>
+</ul>
+<h2><a id="简单的富文本编辑器-富文本输入框" class="content__heading-anchor"></a>简单的富文本编辑器-富文本输入框</h2>
+<p>我们先来实现简单的富文本输入框，富文本输入框的主要应用场景是评论、动态等短文字的内容输入，比如微博、掘金沸点的输入框和评论模块都是富文本输入框。<br>
+首先我们来分析一下先来分析微博和掘金沸点的实现方式。</p>
+<h3><a id="微博实现方式" class="content__heading-anchor"></a>微博实现方式</h3>
+<p>打开控制台，可以看到微博的代码，在代码中可以看到微博的实现方式是textarea。</p>
+<p><a href="https://wty9sky.api.swdwiki.com/resource/723a928bd82e4b5dbb2629e5b0101857" data-fancybox data-caption=""><img src="https://wty9sky.api.swdwiki.com/resource/723a928bd82e4b5dbb2629e5b0101857" alt="" title="" /></a></p>
+<p>接下来输入内容，包括文字、表情、话题等，然后从控制台中获取并输出实际的内容。</p>
+<p><a href="https://wty9sky.api.swdwiki.com/resource/cd520e75b2b74230842327171e38ee28" data-fancybox data-caption=""><img src="https://wty9sky.api.swdwiki.com/resource/cd520e75b2b74230842327171e38ee28" alt="" title="" /></a></p>
+<p>我们从控制台里获取在textarea输入框里的内容如下：</p>
+<p><a href="https://wty9sky.api.swdwiki.com/resource/9206b6df977144efbf8d388f9688faab" data-fancybox data-caption=""><img src="https://wty9sky.api.swdwiki.com/resource/9206b6df977144efbf8d388f9688faab" alt="" title="" /></a></p>
+<p>可以看到，输入内容和表情都是文本内容，表情由[]包住，选择话题后显示的也是#文本#的形式，回车则是用\n表示。<br></p>
+<p>而在发布微博后，我们可以在控制台代码中看到，\n都转换为&lt;br&gt;，话题转为链接，表情则转为img图片标签。</p>
+<p><a href="https://wty9sky.api.swdwiki.com/resource/8611cece83514dc49f34006afe0ef6bf" data-fancybox data-caption=""><img src="https://wty9sky.api.swdwiki.com/resource/8611cece83514dc49f34006afe0ef6bf" alt="" title="" /></a></p>
+<p>综合以上来看，微博的输入框是基于Textarea实现，输入内容显示均为文本内容，通过转换函数将指定格式的内容转换为对应的内容。</p>
+<p>优缺点：</p>
+<ul>
+<li>优点：
+<ul>
+<li>不需要单独开发编辑器组件。</li>
+<li>只需要提供转换函数，就可以根据输入的内容按照规则进行转换。</li>
+</ul></li>
+<li>缺点：
+<ul>
+<li>只能显示纯文本内容，不能显示非纯文本的内容，比如表情、超话等内容只能以纯文本形式展示。</li>
+<li>如果没有输入空格或其他间隔符，或者没有按照微博指定格式输入，就会导致输入的内容无法正常解析转换，比如链接、超话、提及等内容。</li>
+</ul></li>
+</ul>
+<h3><a id="掘金沸点的实现方式" class="content__heading-anchor"></a>掘金沸点的实现方式</h3>
+<p>打开控制台，可以看到掘金沸点的代码，在代码中可以看到掘金的实现方式是contenteditable=&quot;true&quot;，也就是LO、L1编辑器的实现方式。<br><br>
+contenteditable属性可以指定元素内容是否可编辑。</p>
+<p>优缺点</p>
+<ul>
+<li>优点
+<ul>
+<li>可以显示大部分样式内容，包括图片、表情、视频等等。</li>
+<li>可以根据实际需求，定制化样式。</li>
+<li>可以拦截复制的内容并根据其内容进行进一步处理。</li>
+<li>......</li>
+</ul></li>
+</ul>
+<h4><a id="语法" class="content__heading-anchor"></a>语法</h4>
+<pre><code class="language-html">&lt;*element* contenteditable=&quot;true|false&quot;&gt;
+</code></pre>
+<h4><a id="属性值" class="content__heading-anchor"></a>属性值</h4>
+<table>
+<thead>
+<tr><th>值</th><th>描述</th></tr>
+</thead>
+<tbody>
+<tr><td>true</td><td>指定元素是可编辑的</td></tr>
+<tr><td>false</td><td>指定元素是不可编辑的</td></tr>
+</tbody>
+</table>
+<h2><a id="实现简单的富文本输入框-1" class="content__heading-anchor"></a>实现简单的富文本输入框</h2>
+<h3><a id="contenteditable实现" class="content__heading-anchor"></a>contenteditable实现</h3>
+<h4><a id="将div变为可编辑状态" class="content__heading-anchor"></a>将div变为可编辑状态</h4>
+<pre><code class="language-html"><span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;rich_input&quot;</span> <span class="hljs-attr">contenteditable</span>=<span class="hljs-string">&quot;true&quot;</span> <span class="hljs-attr">spellcheck</span>=<span class="hljs-string">&quot;false&quot;</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+</code></pre>
+<p>css样式：</p>
+<pre><code class="language-css"><span class="hljs-selector-class">.rich_input</span>{
+<span class="hljs-attribute">position</span>: relative;
+<span class="hljs-attribute">font-size</span>: <span class="hljs-number">14px</span>;
+<span class="hljs-attribute">line-height</span>: <span class="hljs-number">24px</span>;
+<span class="hljs-attribute">color</span>:<span class="hljs-number">#333</span>;
+<span class="hljs-attribute">outline</span>: none;
+<span class="hljs-attribute">padding</span>: <span class="hljs-number">5px</span> <span class="hljs-number">12px</span>;
+<span class="hljs-attribute">box-sizing</span>: border-box;
+<span class="hljs-attribute">white-space</span>: pre-wrap;
+<span class="hljs-attribute">word-break</span>: break-all;
+<span class="hljs-attribute">border</span>: <span class="hljs-number">#888</span> solid <span class="hljs-number">1px</span>;
+<span class="hljs-attribute">border-radius</span>: <span class="hljs-number">5px</span>;
+<span class="hljs-attribute">width</span>: <span class="hljs-number">500px</span>;
+<span class="hljs-attribute">height</span>: <span class="hljs-number">100px</span>;
+<span class="hljs-attribute">overflow</span>: scroll;
+}
+</code></pre>
+<h4><a id="实现placeholder占位内容填充" class="content__heading-anchor"></a>实现placeholder占位内容填充</h4>
+<pre><code class="language-html"><span class="hljs-tag">&lt;<span class="hljs-name">div</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;rich_input&quot;</span> <span class="hljs-attr">contenteditable</span>=<span class="hljs-string">&quot;true&quot;</span> <span class="hljs-attr">spellcheck</span>=<span class="hljs-string">&quot;false&quot;</span> <span class="hljs-attr">placeholder</span>=<span class="hljs-string">&quot;placeholder&quot;</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span>
+</code></pre>
+<p>css样式</p>
+<pre><code class="language-css"><span class="hljs-selector-class">.rich_input</span><span class="hljs-selector-pseudo">:empty</span><span class="hljs-selector-pseudo">::before</span>{
+<span class="hljs-attribute">cursor</span>: text;
+<span class="hljs-attribute">content</span>: <span class="hljs-built_in">attr</span>(placeholder);
+<span class="hljs-attribute">color</span>: <span class="hljs-number">#333</span>;
+<span class="hljs-attribute">position</span>: absolute;
+<span class="hljs-attribute">top</span>: <span class="hljs-number">5px</span>;
+}
+</code></pre>
+<h4><a id="实现插入文本内容" class="content__heading-anchor"></a>实现插入文本内容</h4>
+<p>这里涉及到选区的概念，由于本期只是实现简单的输入和插入功能，不涉及复杂的选区内容，本期暂不做介绍，下期会基于选区做个详细的介绍和说明。</p>
+<pre><code class="language-js">    <span class="hljs-keyword">const</span> <span class="hljs-title function_">addText</span> = (<span class="hljs-params">val</span>) =&gt;{
+      <span class="hljs-keyword">const</span> selection = <span class="hljs-variable language_">window</span>.<span class="hljs-title function_">getSelection</span>();
+      <span class="hljs-keyword">if</span> (selection) {
+        selection.<span class="hljs-title function_">removeAllRanges</span>();
+        <span class="hljs-comment">// 为空初始化光标</span>
+        <span class="hljs-keyword">if</span> (!range.<span class="hljs-property">value</span>) {
+          editorRef.<span class="hljs-property">value</span>.<span class="hljs-title function_">focus</span>();
+          range.<span class="hljs-property">value</span> = selection.<span class="hljs-title function_">getRangeAt</span>(<span class="hljs-number">0</span>);
+          }
+          range.<span class="hljs-property">value</span>.<span class="hljs-title function_">deleteContents</span>();
+          range.<span class="hljs-property">value</span>.<span class="hljs-title function_">insertNode</span>(range.<span class="hljs-property">value</span>.<span class="hljs-title function_">createContextualFragment</span>(val));
+          range.<span class="hljs-property">value</span>.<span class="hljs-title function_">collapse</span>(<span class="hljs-literal">false</span>);
+          selection.<span class="hljs-title function_">addRange</span>(range.<span class="hljs-property">value</span>);
+      }
+    }
+</code></pre>
+<p>最终效果:</p>
+<iframe src="https://wty9sky.github.io/simple_editor/" class="w-full h-[300px]"></iframe>
+<p>Github代码：</p>
+<ul>
+<li>源码地址：https://github.com/wty9sky/simple_editor</li>
+</ul>
+<p>目前关于简单的富文本输入框就到这里了，更多的功能可以自行实现，下一期来实现简单的富文本编辑器。<br></p>
+ </article> </section> </main>  <footer class="footer"> <hr class="footer__divide"> <div class="footer__row"> <p class="m-2">
+&#169; 2017-2024 <a href="/" class="link">9Sky 九天</a> </p> <div class="m-2"> <ul data-astro-cid-tfcnbjmv> <li data-astro-cid-tfcnbjmv> <a class="link" href="/" data-astro-cid-tfcnbjmv> 
+主页
+</a> </li> <li data-astro-cid-tfcnbjmv> <a class="link" href="/blog" data-astro-cid-tfcnbjmv>  文章 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/projects" data-astro-cid-tfcnbjmv>  项目 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/lab" data-astro-cid-tfcnbjmv>  实验室 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/about" data-astro-cid-tfcnbjmv>  关于 </a> </li> </ul>  </div> </div> </footer> </body></html> 

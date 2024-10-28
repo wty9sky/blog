@@ -1,0 +1,121 @@
+<!DOCTYPE html><html> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width"><title>从零开发富文本编辑器-说明&amp;进度&amp;TODO</title><link rel="icon" type="image/vnd.microsoft.icon" href="/favicon.ico"><link rel="sitemap" href="/sitemap-index.xml"><title>从零开发富文本编辑器-说明&进度&TODO</title><link rel="canonical" href="https://wty9sky.github.io/blog/detail/11/"><meta name="description" content="从零开发L0级富文本编辑器的计划、开发历程、开发中遇到的问题与心得"><meta name="robots" content="index, follow"><meta property="og:title" content="从零开发富文本编辑器-说明&#38;进度&#38;TODO"><meta property="og:type" content="article"><meta property="og:image" content="/og.svg"><meta property="og:url" content="https://wty9sky.github.io/blog/detail/11/"><meta property="og:locale" content="zh_CN"><meta property="og:locale:alternate" content="zh_TW"><meta property="og:locale:alternate" content="en_US"><meta property="og:site_name" content="9Sky 九天"><link rel="shortcut icon" href="/favicon.ico"><link rel="bookmark" href="/favicon.ico"><link rel="apple-touch-icon" href="/avatar.png"><meta name="generator" content="Astro v4.16.7"><meta name="keywords" content="详情"><meta name="astro-view-transitions-enabled" content="true"><meta name="astro-view-transitions-fallback" content="animate"><link rel="stylesheet" href="/_astro/about.CkC6PiIh.css">
+<link rel="stylesheet" href="/_astro/about.D3zQv4Ly.css"><script type="module" src="/_astro/hoisted.HO6_Fzad.js"></script></head> <body> <header class="header"> <h5 class="header__heading"> <a href="/" class="link">9Sky 九天</a> <span>
+/
+<a href="/blog" class="link"> 博客 </a> </span><span>
+/
+从零开发富文本编辑器-说明&amp;进度&amp;TODO </span> </h5> </header> <div id="navbar-sentinal"></div> <nav class="navbar" id="navbar-wrapper"> <div class="navbar__content"> <h5 class="navbar__path"> <a href="/" class="link">9Sky 九天</a> <span>
+/
+<a href="/blog" class="link"> 博客 </a> </span><span>
+/
+从零开发富文本编辑器-说明&amp;进度&amp;TODO </span> </h5> <div class="navbar__menu"> <ul data-astro-cid-tfcnbjmv> <li data-astro-cid-tfcnbjmv> <a class="link" href="/" data-astro-cid-tfcnbjmv> <i class="ri-home-line" data-astro-cid-tfcnbjmv></i>
+主页
+</a> </li> <li data-astro-cid-tfcnbjmv> <a class="link" href="/blog" data-astro-cid-tfcnbjmv> <i class="ri-newspaper-line" data-astro-cid-tfcnbjmv></i> 文章 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/projects" data-astro-cid-tfcnbjmv> <i class="ri-server-line" data-astro-cid-tfcnbjmv></i> 项目 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/lab" data-astro-cid-tfcnbjmv> <i class="ri-server-line" data-astro-cid-tfcnbjmv></i> 实验室 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/about" data-astro-cid-tfcnbjmv> <i class="ri-cup-line" data-astro-cid-tfcnbjmv></i> 关于 </a> </li> </ul>  </div> </div> </nav> <script>
+  // 使用 ViewTransition 后，所有 DOM 操作的 js 都有一堆问题
+  // 这里用了极不优雅的 var，有待改进
+  var observer;
+  function addNavObserver() {
+    const headerEl = document.querySelector("#navbar-wrapper");
+    const sentinalEl = document.querySelector("#navbar-sentinal");
+    if (!sentinalEl || !headerEl) return;
+    observer = new window.IntersectionObserver((e) => {
+      if (!e[0].isIntersectin && e[0].boundingClientRect.top <= 0) {
+        headerEl.classList.add("navbar--sticked");
+      } else {
+        headerEl.classList.remove("navbar--sticked");
+      }
+    });
+    observer.observe(sentinalEl);
+  }
+
+  function removeNavObserver() {
+    if (observer) observer.disconnect();
+    observer = null;
+  }
+
+  document.addEventListener(
+    "astro:page-load",
+    () => {
+      addNavObserver();
+    },
+    { once: false },
+  );
+
+  document.addEventListener(
+    "astro:before-swap",
+    () => {
+      removeNavObserver();
+    },
+    { once: false },
+  );
+</script>  <main class="page"> <section class="page__section page__section--at-top"> <!-- {
+        article.cover && (
+          <a href={article.cover} data-fancybox data-caption={article.title}>
+            <img
+              src={article.cover}
+              alt={article.title}
+              title={article.title}
+              class="page__cover mb-8"
+            />
+          </a>
+        )
+      } --> <h1 class="page__heading">从零开发富文本编辑器-说明&amp;进度&amp;TODO</h1> <p class="page__meta"> <i class="ri-calendar-line"></i> <span>2024 年 4 月 11 日 05:55</span> </p> <hr class="page__divide"> <article class="content"> <h2><a id="文章目录" class="content__heading-anchor"></a>文章目录</h2>
+<ul>
+<li><a href="#%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%8F%91l0l1%E7%BA%A7%E5%9D%97%E7%B1%BB%E5%AF%8C%E6%96%87%E6%9C%ACmarkdown%E7%BC%96%E8%BE%91%E5%99%A8">从零开发L0&amp;L1级块类富文本&amp;Markdown编辑器</a>
+<ul>
+<li><a href="#%E5%AD%A6%E4%B9%A0%E5%BC%80%E5%8F%91%E6%96%87%E7%AB%A0%E6%9B%B4%E6%96%B0%E8%AE%A1%E5%88%92">学习&amp;开发文章更新计划</a></li>
+<li><a href="#swordeditor%E9%A1%B9%E7%9B%AE%E4%BB%8B%E7%BB%8D">SwordEditor项目介绍</a></li>
+<li><a href="#%E9%A1%B9%E7%9B%AE%E7%9B%AE%E6%A0%87">项目目标</a></li>
+<li><a href="#swordeditor">SwordEditor</a></li>
+<li><a href="#%E5%BC%80%E5%8F%91%E6%97%B6%E9%97%B4">开发时间</a></li>
+</ul></li>
+</ul>
+<h1><a id="从零开发l0l1级块类富文本markdown编辑器" class="content__heading-anchor"></a>从零开发L0&amp;L1级块类富文本&amp;Markdown编辑器</h1>
+<h2><a id="学习开发文章更新计划" class="content__heading-anchor"></a>学习&amp;开发文章更新计划</h2>
+<ul>
+<li>[x] 从零开发L0级富文本编辑器
+<ul>
+<li>[x] 仿掘金沸点实现简单的富文本输入框</li>
+<li>[ ] 从零实现简单的富文本编辑器</li>
+</ul></li>
+<li>[x] 解析与实现L1级富文本编辑器
+<ul>
+<li>[ ] 了解并基于proseMirror实现富文本编辑器</li>
+<li>[ ] 解析proseMirror富文本编辑器</li>
+<li>[ ] 基于tiptap实现简单的块类富文本编辑器并添加简单的AI功能</li>
+<li>[ ] 解析wangEditor等开源编辑器源码</li>
+<li>[ ] 从零实现L1级富文本编辑器</li>
+<li>[ ] 从零实现L1级Markdown编辑器</li>
+<li>[ ] 解析和扩展掘金Markdown编辑器bytemd的源码</li>
+</ul></li>
+<li>[ ] 实现L2级富文本编辑器（待定）</li>
+</ul>
+<h2><a id="swordeditor项目介绍" class="content__heading-anchor"></a>SwordEditor项目介绍</h2>
+<p><code>SwordEditor</code></p>
+<h2><a id="项目目标" class="content__heading-anchor"></a>项目目标</h2>
+<ul>
+<li>可在Vue、React项目中引入</li>
+<li>UI和底层实现分离，可定制化开发</li>
+<li>支持可视化调整配置，快速生成编辑器功能和菜单布局</li>
+<li>实现多种块类组件，支持拖拽、复制、粘贴等</li>
+<li>可实现多个底层切换，包括contenteditable、execommand、Slatejs、Prosemirror、数据驱动等</li>
+<li>使用Rust实现对底层的优化，提升性能</li>
+<li>增加对Office文档的支持，支持Word、Excel导入</li>
+<li>实现导出PDF、Word、PNG等，尽可能还原微软Office Word的样式</li>
+<li>增加对Markdown的支持，支持富文本与Markdown的切换或拆分独立使用</li>
+<li>增加多人协作功能，支持多人在线编辑、评论、标注等</li>
+<li>增加AIGC创作功能，为AI赋能</li>
+<li>实现WebAssembly、WebGL、Canvas、SVG的支持</li>
+</ul>
+<h2><a id="swordeditor" class="content__heading-anchor"></a>SwordEditor</h2>
+<h2><a id="开发时间" class="content__heading-anchor"></a>开发时间</h2>
+<ul>
+<li>2024年4月-2024年9月 实现Markdown、富文本编辑器的基础功能和AI功能，支持富文本与Markdown的切换或拆分独立使用</li>
+<li>2024年10月-2024年12月 扩展底层，实现底层切换方式，增加多人协作功能，支持多人在线编辑、评论、标注等，实现导入、导出PDF、Word、PNG等</li>
+<li>2024年12月底 开源</li>
+<li>2025年1月-2025年3月 支持可视化调整配置，快速生成编辑器功能和菜单布局</li>
+<li>2025年4月-2025年6月 待定</li>
+</ul>
+ </article> </section> </main>  <footer class="footer"> <hr class="footer__divide"> <div class="footer__row"> <p class="m-2">
+&#169; 2017-2024 <a href="/" class="link">9Sky 九天</a> </p> <div class="m-2"> <ul data-astro-cid-tfcnbjmv> <li data-astro-cid-tfcnbjmv> <a class="link" href="/" data-astro-cid-tfcnbjmv> 
+主页
+</a> </li> <li data-astro-cid-tfcnbjmv> <a class="link" href="/blog" data-astro-cid-tfcnbjmv>  文章 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/projects" data-astro-cid-tfcnbjmv>  项目 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/lab" data-astro-cid-tfcnbjmv>  实验室 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/about" data-astro-cid-tfcnbjmv>  关于 </a> </li> </ul>  </div> </div> </footer> </body></html> 

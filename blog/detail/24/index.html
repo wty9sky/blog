@@ -1,0 +1,785 @@
+<!DOCTYPE html><html> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width"><title>Rust学习：Struct&amp;枚举</title><link rel="icon" type="image/vnd.microsoft.icon" href="/favicon.ico"><link rel="sitemap" href="/sitemap-index.xml"><title>Rust学习：Struct&枚举</title><link rel="canonical" href="https://wty9sky.github.io/blog/detail/24/"><meta name="description" content="Rust学习：Struct&#38;枚举"><meta name="robots" content="index, follow"><meta property="og:title" content="Rust学习：Struct&#38;枚举"><meta property="og:type" content="article"><meta property="og:image" content="/og.svg"><meta property="og:url" content="https://wty9sky.github.io/blog/detail/24/"><meta property="og:locale" content="zh_CN"><meta property="og:locale:alternate" content="zh_TW"><meta property="og:locale:alternate" content="en_US"><meta property="og:site_name" content="9Sky 九天"><link rel="shortcut icon" href="/favicon.ico"><link rel="bookmark" href="/favicon.ico"><link rel="apple-touch-icon" href="/avatar.png"><meta name="generator" content="Astro v4.16.7"><meta name="keywords" content="详情"><meta name="astro-view-transitions-enabled" content="true"><meta name="astro-view-transitions-fallback" content="animate"><link rel="stylesheet" href="/_astro/about.CkC6PiIh.css">
+<link rel="stylesheet" href="/_astro/about.D3zQv4Ly.css"><script type="module" src="/_astro/hoisted.HO6_Fzad.js"></script></head> <body> <header class="header"> <h5 class="header__heading"> <a href="/" class="link">9Sky 九天</a> <span>
+/
+<a href="/blog" class="link"> 博客 </a> </span><span>
+/
+Rust学习：Struct&amp;枚举 </span> </h5> </header> <div id="navbar-sentinal"></div> <nav class="navbar" id="navbar-wrapper"> <div class="navbar__content"> <h5 class="navbar__path"> <a href="/" class="link">9Sky 九天</a> <span>
+/
+<a href="/blog" class="link"> 博客 </a> </span><span>
+/
+Rust学习：Struct&amp;枚举 </span> </h5> <div class="navbar__menu"> <ul data-astro-cid-tfcnbjmv> <li data-astro-cid-tfcnbjmv> <a class="link" href="/" data-astro-cid-tfcnbjmv> <i class="ri-home-line" data-astro-cid-tfcnbjmv></i>
+主页
+</a> </li> <li data-astro-cid-tfcnbjmv> <a class="link" href="/blog" data-astro-cid-tfcnbjmv> <i class="ri-newspaper-line" data-astro-cid-tfcnbjmv></i> 文章 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/projects" data-astro-cid-tfcnbjmv> <i class="ri-server-line" data-astro-cid-tfcnbjmv></i> 项目 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/lab" data-astro-cid-tfcnbjmv> <i class="ri-server-line" data-astro-cid-tfcnbjmv></i> 实验室 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/about" data-astro-cid-tfcnbjmv> <i class="ri-cup-line" data-astro-cid-tfcnbjmv></i> 关于 </a> </li> </ul>  </div> </div> </nav> <script>
+  // 使用 ViewTransition 后，所有 DOM 操作的 js 都有一堆问题
+  // 这里用了极不优雅的 var，有待改进
+  var observer;
+  function addNavObserver() {
+    const headerEl = document.querySelector("#navbar-wrapper");
+    const sentinalEl = document.querySelector("#navbar-sentinal");
+    if (!sentinalEl || !headerEl) return;
+    observer = new window.IntersectionObserver((e) => {
+      if (!e[0].isIntersectin && e[0].boundingClientRect.top <= 0) {
+        headerEl.classList.add("navbar--sticked");
+      } else {
+        headerEl.classList.remove("navbar--sticked");
+      }
+    });
+    observer.observe(sentinalEl);
+  }
+
+  function removeNavObserver() {
+    if (observer) observer.disconnect();
+    observer = null;
+  }
+
+  document.addEventListener(
+    "astro:page-load",
+    () => {
+      addNavObserver();
+    },
+    { once: false },
+  );
+
+  document.addEventListener(
+    "astro:before-swap",
+    () => {
+      removeNavObserver();
+    },
+    { once: false },
+  );
+</script>  <main class="page"> <section class="page__section page__section--at-top"> <!-- {
+        article.cover && (
+          <a href={article.cover} data-fancybox data-caption={article.title}>
+            <img
+              src={article.cover}
+              alt={article.title}
+              title={article.title}
+              class="page__cover mb-8"
+            />
+          </a>
+        )
+      } --> <h1 class="page__heading">Rust学习：Struct&amp;枚举</h1> <p class="page__meta"> <i class="ri-calendar-line"></i> <span>2024 年 5 月 4 日 02:45</span> </p> <hr class="page__divide"> <article class="content"> <h2><a id="文章目录" class="content__heading-anchor"></a>文章目录</h2>
+<ul>
+<li><a href="#struct%E6%9E%9A%E4%B8%BE">Struct&amp;枚举</a>
+<ul>
+<li><a href="#%E5%AE%9A%E4%B9%89%E5%B9%B6%E5%AE%9E%E4%BE%8B%E5%8C%96-struct">定义并实例化 struct</a>
+<ul>
+<li><a href="#struct%E7%BB%93%E6%9E%84%E4%BD%93">Struct，结构体</a></li>
+<li><a href="#%E5%AE%9E%E4%BE%8B%E5%8C%96-struct">实例化 struct</a></li>
+<li><a href="#%E5%8F%96%E5%BE%97-struct-%E9%87%8C%E9%9D%A2%E7%9A%84%E6%9F%90%E4%B8%AA%E5%80%BC">取得 struct 里面的某个值</a></li>
+<li><a href="#%E4%BF%AE%E6%94%B9-struct-%E7%9A%84%E5%80%BC">修改 struct 的值</a></li>
+<li><a href="#struct-%E4%BD%9C%E4%B8%BA%E5%87%BD%E6%95%B0%E7%9A%84%E8%BF%94%E5%9B%9E%E5%80%BC">struct 作为函数的返回值</a></li>
+<li><a href="#%E5%AD%97%E6%AE%B5%E5%88%9D%E5%A7%8B%E5%8C%96%E7%AE%80%E5%86%99">字段初始化简写</a></li>
+<li><a href="#struct-%E6%9B%B4%E6%96%B0%E8%AF%AD%E6%B3%95">struct 更新语法</a></li>
+</ul></li>
+</ul>
+<ul>
+<li><a href="#tuple-struct">Tuple Struct</a>
+<ul>
+<li><a href="#%E7%BB%93%E6%9E%84%E4%BD%93%E6%95%B0%E6%8D%AE%E7%9A%84%E6%89%80%E6%9C%89%E6%9D%83">结构体数据的所有权</a></li>
+<li><a href="#struct-%E7%9A%84%E4%BE%8B%E5%AD%90">struct 的例子</a></li>
+<li><a href="#%E8%BE%93%E5%87%BA%E7%BB%93%E6%9E%84%E4%BD%93">输出结构体</a></li>
+<li><a href="#struct-%E6%96%B9%E6%B3%95">struct 方法</a></li>
+</ul></li>
+<li><a href="#%E6%9E%9A%E4%B8%BE%E4%B8%8E%E6%A8%A1%E5%BC%8F%E5%8C%B9%E9%85%8D">枚举与模式匹配</a>
+<ul>
+<li><a href="#%E6%9E%9A%E4%B8%BE">枚举</a>
+<ul>
+<li><a href="#%E5%AE%9A%E4%B9%89%E6%9E%9A%E4%B8%BE">定义枚举</a></li>
+</ul></li>
+</ul></li>
+<li><a href="#option-%E6%9E%9A%E4%B8%BE">Option 枚举</a></li>
+<li><a href="#%E6%8E%A7%E5%88%B6%E6%B5%81%E8%BF%90%E7%AE%97%E7%AC%A6---match">控制流运算符 - match</a></li>
+<li><a href="#if-let">if let</a></li>
+</ul></li>
+</ul>
+<h1><a id="struct枚举" class="content__heading-anchor"></a>Struct&amp;枚举</h1>
+<h3><a id="定义并实例化-struct" class="content__heading-anchor"></a>定义并实例化 struct</h3>
+<h4><a id="struct结构体" class="content__heading-anchor"></a>Struct，结构体</h4>
+<ul>
+<li>自定义的数据类型</li>
+<li>让我们能为相关联的值命名，打包组合成有意义的组合</li>
+<li>定义 struct
+<ul>
+<li>使用 struct 关键字，并为整个 struct 命名</li>
+<li>在花括号内，为所有字段（Field）定义名称和类型</li>
+</ul></li>
+</ul>
+<pre><code class="language-rust"><span class="hljs-keyword">struct</span> <span class="hljs-title class_">User</span> {
+    username: <span class="hljs-type">String</span>,
+    email: <span class="hljs-type">String</span>,
+    sign_in_count: <span class="hljs-type">u64</span>,
+    active: <span class="hljs-type">bool</span>,
+}
+</code></pre>
+<h4><a id="实例化-struct" class="content__heading-anchor"></a>实例化 struct</h4>
+<ul>
+<li>想要使用 struct ，需要创建 struct 的实例</li>
+<li>为每个字段指定具体值</li>
+<li>无需按照声明的顺序进行指定</li>
+</ul>
+<pre><code class="language-rust"><span class="hljs-keyword">let</span> <span class="hljs-variable">user1</span> = User{
+email:<span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;1841632321@qq.com&quot;</span>),
+username:<span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;李泽辉&quot;</span>),
+sign_in_count:<span class="hljs-number">1</span>,
+active:<span class="hljs-literal">true</span>,
+}
+</code></pre>
+<h4><a id="取得-struct-里面的某个值" class="content__heading-anchor"></a>取得 struct 里面的某个值</h4>
+<ul>
+<li>使用点标记法</li>
+</ul>
+<pre><code class="language-rust"><span class="hljs-keyword">struct</span> <span class="hljs-title class_">User</span> {
+username: <span class="hljs-type">String</span>,
+email: <span class="hljs-type">String</span>,
+sign_in_count: <span class="hljs-type">u64</span>,
+active: <span class="hljs-type">bool</span>,
+}
+
+<span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() {
+<span class="hljs-keyword">let</span> <span class="hljs-variable">user1</span> = User {
+email: <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;1841632321@qq.com&quot;</span>),
+username: <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;李泽辉&quot;</span>),
+sign_in_count: <span class="hljs-number">1</span>,
+active: <span class="hljs-literal">true</span>,
+};
+<span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;{}&quot;</span>, user1.username);
+<span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;{}&quot;</span>, user1.email);
+<span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;{}&quot;</span>, user1.sign_in_count);
+<span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;{}&quot;</span>, user1.active);
+}
+</code></pre>
+<h4><a id="修改-struct-的值" class="content__heading-anchor"></a>修改 struct 的值</h4>
+<ul>
+<li>修改了 username，注意要给实例 user1 加 mut 因为是可变的</li>
+<li>而一旦这个实例 user1 是可变的，那么示例中的所有字段都是可变的</li>
+</ul>
+<pre><code class="language-rust"><span class="hljs-keyword">struct</span> <span class="hljs-title class_">User</span> {
+username: <span class="hljs-type">String</span>,
+email: <span class="hljs-type">String</span>,
+sign_in_count: <span class="hljs-type">u64</span>,
+active: <span class="hljs-type">bool</span>,
+}
+
+<span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() {
+<span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">user1</span> = User {
+email: <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;1841632321@qq.com&quot;</span>),
+username: <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;李泽辉&quot;</span>),
+sign_in_count: <span class="hljs-number">1</span>,
+active: <span class="hljs-literal">true</span>,
+};
+user1.username = <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;李大聪明&quot;</span>);
+
+    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;{}&quot;</span>, user1.username);
+    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;{}&quot;</span>, user1.email);
+    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;{}&quot;</span>, user1.sign_in_count);
+    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;{}&quot;</span>, user1.active);
+
+}
+</code></pre>
+<h4><a id="struct-作为函数的返回值" class="content__heading-anchor"></a>struct 作为函数的返回值</h4>
+<ul>
+<li>传入用户名和邮箱，返回用户的结构体</li>
+</ul>
+<pre><code class="language-rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">return_user</span>(email: <span class="hljs-type">String</span>, username: <span class="hljs-type">String</span>) <span class="hljs-punctuation">-&gt;</span> User {
+User {
+email: email,
+username: username,
+sign_in_count: <span class="hljs-number">1</span>,
+active: <span class="hljs-literal">true</span>,
+}
+}
+</code></pre>
+<h4><a id="字段初始化简写" class="content__heading-anchor"></a>字段初始化简写</h4>
+<ul>
+<li>当字段名与字段值对应的变量名相同时，就可以使用字段初始化简写的方式</li>
+</ul>
+<p>比如上面的例子，传入用户名和邮箱，结构体字段名和传入字段名一样，可以直接简写为下面的样子</p>
+<pre><code class="language-rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">return_user</span>(email: <span class="hljs-type">String</span>, username: <span class="hljs-type">String</span>) <span class="hljs-punctuation">-&gt;</span> User {
+User {
+email,
+username,
+sign_in_count: <span class="hljs-number">1</span>,
+active: <span class="hljs-literal">true</span>,
+}
+}
+</code></pre>
+<h4><a id="struct-更新语法" class="content__heading-anchor"></a>struct 更新语法</h4>
+<ul>
+<li>当你想基于某个 struct 实例来创建一个新实例的时候，可以使用 struct 更新语法</li>
+</ul>
+<pre><code class="language-rust"><span class="hljs-keyword">struct</span> <span class="hljs-title class_">User</span> {
+username: <span class="hljs-type">String</span>,
+email: <span class="hljs-type">String</span>,
+sign_in_count: <span class="hljs-type">u64</span>,
+active: <span class="hljs-type">bool</span>,
+}
+
+<span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() {
+<span class="hljs-keyword">let</span> <span class="hljs-variable">user1</span> = User {
+email: <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;1841632321@qq.com&quot;</span>),
+username: <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;李泽辉&quot;</span>),
+sign_in_count: <span class="hljs-number">1</span>,
+active: <span class="hljs-literal">true</span>,
+};
+
+<span class="hljs-keyword">let</span> <span class="hljs-variable">user2</span> = User {
+    email: <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;新邮箱&quot;</span>),<span class="hljs-comment">//改变了email</span>
+    ..user1<span class="hljs-comment">//其他的不改变可以直接这样写，表示这个新实例中剩下的没被赋值的字段(除了email)和user1的一样</span>
+};
+}
+</code></pre>
+<h2><a id="tuple-struct" class="content__heading-anchor"></a>Tuple Struct</h2>
+<ul>
+<li><p>可定义类似 Tuple 的 Struct ，叫做 Tuple Struct</p>
+<ul>
+<li>Tuple Struct 整体有个名，但里面的元素没有名</li>
+<li>它存在的意义是为了处理那些需要定义类型（经常使用）又不想太复杂的简单数据</li>
+<li>&quot;颜色&quot;和&quot;点坐标&quot;是常用的两种数据类型，但如果实例化时写个大括号再写上两个名字就为了可读性牺牲了便捷性</li>
+<li>Rust 不会遗留这个问题。</li>
+</ul></li>
+<li><p>元组结构体对象的使用方式和元组一样，通过.和下标来进行访问：</p></li>
+</ul>
+<pre><code class="language-rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() {
+<span class="hljs-keyword">struct</span> <span class="hljs-title class_">Color</span>(<span class="hljs-type">u8</span>, <span class="hljs-type">u8</span>, <span class="hljs-type">u8</span>);
+<span class="hljs-keyword">struct</span> <span class="hljs-title class_">Point</span>(<span class="hljs-type">f64</span>, <span class="hljs-type">f64</span>);
+
+        <span class="hljs-keyword">let</span> <span class="hljs-variable">black</span> = <span class="hljs-title function_ invoke__">Color</span>(<span class="hljs-number">0</span>, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>);
+        <span class="hljs-keyword">let</span> <span class="hljs-variable">origin</span> = <span class="hljs-title function_ invoke__">Point</span>(<span class="hljs-number">0.1</span>, <span class="hljs-number">0.2</span>);
+
+        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;black = ({}, {}, {})&quot;</span>, black.<span class="hljs-number">0</span>, black.<span class="hljs-number">1</span>, black.<span class="hljs-number">2</span>);
+        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;origin = ({}, {})&quot;</span>, origin.<span class="hljs-number">0</span>, origin.<span class="hljs-number">1</span>);
+    }
+
+<span class="hljs-comment">//运行结果：</span>
+<span class="hljs-comment">// black = (0, 0, 0)</span>
+
+<span class="hljs-comment">// origin = (0.1, 0.2)</span>
+</code></pre>
+<h4><a id="结构体数据的所有权" class="content__heading-anchor"></a>结构体数据的所有权</h4>
+<ul>
+<li>我们声明 User ，里面的 username 和 email 时候用的是 String 而不是&amp;str</li>
+<li>sign_in_count 和 active 又是标量类型</li>
+</ul>
+<pre><code class="language-rust"><span class="hljs-keyword">struct</span> <span class="hljs-title class_">User</span> {
+username: <span class="hljs-type">String</span>,
+email: <span class="hljs-type">String</span>,
+sign_in_count: <span class="hljs-type">u64</span>,
+active: <span class="hljs-type">bool</span>,
+}
+</code></pre>
+<ul>
+<li>这个结构体拥有其所有数据的所有权，因为结构体失效的时候会释放所有字段。</li>
+<li>但这不意味着结构体中不定义引用型字段，这需要通过&quot;生命周期&quot;机制来实现。</li>
+<li>生命周期确保结构体引用的数据有效性跟结构体本身保持一致。如果你尝试在结构体中存储一个引用而不指定生命周期将是无效的</li>
+</ul>
+<pre><code class="language-rust"><span class="hljs-keyword">struct</span> <span class="hljs-title class_">User</span> {
+username: &amp;<span class="hljs-type">str</span>,<span class="hljs-comment">//这样会报错</span>
+email: &amp;<span class="hljs-type">str</span>,<span class="hljs-comment">//报错，没有生命周期</span>
+sign_in_count: <span class="hljs-type">u64</span>,
+active: <span class="hljs-type">bool</span>,
+}
+</code></pre>
+<h4><a id="struct-的例子" class="content__heading-anchor"></a>struct 的例子</h4>
+<p>计算长方形面积</p>
+<pre><code class="language-rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() {
+    <span class="hljs-keyword">let</span> <span class="hljs-variable">w</span> = <span class="hljs-number">30</span>;
+    <span class="hljs-keyword">let</span> <span class="hljs-variable">h</span> = <span class="hljs-number">50</span>;
+
+    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;面积是{}&quot;</span>, <span class="hljs-title function_ invoke__">area</span>(w, h));
+}
+
+<span class="hljs-keyword">fn</span> <span class="hljs-title function_">area</span>(width: <span class="hljs-type">u32</span>, height: <span class="hljs-type">u32</span>) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">u32</span> {
+    width * height
+}
+</code></pre>
+<p>通过元组重构一下</p>
+<pre><code class="language-rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() {
+    <span class="hljs-keyword">let</span> <span class="hljs-variable">rec</span>: (<span class="hljs-type">u32</span>, <span class="hljs-type">u32</span>) = (<span class="hljs-number">30</span>, <span class="hljs-number">50</span>);
+
+    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;面积是{}&quot;</span>, <span class="hljs-title function_ invoke__">area</span>(rec));
+}
+
+<span class="hljs-keyword">fn</span> <span class="hljs-title function_">area</span>(dimensions: (<span class="hljs-type">u32</span>, <span class="hljs-type">u32</span>)) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">u32</span> {
+    dimensions.<span class="hljs-number">0</span> * dimensions.<span class="hljs-number">1</span>
+}
+</code></pre>
+<ul>
+<li>元组帮助我们增加了一些结构性，并且现在只需传一个参数。</li>
+<li>元组并没有给出元素的名称，所以计算变得更费解了，因为不得不使用索引来获取元组的每一部分</li>
+<li>必须牢记 width 的元组索引是 0，height 的元组索引是 1</li>
+<li>我们用结构体重构一下</li>
+</ul>
+<pre><code class="language-rust"><span class="hljs-keyword">struct</span> <span class="hljs-title class_">Rectangle</span> {
+width: <span class="hljs-type">u32</span>,
+height: <span class="hljs-type">u32</span>,
+}
+
+<span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() {
+<span class="hljs-keyword">let</span> <span class="hljs-variable">rec</span> = Rectangle {
+width: <span class="hljs-number">30</span>,
+height: <span class="hljs-number">50</span>,
+};
+<span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;面积是{}&quot;</span>, <span class="hljs-title function_ invoke__">area</span>(&amp;rec));
+}
+
+<span class="hljs-keyword">fn</span> <span class="hljs-title function_">area</span>(rectangle: &amp;Rectangle) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">u32</span> {
+rectangle.width \* rectangle.height
+}
+</code></pre>
+<ul>
+<li><p>这里定义了一个结构体并称其为 Rectangle。</p></li>
+<li><p>在大括号中定义了字段 width 和 height，类型都是 u32。</p></li>
+<li><p>在 main 中，我们创建了一个具体的 Rectangle 实例，它的宽是 30，高是 50。</p></li>
+<li><p>函数 area 现在被定义为接收一个名叫 rectangle 的参数，其类型是一个结构体 Rectangle 实例的不可变借用。</p></li>
+<li><p>我们希望借用结构体而不是获取它的所有权，这样 main 函数就可以保持 rect1 的所有权并继续使用它，所以这就是为什么在函数签名和调用的地方会有 &amp;。</p></li>
+</ul>
+<p>现在！area 的函数签名现在明确的阐述了我们的意图：使用 Rectangle 的 width 和 height 字段，计算 Rectangle 的面积。这表明宽高是相互联系的，并为这些值提供了描述性的名称而不是使用元组的索引值 0 和 1 。结构体胜在更清晰明了。</p>
+<h4><a id="输出结构体" class="content__heading-anchor"></a>输出结构体</h4>
+<p>输出结构体</p>
+<pre><code class="language-rust"><span class="hljs-comment">//通过 println!会报错</span>
+
+<span class="hljs-keyword">struct</span> <span class="hljs-title class_">Rectangle</span> {
+width: <span class="hljs-type">u32</span>,
+height: <span class="hljs-type">u32</span>,
+}
+
+<span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() {
+<span class="hljs-keyword">let</span> <span class="hljs-variable">rec</span> = Rectangle {
+width: <span class="hljs-number">30</span>,
+height: <span class="hljs-number">50</span>,
+};
+<span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;面积是{}&quot;</span>, rec);<span class="hljs-comment">//报错</span>
+}
+</code></pre>
+<p><span><br>
+当我们运行这个代码时，会出现带有如下核心信息的错误：<br><br>
+error[E0277]: Rectangle doesn't implement std::fmt::Display<br><br>
+println! 宏能处理很多类型的格式，不过，{} 默认告诉 println! 使用被称为 Display 的格式：意在提供给直接终端用户查看的输出。<br><br>
+不过对于结构体，println! 应该用来输出的格式是不明确的，因为这有更多显示的可能性：是否需要逗号？需要打印出大括号吗？所有字段都应该<br>
+显示吗？由于这种不确定性，Rust 不会尝试猜测我们的意图，所以结构体并没有提供一个 Display 实现。<br><br>
+</span></p>
+<pre><code class="language-rust"><span class="hljs-keyword">struct</span> <span class="hljs-title class_">Rectangle</span> {
+width: <span class="hljs-type">u32</span>,
+height: <span class="hljs-type">u32</span>,
+}
+
+<span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() {
+<span class="hljs-keyword">let</span> <span class="hljs-variable">rec</span> = Rectangle {
+width: <span class="hljs-number">30</span>,
+height: <span class="hljs-number">50</span>,
+};
+<span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;面积是{:?}&quot;</span>, rec);<span class="hljs-comment">//这里试一下</span>
+}
+</code></pre>
+<p>我们必须为结构体显式选择这个功能。为此，在结构体定义之前加上 #[derive(Debug)] 注解</p>
+<pre><code class="language-rust"><span class="hljs-meta">#[derive(Debug)]</span>
+<span class="hljs-keyword">struct</span> <span class="hljs-title class_">Rectangle</span> {
+width: <span class="hljs-type">u32</span>,
+height: <span class="hljs-type">u32</span>,
+}
+
+<span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() {
+<span class="hljs-keyword">let</span> <span class="hljs-variable">rec</span> = Rectangle {
+width: <span class="hljs-number">30</span>,
+height: <span class="hljs-number">50</span>,
+};
+<span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;面积是{:?}&quot;</span>, rec);
+
+}
+</code></pre>
+<pre><code class="language-rust"><span class="hljs-meta">#[derive(Debug)]</span>
+<span class="hljs-keyword">struct</span> <span class="hljs-title class_">Rectangle</span> {
+width: <span class="hljs-type">u32</span>,
+height: <span class="hljs-type">u32</span>,
+}
+
+<span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() {
+<span class="hljs-keyword">let</span> <span class="hljs-variable">rec</span> = Rectangle {
+width: <span class="hljs-number">30</span>,
+height: <span class="hljs-number">50</span>,
+};
+<span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;面积是{:#?}&quot;</span>, rec);
+
+}
+</code></pre>
+<h4><a id="struct-方法" class="content__heading-anchor"></a>struct 方法</h4>
+<p>方法和函数很类似：fn 关键字、名称、参数、返回值<br>
+方法与函数不同之处：<br>
+方法是在 struct（ 或 enum、trait 对象）的上下文中定义<br>
+方法的第一个参数是 self，表示方法被调用的 struct 实例<br>
+定义方法<br>
+在 impl 块里定义方法<br>
+方法的第一个参数可以&amp;self 借用，也可以获得其所有权，或者可变借用（和其它参数一样）</p>
+<pre><code class="language-rust"><span class="hljs-keyword">struct</span> <span class="hljs-title class_">Rectangle</span> {
+width: <span class="hljs-type">u32</span>,
+height: <span class="hljs-type">u32</span>,
+}
+
+<span class="hljs-keyword">impl</span> <span class="hljs-title class_">Rectangle</span> {
+<span class="hljs-keyword">fn</span> <span class="hljs-title function_">area</span>(&amp;<span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">u32</span> {
+<span class="hljs-keyword">self</span>.width \* <span class="hljs-keyword">self</span>.height
+}
+}
+
+<span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() {
+<span class="hljs-keyword">let</span> <span class="hljs-variable">rec</span> = Rectangle {
+width: <span class="hljs-number">30</span>,
+height: <span class="hljs-number">50</span>,
+};
+<span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;面积是{}&quot;</span>, rec.<span class="hljs-title function_ invoke__">area</span>());
+}
+</code></pre>
+<p>带有更多参数的方法<br>
+我们要实现一个功能，判断一个长方形，是否能容纳下另一个长方形</p>
+<pre><code class="language-rust"><span class="hljs-keyword">struct</span> <span class="hljs-title class_">Rectangle</span> {
+width: <span class="hljs-type">u32</span>,
+height: <span class="hljs-type">u32</span>,
+}
+
+<span class="hljs-keyword">impl</span> <span class="hljs-title class_">Rectangle</span> {
+<span class="hljs-keyword">fn</span> <span class="hljs-title function_">can_hold</span>(&amp;<span class="hljs-keyword">self</span>, other: &amp;Rectangle) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">bool</span> {
+<span class="hljs-keyword">self</span>.width &gt; other.width &amp;&amp; <span class="hljs-keyword">self</span>.height &gt; other.height
+}
+}
+
+<span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() {
+<span class="hljs-keyword">let</span> <span class="hljs-variable">rec1</span> = Rectangle {
+width: <span class="hljs-number">30</span>,
+height: <span class="hljs-number">50</span>,
+};
+<span class="hljs-keyword">let</span> <span class="hljs-variable">rec2</span> = Rectangle {
+width: <span class="hljs-number">10</span>,
+height: <span class="hljs-number">40</span>,
+};
+<span class="hljs-keyword">let</span> <span class="hljs-variable">rec3</span> = Rectangle {
+width: <span class="hljs-number">35</span>,
+height: <span class="hljs-number">55</span>,
+};
+<span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;rec1 能否包括 rec2：{}&quot;</span>, rec1.<span class="hljs-title function_ invoke__">can_hold</span>(&amp;rec2));<span class="hljs-comment">//调用 can_hold 时候，&amp;self 代表 rec1，other 代表 rec2</span>
+<span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;rec1 能否包括 rec3：{}&quot;</span>, rec1.<span class="hljs-title function_ invoke__">can_hold</span>(&amp;rec3));
+}
+
+<span class="hljs-comment">//返回:</span>
+
+<span class="hljs-comment">// rec1 能否包括 rec2：true</span>
+<span class="hljs-comment">// rec1 能否包括 rec3：false</span>
+</code></pre>
+<ul>
+<li>关联函数
+<ul>
+<li>可以在 impl 块里定义不把 self 作为第一个参数的函数，他们叫关联函数（是函数，不是方法，不是通过实例对象.进行调用的）</li>
+<li>例如：String::from()就是一个关联函数</li>
+</ul></li>
+<li>关联函数经常被用作返回一个结构体新实例的构造函数。</li>
+<li>例如我们可以提供一个关联函数，它接受一个维度参数并且同时作为宽和高</li>
+<li>这样可以更轻松的创建一个正方形 Rectangle 而不必指定两次同样的值：</li>
+</ul>
+<pre><code class="language-rust">
+<span class="hljs-meta">#[derive(Debug)]</span>
+<span class="hljs-keyword">struct</span> <span class="hljs-title class_">Rectangle</span> {
+width: <span class="hljs-type">u32</span>,
+height: <span class="hljs-type">u32</span>,
+}
+<span class="hljs-keyword">impl</span> <span class="hljs-title class_">Rectangle</span> {
+        <span class="hljs-keyword">fn</span> <span class="hljs-title function_">square</span>(size: <span class="hljs-type">u32</span>) <span class="hljs-punctuation">-&gt;</span> Rectangle {
+            Rectangle {
+                width: size,
+                height: size,
+            }
+        }
+    }
+
+<span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() {
+        <span class="hljs-keyword">let</span> <span class="hljs-variable">r</span> = Rectangle::<span class="hljs-title function_ invoke__">square</span>(<span class="hljs-number">20</span>);
+        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;{:#?}&quot;</span>, &amp;r);<span class="hljs-comment">//输出一下</span>
+}
+</code></pre>
+<ul>
+<li>分成多个块</li>
+</ul>
+<pre><code class="language-rust"><span class="hljs-keyword">impl</span> <span class="hljs-title class_">Rectangle</span> {
+<span class="hljs-keyword">fn</span> <span class="hljs-title function_">square</span>(size: <span class="hljs-type">u32</span>) <span class="hljs-punctuation">-&gt;</span> Rectangle {
+Rectangle {
+width: size,
+height: size,
+}
+}
+}
+<span class="hljs-keyword">impl</span> <span class="hljs-title class_">Rectangle</span> {
+<span class="hljs-keyword">fn</span> <span class="hljs-title function_">can_hold</span>(&amp;<span class="hljs-keyword">self</span>, other: &amp;Rectangle) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">bool</span> {
+<span class="hljs-keyword">self</span>.width &gt; other.width &amp;&amp; <span class="hljs-keyword">self</span>.height &gt; other.height
+}
+}
+</code></pre>
+<h2><a id="枚举与模式匹配" class="content__heading-anchor"></a>枚举与模式匹配</h2>
+<h3><a id="枚举" class="content__heading-anchor"></a>枚举</h3>
+<p>枚举允许我们列举所有可能的值来定义一个类型</p>
+<h4><a id="定义枚举" class="content__heading-anchor"></a>定义枚举</h4>
+<ul>
+<li>IP 地址：IPv4，IPv6</li>
+<li>创建枚举值,并且传入方法中</li>
+</ul>
+<pre><code class="language-rust"><span class="hljs-keyword">enum</span> <span class="hljs-title class_">ipAddrKind</span> {
+V4,<span class="hljs-comment">//枚举中所有可能的值叫做变体</span>
+V6,
+}
+
+<span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() {
+<span class="hljs-keyword">let</span> <span class="hljs-variable">four</span> = ipAddrKind::V4;
+<span class="hljs-keyword">let</span> <span class="hljs-variable">six</span> = ipAddrKind::V6;
+<span class="hljs-title function_ invoke__">route</span>(four);
+<span class="hljs-title function_ invoke__">route</span>(six);
+<span class="hljs-title function_ invoke__">route</span>(ipAddrKind::V4);
+<span class="hljs-title function_ invoke__">route</span>(ipAddrKind::V6);
+}
+
+<span class="hljs-keyword">fn</span> <span class="hljs-title function_">route</span>(ip_kind: ipAddrKind) {}
+</code></pre>
+<ul>
+<li>将数据附加到枚举的变体中</li>
+<li>所有类型都可以进行附加数据</li>
+</ul>
+<pre><code class="language-rust"><span class="hljs-keyword">enum</span> <span class="hljs-title class_">Message</span> {
+Quit,<span class="hljs-comment">//匿名结构体</span>
+Move { x: <span class="hljs-type">i32</span>, y: <span class="hljs-type">i32</span> },<span class="hljs-comment">//坐标结构体</span>
+<span class="hljs-title function_ invoke__">Write</span>(<span class="hljs-type">String</span>),<span class="hljs-comment">//字符串</span>
+<span class="hljs-title function_ invoke__">ChangeColor</span>(<span class="hljs-type">i32</span>, <span class="hljs-type">i32</span>, <span class="hljs-type">i32</span>),<span class="hljs-comment">//元组</span>
+}
+<span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() {
+<span class="hljs-keyword">let</span> <span class="hljs-variable">q</span> = Message::Quit;
+<span class="hljs-keyword">let</span> <span class="hljs-variable">m</span> = Message::Move { x: <span class="hljs-number">10</span>, y: <span class="hljs-number">22</span> };
+<span class="hljs-keyword">let</span> <span class="hljs-variable">q</span> = Message::<span class="hljs-title function_ invoke__">Write</span>(<span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;字符串&quot;</span>));
+<span class="hljs-keyword">let</span> <span class="hljs-variable">q</span> = Message::<span class="hljs-title function_ invoke__">ChangeColor</span>(<span class="hljs-number">0</span>, <span class="hljs-number">255</span>, <span class="hljs-number">255</span>);
+}
+</code></pre>
+<ul>
+<li>为枚举定义方法
+<ul>
+<li>impl 关键字</li>
+</ul></li>
+</ul>
+<pre><code class="language-rust"><span class="hljs-meta">#[derive(Debug)]</span>
+<span class="hljs-keyword">enum</span> <span class="hljs-title class_">Message</span> {
+Quit,Move { x: <span class="hljs-type">i32</span>, y: <span class="hljs-type">i32</span> },
+<span class="hljs-title function_ invoke__">Write</span>(<span class="hljs-type">String</span>),
+<span class="hljs-title function_ invoke__">ChangeColor</span>(<span class="hljs-type">i32</span>, <span class="hljs-type">i32</span>, <span class="hljs-type">i32</span>),
+}
+<span class="hljs-keyword">impl</span> <span class="hljs-title class_">Message</span> {
+<span class="hljs-keyword">fn</span> <span class="hljs-title function_">call</span>(<span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> Message {
+<span class="hljs-keyword">self</span>
+}
+}
+<span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() {
+<span class="hljs-keyword">let</span> <span class="hljs-variable">q</span> = Message::Quit;
+<span class="hljs-keyword">let</span> <span class="hljs-variable">m</span> = Message::Move { x: <span class="hljs-number">10</span>, y: <span class="hljs-number">22</span> };
+<span class="hljs-keyword">let</span> <span class="hljs-variable">w</span> = Message::<span class="hljs-title function_ invoke__">Write</span>(<span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;字符串&quot;</span>));
+<span class="hljs-keyword">let</span> <span class="hljs-variable">c</span> = Message::<span class="hljs-title function_ invoke__">ChangeColor</span>(<span class="hljs-number">0</span>, <span class="hljs-number">255</span>, <span class="hljs-number">255</span>);
+
+<span class="hljs-keyword">let</span> <span class="hljs-variable">x</span> = m.<span class="hljs-title function_ invoke__">call</span>();
+<span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;{:#?}&quot;</span>, x);
+
+}
+
+</code></pre>
+<h2><a id="option-枚举" class="content__heading-anchor"></a>Option 枚举</h2>
+<ul>
+<li>Rust 没有 Null ，所以 Rust 提供了类似 Null 概念的枚举-Option&lt;T&gt;</li>
+<li>定义于标准库中</li>
+<li>在 Prelude（预导入模块）中
+<ul>
+<li>描述了：某个值可能存在（某种类型）或不存在的情况</li>
+</ul></li>
+</ul>
+<pre><code class="language-rust"><span class="hljs-keyword">enum</span> <span class="hljs-title class_">Option</span>&lt;T&gt; {
+<span class="hljs-title function_ invoke__">Some</span>(T),
+<span class="hljs-literal">None</span>,
+}
+</code></pre>
+<p>可以直接使用，不需要像正常的枚举一样，Option::Some(5);</p>
+<pre><code class="language-rust"><span class="hljs-keyword">let</span> <span class="hljs-variable">some_number</span> = <span class="hljs-title function_ invoke__">Some</span>(<span class="hljs-number">5</span>); <span class="hljs-comment">//std::option::Option&lt;i32&gt;</span>
+<span class="hljs-keyword">let</span> <span class="hljs-variable">some_string</span> = <span class="hljs-title function_ invoke__">Some</span>(<span class="hljs-string">&quot;A String&quot;</span>); <span class="hljs-comment">//std::option::Option&lt;&amp;str&gt;</span>
+<span class="hljs-keyword">let</span> <span class="hljs-variable">absent_number</span>: <span class="hljs-type">Option</span>&lt;<span class="hljs-type">i32</span>&gt; = <span class="hljs-literal">None</span>;<span class="hljs-comment">//这里编译器无法推断类型，所以要显式的声明类型</span>
+</code></pre>
+<p>如果你想针对 opt 执行某些操作，你必须先判断它是否是 Option::None：</p>
+<pre><code class="language-rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() {
+<span class="hljs-keyword">let</span> <span class="hljs-variable">opt</span> = <span class="hljs-type">Option</span>::<span class="hljs-title function_ invoke__">Some</span>(<span class="hljs-string">&quot;Hello&quot;</span>);
+<span class="hljs-comment">//let opt: Option&lt;&amp;str&gt; = Option::None;</span>
+<span class="hljs-comment">//let opt: Option&lt;&amp;str&gt; = None;</span>
+<span class="hljs-comment">//空值</span>
+<span class="hljs-keyword">match</span> opt {
+<span class="hljs-type">Option</span>::<span class="hljs-title function_ invoke__">Some</span>(something) =&gt; {
+<span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;{}&quot;</span>, something);
+},
+<span class="hljs-type">Option</span>::<span class="hljs-literal">None</span> =&gt; {
+<span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;opt is nothing&quot;</span>);
+}
+}
+}
+</code></pre>
+<h2><a id="控制流运算符---match" class="content__heading-anchor"></a>控制流运算符 - match</h2>
+<ul>
+<li>允许一个值与一系列模式进行匹配，并执行匹配的模式对应的代码</li>
+<li>模式可以是字面值、变量名、通配符</li>
+<li>有一个结构体 Coin 里面四个变体，对应四个分支返回值</li>
+</ul>
+<pre><code class="language-rust"><span class="hljs-keyword">enum</span> <span class="hljs-title class_">Coin</span> {
+Penny,
+Nickel,
+Dime,
+Quarter,
+}
+
+<span class="hljs-keyword">fn</span> <span class="hljs-title function_">value_in_cents</span>(coin: Coin) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">u8</span> {
+<span class="hljs-comment">//进行匹配</span>
+<span class="hljs-keyword">match</span> coin {
+Coin::Penny =&gt; {
+<span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;{}&quot;</span>, <span class="hljs-number">1</span>);
+<span class="hljs-number">1</span>
+}
+Coin::Nickel =&gt; <span class="hljs-number">5</span>,
+Coin::Dime =&gt; <span class="hljs-number">10</span>,
+Coin::Quarter =&gt; <span class="hljs-number">25</span>,
+}
+}
+
+<span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() {
+<span class="hljs-title function_ invoke__">value_in_cents</span>(Coin::Penny);
+}
+</code></pre>
+<ul>
+<li>绑定值的模式匹配(提取 enum 中的变体)</li>
+<li>匹配的分支可以绑定到被匹配对象的部分值</li>
+<li>因此可以从 enum 变体中提取值</li>
+</ul>
+<pre><code class="language-rust"><span class="hljs-meta">#[derive(Debug)]</span>
+<span class="hljs-keyword">enum</span> <span class="hljs-title class_">UsState</span> {
+Alabama,
+Alaska { x: <span class="hljs-type">u32</span>, y: <span class="hljs-type">u32</span> },
+}
+
+<span class="hljs-keyword">enum</span> <span class="hljs-title class_">Coin</span> {
+Penny,
+Nickel,
+Dime { index: <span class="hljs-type">u8</span> },
+<span class="hljs-title function_ invoke__">Quarter</span>(UsState),
+}
+
+<span class="hljs-keyword">fn</span> <span class="hljs-title function_">value_in_cents</span>(coin: Coin) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">u8</span> {
+<span class="hljs-comment">//匹配</span>
+<span class="hljs-keyword">match</span> coin {
+Coin::Penny =&gt; <span class="hljs-number">1</span>,
+Coin::Nickel =&gt; <span class="hljs-number">5</span>,
+Coin::Dime { index } =&gt; <span class="hljs-number">10</span>,
+Coin::<span class="hljs-title function_ invoke__">Quarter</span>(state) =&gt; {
+<span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;state is {:#?}&quot;</span>, state);
+<span class="hljs-number">25</span>
+}
+}
+}
+
+<span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() {
+<span class="hljs-keyword">let</span> <span class="hljs-variable">c</span> = Coin::<span class="hljs-title function_ invoke__">Quarter</span>(UsState::Alaska { x: <span class="hljs-number">10</span>, y: <span class="hljs-number">20</span> }); <span class="hljs-comment">//传值</span>
+<span class="hljs-keyword">let</span> <span class="hljs-variable">x</span> = Coin::Dime { index: <span class="hljs-number">2</span> };
+<span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;{}&quot;</span>, <span class="hljs-title function_ invoke__">value_in_cents</span>(c)); <span class="hljs-comment">//取值</span>
+<span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;{}&quot;</span>, <span class="hljs-title function_ invoke__">value_in_cents</span>(x)); <span class="hljs-comment">//取值</span>
+}
+
+<span class="hljs-comment">// 结果</span>
+<span class="hljs-comment">/*state is Alaska {
+x: 10,
+y: 20,
+}
+25
+10
+匹配 Option&lt;T&gt;
+fn main() {
+let five = Some(5); //定义一个 Option
+let six = plus_one(five); //走 Some 分支，i+1
+let none = plus_one(None); //为 None 返回 None
+}
+
+fn plus_one(x: Option&lt;i32&gt;) -&gt; Option&lt;i32&gt; {
+match x {
+None =&gt; None,
+Some(i) =&gt; Some(i + 1),
+}
+}
+*/</span>
+</code></pre>
+<ul>
+<li>match 必须穷举所有可能</li>
+<li>Option 有两个变体，一个 None 一个 Some 必须都有分支</li>
+</ul>
+<pre><code class="language-rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() {}
+
+<span class="hljs-keyword">fn</span> <span class="hljs-title function_">plus</span>*<span class="hljs-title function_ invoke__">one</span>(x: <span class="hljs-type">Option</span>&lt;<span class="hljs-type">i32</span>&gt;) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Option</span>&lt;<span class="hljs-type">i32</span>&gt; {
+<span class="hljs-keyword">match</span> x {
+<span class="hljs-literal">None</span> =&gt; <span class="hljs-literal">None</span>,
+<span class="hljs-title function_ invoke__">Some</span>(i) =&gt; <span class="hljs-title function_ invoke__">Some</span>(i + <span class="hljs-number">1</span>),
+}
+}
+</code></pre>
+<ul>
+<li>match 使用通配符*</li>
+<li>不用穷举所有可能性了</li>
+</ul>
+<pre><code class="language-rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() {
+<span class="hljs-keyword">let</span> <span class="hljs-variable">v</span> = <span class="hljs-number">4</span>;
+
+    <span class="hljs-keyword">match</span> v {
+        <span class="hljs-number">1</span> =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;1&quot;</span>),
+        <span class="hljs-number">3</span> =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;2&quot;</span>),
+        _ =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;other&quot;</span>),
+    }
+
+}
+</code></pre>
+<pre><code>\_表示除了以上两种情况外，剩下所有的
+</code></pre>
+<h2><a id="if-let" class="content__heading-anchor"></a>if let</h2>
+<p>处理只关心一种匹配，忽略其他匹配的情况，你可以认为他是只用来区分两种情况的 match 语句的语法糖</p>
+<ul>
+<li>语法格式：
+<ul>
+<li>if let 匹配值 = 源变量 {语句块}</li>
+<li>用 match 来写，如果 i 是 0，输出 0，其他数字输出 other</li>
+</ul></li>
+</ul>
+<pre><code class="language-rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() {
+<span class="hljs-keyword">let</span> <span class="hljs-variable">i</span> = <span class="hljs-number">0</span>;
+<span class="hljs-keyword">match</span> i {
+<span class="hljs-number">0</span> =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;zero&quot;</span>),
+\_ =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;other&quot;</span>),
+}
+}
+</code></pre>
+<pre><code class="language-rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() {
+<span class="hljs-keyword">let</span> <span class="hljs-variable">i</span> = <span class="hljs-number">0</span>;
+<span class="hljs-keyword">if</span> <span class="hljs-keyword">let</span> <span class="hljs-number">0</span> = i {
+<span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;zero&quot;</span>)
+} <span class="hljs-keyword">else</span> {
+<span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;other&quot;</span>)
+}
+}
+</code></pre>
+<ul>
+<li>上面的是标量，我们现在用枚举试一下</li>
+</ul>
+<pre><code class="language-rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() {
+<span class="hljs-keyword">enum</span> <span class="hljs-title class_">Book</span> {
+<span class="hljs-title function_ invoke__">Papery</span>(<span class="hljs-type">u32</span>),
+Electronic,
+}
+<span class="hljs-keyword">let</span> <span class="hljs-variable">book</span> = Book::<span class="hljs-title function_ invoke__">Papery</span>(<span class="hljs-number">1</span>);
+<span class="hljs-keyword">if</span> <span class="hljs-keyword">let</span> <span class="hljs-variable">Book</span>::<span class="hljs-title function_ invoke__">Papery</span>(index) = book {
+<span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;{}&quot;</span>, index)
+} <span class="hljs-keyword">else</span> {
+<span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;Electronic&quot;</span>)
+}
+}
+</code></pre>
+ </article> </section> </main>  <footer class="footer"> <hr class="footer__divide"> <div class="footer__row"> <p class="m-2">
+&#169; 2017-2024 <a href="/" class="link">9Sky 九天</a> </p> <div class="m-2"> <ul data-astro-cid-tfcnbjmv> <li data-astro-cid-tfcnbjmv> <a class="link" href="/" data-astro-cid-tfcnbjmv> 
+主页
+</a> </li> <li data-astro-cid-tfcnbjmv> <a class="link" href="/blog" data-astro-cid-tfcnbjmv>  文章 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/projects" data-astro-cid-tfcnbjmv>  项目 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/lab" data-astro-cid-tfcnbjmv>  实验室 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/about" data-astro-cid-tfcnbjmv>  关于 </a> </li> </ul>  </div> </div> </footer> </body></html> 

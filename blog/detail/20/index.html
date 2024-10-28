@@ -1,0 +1,496 @@
+<!DOCTYPE html><html> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width"><title>JavaScript探秘：手写 Promise</title><link rel="icon" type="image/vnd.microsoft.icon" href="/favicon.ico"><link rel="sitemap" href="/sitemap-index.xml"><title>JavaScript探秘：手写 Promise</title><link rel="canonical" href="https://wty9sky.github.io/blog/detail/20/"><meta name="description" content="JavaScript探秘系列：promise 是异步操作的一个解决方案，相对于传统的回调函数来讲更合理，可以避免回调地狱。
+promise 类似于一个容器，获取异步操作的消息，存储异步操作的结果，为各种异步操作提供了统一的 API。"><meta name="robots" content="index, follow"><meta property="og:title" content="JavaScript探秘：手写 Promise"><meta property="og:type" content="article"><meta property="og:image" content="/og.svg"><meta property="og:url" content="https://wty9sky.github.io/blog/detail/20/"><meta property="og:locale" content="zh_CN"><meta property="og:locale:alternate" content="zh_TW"><meta property="og:locale:alternate" content="en_US"><meta property="og:site_name" content="9Sky 九天"><link rel="shortcut icon" href="/favicon.ico"><link rel="bookmark" href="/favicon.ico"><link rel="apple-touch-icon" href="/avatar.png"><meta name="generator" content="Astro v4.16.7"><meta name="keywords" content="详情"><meta name="astro-view-transitions-enabled" content="true"><meta name="astro-view-transitions-fallback" content="animate"><link rel="stylesheet" href="/_astro/about.CkC6PiIh.css">
+<link rel="stylesheet" href="/_astro/about.D3zQv4Ly.css"><script type="module" src="/_astro/hoisted.HO6_Fzad.js"></script></head> <body> <header class="header"> <h5 class="header__heading"> <a href="/" class="link">9Sky 九天</a> <span>
+/
+<a href="/blog" class="link"> 博客 </a> </span><span>
+/
+JavaScript探秘：手写 Promise </span> </h5> </header> <div id="navbar-sentinal"></div> <nav class="navbar" id="navbar-wrapper"> <div class="navbar__content"> <h5 class="navbar__path"> <a href="/" class="link">9Sky 九天</a> <span>
+/
+<a href="/blog" class="link"> 博客 </a> </span><span>
+/
+JavaScript探秘：手写 Promise </span> </h5> <div class="navbar__menu"> <ul data-astro-cid-tfcnbjmv> <li data-astro-cid-tfcnbjmv> <a class="link" href="/" data-astro-cid-tfcnbjmv> <i class="ri-home-line" data-astro-cid-tfcnbjmv></i>
+主页
+</a> </li> <li data-astro-cid-tfcnbjmv> <a class="link" href="/blog" data-astro-cid-tfcnbjmv> <i class="ri-newspaper-line" data-astro-cid-tfcnbjmv></i> 文章 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/projects" data-astro-cid-tfcnbjmv> <i class="ri-server-line" data-astro-cid-tfcnbjmv></i> 项目 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/lab" data-astro-cid-tfcnbjmv> <i class="ri-server-line" data-astro-cid-tfcnbjmv></i> 实验室 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/about" data-astro-cid-tfcnbjmv> <i class="ri-cup-line" data-astro-cid-tfcnbjmv></i> 关于 </a> </li> </ul>  </div> </div> </nav> <script>
+  // 使用 ViewTransition 后，所有 DOM 操作的 js 都有一堆问题
+  // 这里用了极不优雅的 var，有待改进
+  var observer;
+  function addNavObserver() {
+    const headerEl = document.querySelector("#navbar-wrapper");
+    const sentinalEl = document.querySelector("#navbar-sentinal");
+    if (!sentinalEl || !headerEl) return;
+    observer = new window.IntersectionObserver((e) => {
+      if (!e[0].isIntersectin && e[0].boundingClientRect.top <= 0) {
+        headerEl.classList.add("navbar--sticked");
+      } else {
+        headerEl.classList.remove("navbar--sticked");
+      }
+    });
+    observer.observe(sentinalEl);
+  }
+
+  function removeNavObserver() {
+    if (observer) observer.disconnect();
+    observer = null;
+  }
+
+  document.addEventListener(
+    "astro:page-load",
+    () => {
+      addNavObserver();
+    },
+    { once: false },
+  );
+
+  document.addEventListener(
+    "astro:before-swap",
+    () => {
+      removeNavObserver();
+    },
+    { once: false },
+  );
+</script>  <main class="page"> <section class="page__section page__section--at-top"> <!-- {
+        article.cover && (
+          <a href={article.cover} data-fancybox data-caption={article.title}>
+            <img
+              src={article.cover}
+              alt={article.title}
+              title={article.title}
+              class="page__cover mb-8"
+            />
+          </a>
+        )
+      } --> <h1 class="page__heading">JavaScript探秘：手写 Promise</h1> <p class="page__meta"> <i class="ri-calendar-line"></i> <span>2020 年 3 月 31 日 02:30</span> </p> <hr class="page__divide"> <article class="content"> <h2><a id="文章目录" class="content__heading-anchor"></a>文章目录</h2>
+<ul>
+<li><a href="#javascript%E6%8E%A2%E7%A7%98%E6%89%8B%E5%86%99-promise">JavaScript探秘：手写 Promise</a>
+<ul>
+<li><a href="#%E5%85%B3%E4%BA%8E-promise">关于 Promise</a></li>
+<li><a href="#promise-%E7%9A%84%E4%BC%98%E7%BC%BA%E7%82%B9">promise 的优缺点</a>
+<ul>
+<li><a href="#%E4%BC%98%E7%82%B9">优点</a></li>
+<li><a href="#%E7%BC%BA%E7%82%B9">缺点</a></li>
+</ul></li>
+<li><a href="#%E4%BD%BF%E7%94%A8-promise">使用 promise</a></li>
+<li><a href="#promise-%E7%9A%84%E5%85%B6%E4%BB%96%E6%96%B9%E6%B3%95">Promise 的其他方法</a></li>
+<li><a href="#%E6%89%8B%E5%86%99-promise-%E5%92%8C%E7%9B%B8%E5%85%B3%E5%87%BD%E6%95%B0">手写 Promise 和相关函数</a>
+<ul>
+<li><a href="#%E6%89%8B%E5%86%99-promise">手写 Promise</a></li>
+<li><a href="#%E6%89%8B%E5%86%99-promiseall">手写 Promise.all</a></li>
+<li><a href="#%E6%89%8B%E5%86%99-promiseallsettled">手写 Promise.allSettled</a></li>
+</ul></li>
+</ul></li>
+</ul>
+<h1><a id="javascript探秘手写-promise" class="content__heading-anchor"></a>JavaScript探秘：手写 Promise</h1>
+<h2><a id="关于-promise" class="content__heading-anchor"></a>关于 Promise</h2>
+<p>promise 是异步操作的一个解决方案，相对于传统的回调函数来讲更合理，可以避免回调地狱。<br>
+promise 类似于一个容器，获取异步操作的消息，存储异步操作的结果，为各种异步操作提供了统一的 API。<br>
+promise 在 ES6 中成为语言标准，原生提供了 Promise 的对象。</p>
+<h2><a id="promise-的优缺点" class="content__heading-anchor"></a>promise 的优缺点</h2>
+<h3><a id="优点" class="content__heading-anchor"></a>优点</h3>
+<p>● 对象的状态不受外界的影响，有三种状态，pending（进行中）、fulfilled（已成功）、rejected（已失败），只有异步操作的结果可以决定当前是哪种状态。<br>
+● 一旦状态更改就不会再改变，任何时候都可以得到这个结果。promise 的状态变化只有两种可能：从 pending 到 fulfilled、从 pending 到 rejected，当改变已发生，后续无论添加什么样的回调函数，都会返回同样的结果。<br>
+● promise 对象可以将异步操作通过链式调用的方式以同步操作的效果运行，避免回调地狱，让代码更直观。<br>
+● promise 对象提供统一的接口，操作异步操作更容易。</p>
+<h3><a id="缺点" class="content__heading-anchor"></a>缺点</h3>
+<p>● 无法取消 promise，一旦新建就会立即执行，不能中途取消。<br>
+● 若无回调函数，内部抛出的错误无法反应到外部。<br>
+● 处于 pending 状态时，无法得知当前处于哪一个状态。</p>
+<h2><a id="使用-promise" class="content__heading-anchor"></a>使用 promise</h2>
+<p>new Promise()创建 promise 对象</p>
+<pre><code class="language-js"><span class="hljs-keyword">let</span> promise = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Promise</span>(<span class="hljs-keyword">function</span>(<span class="hljs-params">resolve,reject</span>){
+  <span class="hljs-keyword">if</span>(<span class="hljs-comment">/*异步操作成功*/</span>) {
+  <span class="hljs-title function_">resolve</span>(value) <span class="hljs-comment">// 成功调用resolve 往下传递参数 且只接受一个参数</span>
+  }<span class="hljs-keyword">else</span> {
+  <span class="hljs-title function_">reject</span>(error)  <span class="hljs-comment">// 失败调用reject  往下传递参数 且只接受一个参数</span>
+  }
+});
+
+promise.<span class="hljs-title function_">then</span>(<span class="hljs-function"><span class="hljs-params">res</span>=&gt;</span>{
+  <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(res)
+}).<span class="hljs-title function_">catch</span>(<span class="hljs-function"><span class="hljs-params">err</span>=&gt;</span>{
+  <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(err)
+})
+</code></pre>
+<p>Promise.resolve/Promise.reject 创建 promise 对象<br>
+有时需要将现有对象转为 Promise 对象，Promise.resolve()、Promise.reject()方法就起到这个作用。<br>
+Promise.resolve()方法返回一个新的 Promise 实例，该实例的状态为 resolved。<br>
+Promise.reject()方法返回一个新的 Promise 实例，该实例的状态为 rejected。</p>
+<p>● 如果参数是一个 promise 实例，将不做任何修改，原封不动的返回这个实例。<br>
+● 如果参数是具有 then()方法的对象，会将这个对象转为 promise 对象，然后立即执行 then()方法。<br>
+● 如果参数不是对象或者不是具有 then()方法的对象，则返回一个新的 promise 对象，状态为 resolved/rejected。<br>
+● 如果不带有任何参数，则直接返回一个 resolved/rejected 状态的 promise 对象。</p>
+<h2><a id="promise-的其他方法" class="content__heading-anchor"></a>Promise 的其他方法</h2>
+<p>Promise.prototype.then()<br>
+then 方法返回的是一个新的 Promise 实例（注意，不是原来那个 Promise 实例）。因此可以采用链式写法，即 then 方法后面再调用另一个 then 方法。</p>
+<pre><code class="language-js">promise
+  .<span class="hljs-title function_">then</span>(<span class="hljs-keyword">function</span> (<span class="hljs-params">res</span>) {
+    <span class="hljs-comment">// ...</span>
+  })
+  .<span class="hljs-title function_">then</span>(<span class="hljs-keyword">function</span> (<span class="hljs-params">res</span>) {});
+</code></pre>
+<p>Promise.prototype.catch()<br>
+Promise.prototype.catch()方法是.then(null, rejection)或.then(undefined, rejection)的别名，用于指定发生错误时的回调函数。</p>
+<pre><code class="language-js">promise
+  .<span class="hljs-title function_">then</span>(<span class="hljs-keyword">function</span> (<span class="hljs-params">posts</span>) {
+    <span class="hljs-comment">// ...</span>
+  })
+  .<span class="hljs-title function_">catch</span>(<span class="hljs-keyword">function</span> (<span class="hljs-params">error</span>) {});
+</code></pre>
+<p>Promise.prototype.finally()<br>
+finally()方法用于指定不管 Promise 对象最后状态如何，都会执行的操作。</p>
+<pre><code class="language-js">promise
+.<span class="hljs-title function_">then</span>(<span class="hljs-function"><span class="hljs-params">result</span> =&gt;</span> {···})
+.<span class="hljs-title function_">catch</span>(<span class="hljs-function"><span class="hljs-params">error</span> =&gt;</span> {···})
+.<span class="hljs-title function_">finally</span>(<span class="hljs-function">() =&gt;</span> {···});
+</code></pre>
+<pre><code class="language-js">promise.<span class="hljs-title function_">finally</span>(<span class="hljs-function">() =&gt;</span> {
+  <span class="hljs-comment">// 语句</span>
+});
+
+<span class="hljs-comment">// 等同于</span>
+promise.<span class="hljs-title function_">then</span>(
+  <span class="hljs-function">(<span class="hljs-params">result</span>) =&gt;</span> {
+    <span class="hljs-comment">// 语句</span>
+    <span class="hljs-keyword">return</span> result;
+  },
+  <span class="hljs-function">(<span class="hljs-params">error</span>) =&gt;</span> {
+    <span class="hljs-comment">// 语句</span>
+    <span class="hljs-keyword">throw</span> error;
+  }
+);
+</code></pre>
+<p>Promise.all()<br>
+Promise.all()方法用于将多个 Promise 实例，包装成一个新的 Promise 实例。<br>
+const promise = Promise.all([promise1, promise2, promise3]);<br>
+该方法只要有一个 promise 方法返回 rejected 状态，则直接返回 rejected 状态，返回第一个返回 rejected 状态的实例的回调结果。</p>
+<p>Promise.race()<br>
+Promise.race()方法是将多个 Promise 实例，包装成一个新的 Promise 实例。<br>
+const promise = Promise.race([promise1, promise2, promise3]);<br>
+上面代码中，只要有一个 promise 实例率先改变状态，就返回率先改变状态的实例的回调结果。</p>
+<p>Promise.allSettled()<br>
+Promise.allSettled()方法用于将多个 Promise 实例，包装成一个新的 Promise 实例。<br>
+const promise = Promise.allSettled([promise1, promise2, promise3]);<br>
+该方法等待全部 promise 实例改变 resolved/rejected 状态后，输出所有实例的回调结果。</p>
+<h2><a id="手写-promise-和相关函数" class="content__heading-anchor"></a>手写 Promise 和相关函数</h2>
+<h3><a id="手写-promise" class="content__heading-anchor"></a>手写 Promise</h3>
+<p>手写思路</p>
+<ol>
+<li>Promise 是一个类, 类中需要传入一个 executor 执行器</li>
+<li>promise 内部会提供两个方法，这两个方法会传给用户,可以更改 promise 的状态</li>
+<li>promise 有三个状态：等待（PENDING)、成功（RESOLVED）（返回成功的结果或 undefined）、失败（REJECTED）（返回失败的原因或 undefined）</li>
+<li>promise 只会从等待变为成功或者从等待变为失败。</li>
+<li>每个 promise 实例上都有一个 then 方法， 分别是成功和失败的回调。</li>
+</ol>
+<pre><code class="language-js"><span class="hljs-keyword">const</span> <span class="hljs-variable constant_">PENDING</span> = <span class="hljs-string">&quot;PENDING&quot;</span>;
+<span class="hljs-keyword">const</span> <span class="hljs-variable constant_">RESOLVED</span> = <span class="hljs-string">&quot;RESOLVED&quot;</span>;
+<span class="hljs-keyword">const</span> <span class="hljs-variable constant_">REJECTED</span> = <span class="hljs-string">&quot;REJECTED&quot;</span>;
+
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">resolvePromise</span>(<span class="hljs-params">promise, x, resolve, reject</span>) {
+  <span class="hljs-keyword">if</span> (promise === x) {
+    <span class="hljs-keyword">return</span> <span class="hljs-title function_">reject</span>(
+      <span class="hljs-keyword">new</span> <span class="hljs-title class_">TypeError</span>(
+        <span class="hljs-string">&quot;[TypeError: Chaining cycle detected for promise #&lt;Promise&gt;]----&quot;</span>
+      )
+    );
+  }
+  <span class="hljs-keyword">let</span> called;
+  <span class="hljs-keyword">if</span> ((<span class="hljs-keyword">typeof</span> x === <span class="hljs-string">&quot;object&quot;</span> &amp;&amp; x != <span class="hljs-literal">null</span>) || <span class="hljs-keyword">typeof</span> x === <span class="hljs-string">&quot;function&quot;</span>) {
+    <span class="hljs-keyword">try</span> {
+      <span class="hljs-keyword">let</span> then = x.<span class="hljs-property">then</span>;
+      <span class="hljs-keyword">if</span> (<span class="hljs-keyword">typeof</span> then === <span class="hljs-string">&quot;function&quot;</span>) {
+        then.<span class="hljs-title function_">call</span>(
+          x,
+          <span class="hljs-function">(<span class="hljs-params">y</span>) =&gt;</span> {
+            <span class="hljs-keyword">if</span> (called) <span class="hljs-keyword">return</span>;
+            called = <span class="hljs-literal">true</span>;
+            <span class="hljs-title function_">resolvePromise</span>(promise, y, resolve, reject);
+          },
+          <span class="hljs-function">(<span class="hljs-params">r</span>) =&gt;</span> {
+            <span class="hljs-keyword">if</span> (called) <span class="hljs-keyword">return</span>;
+            called = <span class="hljs-literal">true</span>;
+            <span class="hljs-title function_">reject</span>(r);
+          }
+        );
+      } <span class="hljs-keyword">else</span> {
+        <span class="hljs-title function_">resolve</span>(x);
+      }
+    } <span class="hljs-keyword">catch</span> (e) {
+      <span class="hljs-keyword">if</span> (called) <span class="hljs-keyword">return</span>;
+      called = <span class="hljs-literal">true</span>;
+      <span class="hljs-title function_">reject</span>(e);
+    }
+  } <span class="hljs-keyword">else</span> {
+    <span class="hljs-title function_">resolve</span>(x);
+  }
+}
+
+<span class="hljs-keyword">class</span> <span class="hljs-title class_">Promise</span> {
+  <span class="hljs-title function_">constructor</span>(<span class="hljs-params">executor</span>) {
+    <span class="hljs-variable language_">this</span>.<span class="hljs-property">status</span> = <span class="hljs-variable constant_">PENDING</span>;
+    <span class="hljs-variable language_">this</span>.<span class="hljs-property">value</span> = <span class="hljs-literal">undefined</span>;
+    <span class="hljs-variable language_">this</span>.<span class="hljs-property">error</span> = <span class="hljs-literal">undefined</span>;
+    <span class="hljs-variable language_">this</span>.<span class="hljs-property">fulfilledList</span> = [];
+    <span class="hljs-variable language_">this</span>.<span class="hljs-property">rejectedList</span> = [];
+    <span class="hljs-keyword">try</span> {
+      <span class="hljs-title function_">executor</span>(<span class="hljs-variable language_">this</span>.<span class="hljs-property">resolve</span>.<span class="hljs-title function_">bind</span>(<span class="hljs-variable language_">this</span>), <span class="hljs-variable language_">this</span>.<span class="hljs-property">reject</span>.<span class="hljs-title function_">bind</span>(<span class="hljs-variable language_">this</span>));
+    } <span class="hljs-keyword">catch</span> (err) {
+      <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">reject</span>(err);
+    }
+  }
+
+  <span class="hljs-title function_">resolve</span>(<span class="hljs-params">value</span>) {
+    <span class="hljs-keyword">if</span> (value <span class="hljs-keyword">instanceof</span> <span class="hljs-title class_">Promise</span>) {
+      <span class="hljs-keyword">return</span> value.<span class="hljs-title function_">then</span>(resolve, reject);
+    }
+
+    <span class="hljs-built_in">setTimeout</span>(<span class="hljs-function">() =&gt;</span> {
+      <span class="hljs-keyword">if</span> (<span class="hljs-variable language_">this</span>.<span class="hljs-property">status</span> === <span class="hljs-variable constant_">PENDING</span>) {
+        <span class="hljs-variable language_">this</span>.<span class="hljs-property">status</span> = <span class="hljs-variable constant_">RESOLVED</span>;
+        <span class="hljs-variable language_">this</span>.<span class="hljs-property">value</span> = value;
+        <span class="hljs-variable language_">this</span>.<span class="hljs-property">fulfilledList</span>.<span class="hljs-title function_">forEach</span>(<span class="hljs-function">(<span class="hljs-params">cb</span>) =&gt;</span> <span class="hljs-title function_">cb</span>(<span class="hljs-variable language_">this</span>.<span class="hljs-property">value</span>));
+      }
+    }, <span class="hljs-number">0</span>);
+  }
+
+  <span class="hljs-title function_">reject</span>(<span class="hljs-params">err</span>) {
+    <span class="hljs-built_in">setTimeout</span>(<span class="hljs-function">() =&gt;</span> {
+      <span class="hljs-keyword">if</span> (<span class="hljs-variable language_">this</span>.<span class="hljs-property">status</span> === <span class="hljs-variable constant_">PENDING</span>) {
+        <span class="hljs-variable language_">this</span>.<span class="hljs-property">status</span> = <span class="hljs-variable constant_">REJECTED</span>;
+        <span class="hljs-variable language_">this</span>.<span class="hljs-property">error</span> = err;
+        <span class="hljs-variable language_">this</span>.<span class="hljs-property">rejectedList</span>.<span class="hljs-title function_">forEach</span>(<span class="hljs-function">(<span class="hljs-params">cb</span>) =&gt;</span> <span class="hljs-title function_">cb</span>(<span class="hljs-variable language_">this</span>.<span class="hljs-property">error</span>));
+      }
+    }, <span class="hljs-number">0</span>);
+  }
+
+  <span class="hljs-title function_">then</span>(<span class="hljs-params">onFulfilled, onRejected</span>) {
+    onFulfilled =
+      <span class="hljs-keyword">typeof</span> onFulfilled === <span class="hljs-string">&quot;function&quot;</span> ? onFulfilled : <span class="hljs-function">(<span class="hljs-params">value</span>) =&gt;</span> value;
+    onRejected =
+      <span class="hljs-keyword">typeof</span> onRejected === <span class="hljs-string">&quot;function&quot;</span>
+        ? onRejected
+        : <span class="hljs-function">(<span class="hljs-params">err</span>) =&gt;</span> {
+            <span class="hljs-keyword">throw</span> err;
+          };
+    <span class="hljs-keyword">let</span> promise = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Promise</span>(<span class="hljs-function">(<span class="hljs-params">resolve, reject</span>) =&gt;</span> {
+      <span class="hljs-keyword">if</span> (<span class="hljs-variable language_">this</span>.<span class="hljs-property">status</span> === <span class="hljs-variable constant_">RESOLVED</span>) {
+        <span class="hljs-built_in">setTimeout</span>(<span class="hljs-function">() =&gt;</span> {
+          <span class="hljs-keyword">try</span> {
+            <span class="hljs-keyword">let</span> x = <span class="hljs-title function_">onFulfilled</span>(<span class="hljs-variable language_">this</span>.<span class="hljs-property">value</span>);
+            <span class="hljs-title function_">resolvePromise</span>(promise, x, resolve, reject);
+          } <span class="hljs-keyword">catch</span> (err) {
+            <span class="hljs-title function_">reject</span>(err);
+          }
+        }, <span class="hljs-number">0</span>);
+      }
+      <span class="hljs-keyword">if</span> (<span class="hljs-variable language_">this</span>.<span class="hljs-property">status</span> === <span class="hljs-variable constant_">REJECTED</span>) {
+        <span class="hljs-built_in">setTimeout</span>(<span class="hljs-function">() =&gt;</span> {
+          <span class="hljs-keyword">try</span> {
+            <span class="hljs-keyword">let</span> x = <span class="hljs-title function_">onRejected</span>(<span class="hljs-variable language_">this</span>.<span class="hljs-property">error</span>);
+            <span class="hljs-title function_">resolvePromise</span>(promise, x, resolve, reject);
+          } <span class="hljs-keyword">catch</span> (err) {
+            <span class="hljs-title function_">reject</span>(err);
+          }
+        }, <span class="hljs-number">0</span>);
+      }
+      <span class="hljs-keyword">if</span> (<span class="hljs-variable language_">this</span>.<span class="hljs-property">status</span> === <span class="hljs-variable constant_">PENDING</span>) {
+        <span class="hljs-variable language_">this</span>.<span class="hljs-property">fulfilledList</span>.<span class="hljs-title function_">push</span>(<span class="hljs-function">() =&gt;</span> {
+          <span class="hljs-built_in">setTimeout</span>(<span class="hljs-function">() =&gt;</span> {
+            <span class="hljs-keyword">try</span> {
+              <span class="hljs-keyword">let</span> x = <span class="hljs-title function_">onFulfilled</span>(<span class="hljs-variable language_">this</span>.<span class="hljs-property">value</span>);
+              <span class="hljs-title function_">resolvePromise</span>(promise, x, resolve, reject);
+            } <span class="hljs-keyword">catch</span> (err) {
+              <span class="hljs-title function_">reject</span>(err);
+            }
+          }, <span class="hljs-number">0</span>);
+        });
+        <span class="hljs-variable language_">this</span>.<span class="hljs-property">rejectedList</span>.<span class="hljs-title function_">push</span>(<span class="hljs-function">() =&gt;</span> {
+          <span class="hljs-built_in">setTimeout</span>(<span class="hljs-function">() =&gt;</span> {
+            <span class="hljs-keyword">try</span> {
+              <span class="hljs-keyword">let</span> x = <span class="hljs-title function_">onRejected</span>(<span class="hljs-variable language_">this</span>.<span class="hljs-property">error</span>);
+              <span class="hljs-title function_">resolvePromise</span>(promise, x, resolve, reject);
+            } <span class="hljs-keyword">catch</span> (err) {
+              <span class="hljs-title function_">reject</span>(err);
+            }
+          }, <span class="hljs-number">0</span>);
+        });
+      }
+    });
+    <span class="hljs-keyword">return</span> promise;
+  }
+
+  <span class="hljs-keyword">catch</span>(errCallback) {
+    <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">then</span>(<span class="hljs-literal">null</span>, errCallback);
+  }
+}
+
+<span class="hljs-keyword">let</span> promise = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Promise</span>(<span class="hljs-function">(<span class="hljs-params">resolve, reject</span>) =&gt;</span> {
+  <span class="hljs-built_in">setTimeout</span>(<span class="hljs-function">() =&gt;</span> {
+    <span class="hljs-comment">//reject(&#x27;xxx&#x27;)</span>
+    <span class="hljs-title function_">resolve</span>(<span class="hljs-string">&quot;xxx&quot;</span>);
+  }, <span class="hljs-number">1000</span>);
+})
+  .<span class="hljs-title function_">then</span>(
+    <span class="hljs-function">(<span class="hljs-params">res</span>) =&gt;</span> {
+      <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">&quot;成功的结果 1&quot;</span>, res);
+      <span class="hljs-keyword">return</span> res;
+    },
+    <span class="hljs-function">(<span class="hljs-params">error</span>) =&gt;</span> {
+      <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">&quot;失败的结果 1&quot;</span>, error);
+    }
+  )
+  .<span class="hljs-title function_">then</span>(
+    <span class="hljs-function">(<span class="hljs-params">res</span>) =&gt;</span> {
+      <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">&quot;成功的结果 2&quot;</span>, res);
+    },
+    <span class="hljs-function">(<span class="hljs-params">error</span>) =&gt;</span> {
+      <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">&quot;失败的结果 2&quot;</span>, error);
+    }
+  );
+</code></pre>
+<h3><a id="手写-promiseall" class="content__heading-anchor"></a>手写 Promise.all</h3>
+<p>手写思路</p>
+<ol>
+<li>接受一个参数，该参数是含有 promise 实例的数组</li>
+<li>遍历传入的参数，用 promise.resolve 将参数转为 promise 对象</li>
+<li>设置 flag，每当一个 promise 对象回调成功，flag+1，然后将回调成功结果添加到回调结果数组中。</li>
+<li>当所有 promise 对象回调成功，返回回调结果数组，只要有一个 promise 对象回调失败，则触发失败状态，该回调失败的 promise 对象的错误信息将作为 promise.all 的错误信息。</li>
+</ol>
+<pre><code class="language-js"><span class="hljs-keyword">function</span> <span class="hljs-title function_">AllPromise</span>(<span class="hljs-params">promiseArray</span>) {
+  <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Promise</span>(<span class="hljs-function">(<span class="hljs-params">resolve, reject</span>) =&gt;</span> {
+    <span class="hljs-keyword">if</span> (!promiseArray <span class="hljs-keyword">instanceof</span> <span class="hljs-title class_">Array</span>) {
+      <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Error</span>(<span class="hljs-string">&quot;参数类型应为数组&quot;</span>);
+    }
+    <span class="hljs-keyword">let</span> resolveResult = [];
+    <span class="hljs-keyword">let</span> flag = <span class="hljs-number">0</span>;
+    <span class="hljs-keyword">let</span> promiseCount = promiseArray.<span class="hljs-property">length</span>;
+
+    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">let</span> i <span class="hljs-keyword">in</span> promiseArray) {
+      <span class="hljs-title class_">Promise</span>.<span class="hljs-title function_">resolve</span>(
+        promiseArray[i].<span class="hljs-title function_">then</span>(
+          <span class="hljs-function">(<span class="hljs-params">val</span>) =&gt;</span> {
+            flag++;
+            <span class="hljs-comment">//resolveResult.push(val)</span>
+            <span class="hljs-comment">//不使用push的原因：先完成的先push，后完成的后push，会导致返回的数组与promiseArray数组的顺序不同，因此不能使用push</span>
+            resolveResult[i] = val;
+            <span class="hljs-keyword">if</span> (flag == promiseCount) {
+              <span class="hljs-keyword">return</span> <span class="hljs-title function_">resolve</span>(resolveResult);
+            }
+          },
+          <span class="hljs-function">(<span class="hljs-params">err</span>) =&gt;</span> {
+            <span class="hljs-keyword">return</span> <span class="hljs-title function_">reject</span>(err);
+          }
+        )
+      );
+    }
+  });
+}
+
+<span class="hljs-keyword">let</span> promise1 = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Promise</span>(<span class="hljs-function">(<span class="hljs-params">resolve, reject</span>) =&gt;</span> {
+  <span class="hljs-built_in">setTimeout</span>(<span class="hljs-function">() =&gt;</span> {
+    <span class="hljs-title function_">resolve</span>(<span class="hljs-number">1</span>);
+  }, <span class="hljs-number">3000</span>);
+});
+
+<span class="hljs-keyword">let</span> promise2 = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Promise</span>(<span class="hljs-function">(<span class="hljs-params">resolve, reject</span>) =&gt;</span> {
+  <span class="hljs-built_in">setTimeout</span>(<span class="hljs-function">() =&gt;</span> {
+    <span class="hljs-title function_">resolve</span>(<span class="hljs-number">2</span>);
+  }, <span class="hljs-number">1000</span>);
+});
+
+<span class="hljs-keyword">let</span> promise3 = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Promise</span>(<span class="hljs-function">(<span class="hljs-params">resolve, reject</span>) =&gt;</span> {
+  <span class="hljs-built_in">setTimeout</span>(<span class="hljs-function">() =&gt;</span> {
+    <span class="hljs-title function_">resolve</span>(<span class="hljs-number">3</span>);
+  }, <span class="hljs-number">2000</span>);
+});
+
+<span class="hljs-keyword">let</span> promise4 = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Promise</span>(<span class="hljs-function">(<span class="hljs-params">resolve, reject</span>) =&gt;</span> {
+  <span class="hljs-built_in">setTimeout</span>(<span class="hljs-function">() =&gt;</span> {
+    <span class="hljs-title function_">resolve</span>(<span class="hljs-number">4</span>);
+  }, <span class="hljs-number">6000</span>);
+});
+
+<span class="hljs-keyword">let</span> promise5 = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Promise</span>(<span class="hljs-function">(<span class="hljs-params">resolve, reject</span>) =&gt;</span> {
+  <span class="hljs-built_in">setTimeout</span>(<span class="hljs-function">() =&gt;</span> {
+    <span class="hljs-title function_">resolve</span>(<span class="hljs-number">5</span>);
+  }, <span class="hljs-number">4000</span>);
+});
+
+<span class="hljs-keyword">let</span> promiseArray = [promise1, promise2, promise3, promise4, promise5];
+
+<span class="hljs-title class_">AllPromise</span>(promiseArray).<span class="hljs-title function_">then</span>(<span class="hljs-function">(<span class="hljs-params">res</span>) =&gt;</span> <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(res));
+</code></pre>
+<h3><a id="手写-promiseallsettled" class="content__heading-anchor"></a>手写 Promise.allSettled</h3>
+<p>手写思路</p>
+<ol>
+<li>接受一个参数，该参数是含有 promise 实例的数组</li>
+<li>遍历传入的参数，用 promise.resolve 将参数转为 promise 对象</li>
+<li>无论 promise 对象回调成功还是失败，都将返回结果存储到回调结果数组中。</li>
+<li>设置 flag，每当一个 promise 对象回调成功或者失败，在 finally 阶段 flag+1，然后将回调结果添加到回调结果数组中，直到 flag 与传入的 promise 实例数组长度相同，则将带有所有回调结果的回调结果数组输出。</li>
+</ol>
+<pre><code class="language-js"><span class="hljs-keyword">function</span> <span class="hljs-title function_">allSettledPromise</span>(<span class="hljs-params">promiseArray</span>) {
+  <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Promise</span>(<span class="hljs-function">(<span class="hljs-params">resolve, reject</span>) =&gt;</span> {
+    <span class="hljs-keyword">if</span> (!promiseArray <span class="hljs-keyword">instanceof</span> <span class="hljs-title class_">Array</span>) {
+      <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Error</span>(<span class="hljs-string">&quot;参数类型应为数组&quot;</span>);
+    }
+    <span class="hljs-keyword">let</span> resolveResult = [];
+    <span class="hljs-keyword">let</span> flag = <span class="hljs-number">0</span>;
+    <span class="hljs-keyword">let</span> promiseCount = promiseArray.<span class="hljs-property">length</span>;
+
+    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">let</span> i <span class="hljs-keyword">in</span> promiseArray) {
+      <span class="hljs-title class_">Promise</span>.<span class="hljs-title function_">resolve</span>(
+        promiseArray[i]
+          .<span class="hljs-title function_">then</span>(<span class="hljs-function">(<span class="hljs-params">val</span>) =&gt;</span> {
+            resolveResult[i] = val;
+          })
+          .<span class="hljs-title function_">catch</span>(<span class="hljs-function">(<span class="hljs-params">err</span>) =&gt;</span> {
+            resolveResult[i] = err;
+          })
+          .<span class="hljs-title function_">finally</span>(<span class="hljs-function">(<span class="hljs-params">res</span>) =&gt;</span> {
+            flag++;
+            <span class="hljs-keyword">if</span> (flag == promiseCount) {
+              <span class="hljs-keyword">return</span> <span class="hljs-title function_">resolve</span>(resolveResult);
+            }
+          })
+      );
+    }
+  });
+}
+
+<span class="hljs-keyword">let</span> promise1 = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Promise</span>(<span class="hljs-function">(<span class="hljs-params">resolve, reject</span>) =&gt;</span> {
+  <span class="hljs-built_in">setTimeout</span>(<span class="hljs-function">() =&gt;</span> {
+    <span class="hljs-title function_">resolve</span>(<span class="hljs-number">1</span>);
+  }, <span class="hljs-number">3000</span>);
+});
+
+<span class="hljs-keyword">let</span> promise2 = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Promise</span>(<span class="hljs-function">(<span class="hljs-params">resolve, reject</span>) =&gt;</span> {
+  <span class="hljs-built_in">setTimeout</span>(<span class="hljs-function">() =&gt;</span> {
+    <span class="hljs-title function_">resolve</span>(<span class="hljs-number">2</span>);
+  }, <span class="hljs-number">1000</span>);
+});
+
+<span class="hljs-keyword">let</span> promise3 = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Promise</span>(<span class="hljs-function">(<span class="hljs-params">resolve, reject</span>) =&gt;</span> {
+  <span class="hljs-built_in">setTimeout</span>(<span class="hljs-function">() =&gt;</span> {
+    <span class="hljs-title function_">resolve</span>(<span class="hljs-number">3</span>);
+  }, <span class="hljs-number">2000</span>);
+});
+
+<span class="hljs-keyword">let</span> promise4 = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Promise</span>(<span class="hljs-function">(<span class="hljs-params">resolve, reject</span>) =&gt;</span> {
+  <span class="hljs-built_in">setTimeout</span>(<span class="hljs-function">() =&gt;</span> {
+    <span class="hljs-title function_">reject</span>(<span class="hljs-string">&quot;错误&quot;</span>);
+  }, <span class="hljs-number">6000</span>);
+});
+
+<span class="hljs-keyword">let</span> promise5 = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Promise</span>(<span class="hljs-function">(<span class="hljs-params">resolve, reject</span>) =&gt;</span> {
+  <span class="hljs-built_in">setTimeout</span>(<span class="hljs-function">() =&gt;</span> {
+    <span class="hljs-title function_">resolve</span>(<span class="hljs-number">5</span>);
+  }, <span class="hljs-number">4000</span>);
+});
+
+<span class="hljs-keyword">let</span> promiseArray = [promise1, promise2, promise3, promise4, promise5];
+
+<span class="hljs-title function_">allSettledPromise</span>(promiseArray).<span class="hljs-title function_">then</span>(<span class="hljs-function">(<span class="hljs-params">res</span>) =&gt;</span> <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(res));
+<span class="hljs-comment">// 返回结果：[ 1, 2, 3, &#x27;错误&#x27;, 5 ]</span>
+</code></pre>
+ </article> </section> </main>  <footer class="footer"> <hr class="footer__divide"> <div class="footer__row"> <p class="m-2">
+&#169; 2017-2024 <a href="/" class="link">9Sky 九天</a> </p> <div class="m-2"> <ul data-astro-cid-tfcnbjmv> <li data-astro-cid-tfcnbjmv> <a class="link" href="/" data-astro-cid-tfcnbjmv> 
+主页
+</a> </li> <li data-astro-cid-tfcnbjmv> <a class="link" href="/blog" data-astro-cid-tfcnbjmv>  文章 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/projects" data-astro-cid-tfcnbjmv>  项目 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/lab" data-astro-cid-tfcnbjmv>  实验室 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/about" data-astro-cid-tfcnbjmv>  关于 </a> </li> </ul>  </div> </div> </footer> </body></html> 

@@ -1,0 +1,142 @@
+<!DOCTYPE html><html> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width"><title>从零实现mini-react(3)：统一提交&amp;实现function component</title><link rel="icon" type="image/vnd.microsoft.icon" href="/favicon.ico"><link rel="sitemap" href="/sitemap-index.xml"><title>从零实现mini-react(3)：统一提交&实现function component</title><link rel="canonical" href="https://wty9sky.github.io/blog/detail/3/"><meta name="description" content="解决当没有空闲时间时，可能导致部分DOM没有被渲染，从而让用户看到不完整的DOM结构。
+"><meta name="robots" content="index, follow"><meta property="og:title" content="从零实现mini-react(3)：统一提交&#38;实现function component"><meta property="og:type" content="article"><meta property="og:image" content="/og.svg"><meta property="og:url" content="https://wty9sky.github.io/blog/detail/3/"><meta property="og:locale" content="zh_CN"><meta property="og:locale:alternate" content="zh_TW"><meta property="og:locale:alternate" content="en_US"><meta property="og:site_name" content="9Sky 九天"><link rel="shortcut icon" href="/favicon.ico"><link rel="bookmark" href="/favicon.ico"><link rel="apple-touch-icon" href="/avatar.png"><meta name="generator" content="Astro v4.16.7"><meta name="keywords" content="详情"><meta name="astro-view-transitions-enabled" content="true"><meta name="astro-view-transitions-fallback" content="animate"><link rel="stylesheet" href="/_astro/about.CkC6PiIh.css">
+<link rel="stylesheet" href="/_astro/about.D3zQv4Ly.css"><script type="module" src="/_astro/hoisted.HO6_Fzad.js"></script></head> <body> <header class="header"> <h5 class="header__heading"> <a href="/" class="link">9Sky 九天</a> <span>
+/
+<a href="/blog" class="link"> 博客 </a> </span><span>
+/
+从零实现mini-react(3)：统一提交&amp;实现function component </span> </h5> </header> <div id="navbar-sentinal"></div> <nav class="navbar" id="navbar-wrapper"> <div class="navbar__content"> <h5 class="navbar__path"> <a href="/" class="link">9Sky 九天</a> <span>
+/
+<a href="/blog" class="link"> 博客 </a> </span><span>
+/
+从零实现mini-react(3)：统一提交&amp;实现function component </span> </h5> <div class="navbar__menu"> <ul data-astro-cid-tfcnbjmv> <li data-astro-cid-tfcnbjmv> <a class="link" href="/" data-astro-cid-tfcnbjmv> <i class="ri-home-line" data-astro-cid-tfcnbjmv></i>
+主页
+</a> </li> <li data-astro-cid-tfcnbjmv> <a class="link" href="/blog" data-astro-cid-tfcnbjmv> <i class="ri-newspaper-line" data-astro-cid-tfcnbjmv></i> 文章 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/projects" data-astro-cid-tfcnbjmv> <i class="ri-server-line" data-astro-cid-tfcnbjmv></i> 项目 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/lab" data-astro-cid-tfcnbjmv> <i class="ri-server-line" data-astro-cid-tfcnbjmv></i> 实验室 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/about" data-astro-cid-tfcnbjmv> <i class="ri-cup-line" data-astro-cid-tfcnbjmv></i> 关于 </a> </li> </ul>  </div> </div> </nav> <script>
+  // 使用 ViewTransition 后，所有 DOM 操作的 js 都有一堆问题
+  // 这里用了极不优雅的 var，有待改进
+  var observer;
+  function addNavObserver() {
+    const headerEl = document.querySelector("#navbar-wrapper");
+    const sentinalEl = document.querySelector("#navbar-sentinal");
+    if (!sentinalEl || !headerEl) return;
+    observer = new window.IntersectionObserver((e) => {
+      if (!e[0].isIntersectin && e[0].boundingClientRect.top <= 0) {
+        headerEl.classList.add("navbar--sticked");
+      } else {
+        headerEl.classList.remove("navbar--sticked");
+      }
+    });
+    observer.observe(sentinalEl);
+  }
+
+  function removeNavObserver() {
+    if (observer) observer.disconnect();
+    observer = null;
+  }
+
+  document.addEventListener(
+    "astro:page-load",
+    () => {
+      addNavObserver();
+    },
+    { once: false },
+  );
+
+  document.addEventListener(
+    "astro:before-swap",
+    () => {
+      removeNavObserver();
+    },
+    { once: false },
+  );
+</script>  <main class="page"> <section class="page__section page__section--at-top"> <!-- {
+        article.cover && (
+          <a href={article.cover} data-fancybox data-caption={article.title}>
+            <img
+              src={article.cover}
+              alt={article.title}
+              title={article.title}
+              class="page__cover mb-8"
+            />
+          </a>
+        )
+      } --> <h1 class="page__heading">从零实现mini-react(3)：统一提交&amp;实现function component</h1> <p class="page__meta"> <i class="ri-calendar-line"></i> <span>2024 年 3 月 20 日 02:32</span> </p> <hr class="page__divide"> <article class="content"> <h2><a id="文章目录" class="content__heading-anchor"></a>文章目录</h2>
+<ul>
+<li><a href="#%E4%BB%8E%E9%9B%B6%E5%AE%9E%E7%8E%B0mini-react3%E7%BB%9F%E4%B8%80%E6%8F%90%E4%BA%A4%E5%AE%9E%E7%8E%B0function-component">从零实现mini-react(3)：统一提交&amp;实现function component</a>
+<ul>
+<li><a href="#%E7%BB%9F%E4%B8%80%E6%8F%90%E4%BA%A4">统一提交</a></li>
+<li><a href="#%E6%94%AF%E6%8C%81function-component">支持function component</a></li>
+</ul></li>
+</ul>
+<h1><a id="从零实现mini-react3统一提交实现function-component" class="content__heading-anchor"></a>从零实现mini-react(3)：统一提交&amp;实现function component</h1>
+<h2><a id="统一提交" class="content__heading-anchor"></a>统一提交</h2>
+<blockquote>
+<p>问题<br>
+当没有空闲时间时，会导致部分渲染部分没有渲染，可能导致用户看到部分被渲染的 dom 结构，即渲染不完全的问题</p>
+</blockquote>
+<p><br></p>
+<blockquote>
+<p>解决办法<br>
+处理节点的时候只是创建dom和更新dom的props，处理children逻辑，但不加载dom到父节点。统一提交后，所有的 dom 都创建完成后再统一挂载渲染。</p>
+</blockquote>
+<pre><code class="language-javascript"><span class="hljs-keyword">function</span> <span class="hljs-title function_">commitRoot</span>(<span class="hljs-params"></span>) {
+  <span class="hljs-title function_">commitWork</span>(root.<span class="hljs-property">child</span>);
+  root = <span class="hljs-literal">null</span>;
+}
+
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">commitWork</span>(<span class="hljs-params">fiber</span>) {
+  <span class="hljs-keyword">if</span> (!fiber) <span class="hljs-keyword">return</span>;
+
+  <span class="hljs-keyword">let</span> fiberParent = fiber.<span class="hljs-property">parent</span>;
+  <span class="hljs-keyword">while</span> (!fiberParent.<span class="hljs-property">dom</span>) {
+    fiberParent = fiberParent.<span class="hljs-property">parent</span>;
+  }
+
+  <span class="hljs-keyword">if</span> (fiber.<span class="hljs-property">dom</span>) {
+    fiberParent.<span class="hljs-property">dom</span>.<span class="hljs-title function_">append</span>(fiber.<span class="hljs-property">dom</span>);
+  }
+
+  <span class="hljs-title function_">commitWork</span>(fiber.<span class="hljs-property">child</span>);
+  <span class="hljs-title function_">commitWork</span>(fiber.<span class="hljs-property">sibling</span>);
+}
+</code></pre>
+<h2><a id="支持function-component" class="content__heading-anchor"></a>支持function component</h2>
+<ul>
+<li>实现Function Component
+<ul>
+<li>函数生成dom，并且可以传入props</li>
+<li>实际上就是比普通的component多了一层拆包的过程，判断fiber的type是否为函数，然后进一步去拆包。</li>
+<li>由于function component 本身没有vdom，在寻找父容器和兄弟节点时，需要采用循环向上的方式。</li>
+<li>需要考虑到多种边缘情况</li>
+</ul></li>
+</ul>
+<pre><code class="language-javascript"><span class="hljs-keyword">function</span> <span class="hljs-title function_">performWorkOfUnit</span>(<span class="hljs-params">fiber</span>) {
+  <span class="hljs-keyword">const</span> isFunctionComponent = <span class="hljs-keyword">typeof</span> fiber.<span class="hljs-property">type</span> === <span class="hljs-string">&quot;function&quot;</span>;
+
+  <span class="hljs-keyword">if</span> (isFunctionComponent) {
+    <span class="hljs-title function_">updateFunctionComponent</span>(fiber);
+  } <span class="hljs-keyword">else</span> {
+    <span class="hljs-title function_">updateHostComponent</span>(fiber);
+  }
+
+  <span class="hljs-comment">//...</span>
+}
+
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">createElement</span>(<span class="hljs-params">type, props, ...children</span>) {
+  <span class="hljs-keyword">return</span> {
+    type,
+    <span class="hljs-attr">props</span>: {
+      ...props,
+      <span class="hljs-attr">children</span>: children.<span class="hljs-title function_">map</span>(<span class="hljs-function">(<span class="hljs-params">child</span>) =&gt;</span> {
+        <span class="hljs-keyword">const</span> isTextNode =
+          <span class="hljs-keyword">typeof</span> child === <span class="hljs-string">&quot;string&quot;</span> || <span class="hljs-keyword">typeof</span> child === <span class="hljs-string">&quot;number&quot;</span>;
+        <span class="hljs-keyword">return</span> isTextNode ? <span class="hljs-title function_">createTextNode</span>(child) : child;
+      }),
+    },
+  };
+}
+
+</code></pre>
+ </article> </section> </main>  <footer class="footer"> <hr class="footer__divide"> <div class="footer__row"> <p class="m-2">
+&#169; 2017-2024 <a href="/" class="link">9Sky 九天</a> </p> <div class="m-2"> <ul data-astro-cid-tfcnbjmv> <li data-astro-cid-tfcnbjmv> <a class="link" href="/" data-astro-cid-tfcnbjmv> 
+主页
+</a> </li> <li data-astro-cid-tfcnbjmv> <a class="link" href="/blog" data-astro-cid-tfcnbjmv>  文章 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/projects" data-astro-cid-tfcnbjmv>  项目 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/lab" data-astro-cid-tfcnbjmv>  实验室 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/about" data-astro-cid-tfcnbjmv>  关于 </a> </li> </ul>  </div> </div> </footer> </body></html> 

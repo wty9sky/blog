@@ -1,0 +1,1129 @@
+<!DOCTYPE html><html> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width"><title>Nestjs学习记录（一）：快速上手与基础概念</title><link rel="icon" type="image/vnd.microsoft.icon" href="/favicon.ico"><link rel="sitemap" href="/sitemap-index.xml"><title>Nestjs学习记录（一）：快速上手与基础概念</title><link rel="canonical" href="https://wty9sky.github.io/blog/detail/17/"><meta name="description" content="Nestjs的使用：包括创建项目和模块，控制器、服务、模块、中间件、异常过滤器、管道、守卫和拦截器的使用。控制器处理客户端请求，服务封装复杂的业务逻辑，模块管理所有控制器和提供者，中间件更改请求响应对象，异常过滤器处理所有未处理的异常，管道对客户端数据进行转换和验证，守卫根据特定的权限角色决定是否进行处理，拦截器对处理函数进行切面上的扩展。
+"><meta name="robots" content="index, follow"><meta property="og:title" content="Nestjs学习记录（一）：快速上手与基础概念"><meta property="og:type" content="article"><meta property="og:image" content="/og.svg"><meta property="og:url" content="https://wty9sky.github.io/blog/detail/17/"><meta property="og:locale" content="zh_CN"><meta property="og:locale:alternate" content="zh_TW"><meta property="og:locale:alternate" content="en_US"><meta property="og:site_name" content="9Sky 九天"><link rel="shortcut icon" href="/favicon.ico"><link rel="bookmark" href="/favicon.ico"><link rel="apple-touch-icon" href="/avatar.png"><meta name="generator" content="Astro v4.16.7"><meta name="keywords" content="详情"><meta name="astro-view-transitions-enabled" content="true"><meta name="astro-view-transitions-fallback" content="animate"><link rel="stylesheet" href="/_astro/about.CkC6PiIh.css">
+<link rel="stylesheet" href="/_astro/about.D3zQv4Ly.css"><script type="module" src="/_astro/hoisted.HO6_Fzad.js"></script></head> <body> <header class="header"> <h5 class="header__heading"> <a href="/" class="link">9Sky 九天</a> <span>
+/
+<a href="/blog" class="link"> 博客 </a> </span><span>
+/
+Nestjs学习记录（一）：快速上手与基础概念 </span> </h5> </header> <div id="navbar-sentinal"></div> <nav class="navbar" id="navbar-wrapper"> <div class="navbar__content"> <h5 class="navbar__path"> <a href="/" class="link">9Sky 九天</a> <span>
+/
+<a href="/blog" class="link"> 博客 </a> </span><span>
+/
+Nestjs学习记录（一）：快速上手与基础概念 </span> </h5> <div class="navbar__menu"> <ul data-astro-cid-tfcnbjmv> <li data-astro-cid-tfcnbjmv> <a class="link" href="/" data-astro-cid-tfcnbjmv> <i class="ri-home-line" data-astro-cid-tfcnbjmv></i>
+主页
+</a> </li> <li data-astro-cid-tfcnbjmv> <a class="link" href="/blog" data-astro-cid-tfcnbjmv> <i class="ri-newspaper-line" data-astro-cid-tfcnbjmv></i> 文章 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/projects" data-astro-cid-tfcnbjmv> <i class="ri-server-line" data-astro-cid-tfcnbjmv></i> 项目 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/lab" data-astro-cid-tfcnbjmv> <i class="ri-server-line" data-astro-cid-tfcnbjmv></i> 实验室 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/about" data-astro-cid-tfcnbjmv> <i class="ri-cup-line" data-astro-cid-tfcnbjmv></i> 关于 </a> </li> </ul>  </div> </div> </nav> <script>
+  // 使用 ViewTransition 后，所有 DOM 操作的 js 都有一堆问题
+  // 这里用了极不优雅的 var，有待改进
+  var observer;
+  function addNavObserver() {
+    const headerEl = document.querySelector("#navbar-wrapper");
+    const sentinalEl = document.querySelector("#navbar-sentinal");
+    if (!sentinalEl || !headerEl) return;
+    observer = new window.IntersectionObserver((e) => {
+      if (!e[0].isIntersectin && e[0].boundingClientRect.top <= 0) {
+        headerEl.classList.add("navbar--sticked");
+      } else {
+        headerEl.classList.remove("navbar--sticked");
+      }
+    });
+    observer.observe(sentinalEl);
+  }
+
+  function removeNavObserver() {
+    if (observer) observer.disconnect();
+    observer = null;
+  }
+
+  document.addEventListener(
+    "astro:page-load",
+    () => {
+      addNavObserver();
+    },
+    { once: false },
+  );
+
+  document.addEventListener(
+    "astro:before-swap",
+    () => {
+      removeNavObserver();
+    },
+    { once: false },
+  );
+</script>  <main class="page"> <section class="page__section page__section--at-top"> <!-- {
+        article.cover && (
+          <a href={article.cover} data-fancybox data-caption={article.title}>
+            <img
+              src={article.cover}
+              alt={article.title}
+              title={article.title}
+              class="page__cover mb-8"
+            />
+          </a>
+        )
+      } --> <h1 class="page__heading">Nestjs学习记录（一）：快速上手与基础概念</h1> <p class="page__meta"> <i class="ri-calendar-line"></i> <span>2021 年 7 月 12 日 10:32</span> </p> <hr class="page__divide"> <article class="content"> <h2><a id="文章目录" class="content__heading-anchor"></a>文章目录</h2>
+<ul>
+<li><a href="#nestjs%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%E4%B8%80%E5%BF%AB%E9%80%9F%E4%B8%8A%E6%89%8B%E4%B8%8E%E5%9F%BA%E7%A1%80%E6%A6%82%E5%BF%B5">Nestjs学习笔记（一）：快速上手与基础概念</a>
+<ul>
+<li><a href="#%E5%BF%AB%E9%80%9F%E5%88%9B%E5%BB%BA%E9%A1%B9%E7%9B%AE">快速创建项目</a></li>
+<li><a href="#%E7%86%9F%E6%82%89%E5%85%B3%E9%94%AE%E6%96%87%E4%BB%B6">熟悉关键文件</a></li>
+<li><a href="#%E8%BF%90%E8%A1%8C%E5%BA%94%E7%94%A8%E7%A8%8B%E5%BA%8F">运行应用程序</a></li>
+<li><a href="#%E4%BB%8E%E6%A8%A1%E5%9D%97%E7%AE%A1%E7%90%86%E5%BC%80%E5%A7%8B">从模块管理开始</a>
+<ul>
+<li><a href="#%E5%88%9B%E5%BB%BA%E6%A8%A1%E5%9D%97">创建模块：</a></li>
+<li><a href="#module-%E5%85%83%E6%95%B0%E6%8D%AE">@Module() 元数据</a></li>
+<li><a href="#%E6%A8%A1%E5%9D%97%E5%86%8D%E5%AF%BC%E5%87%BA">模块再导出</a></li>
+<li><a href="#%E5%85%A8%E5%B1%80%E6%A8%A1%E5%9D%97">全局模块</a></li>
+</ul></li>
+<li><a href="#%E6%8E%A7%E5%88%B6%E5%99%A8%E7%9A%84%E4%BD%BF%E7%94%A8">控制器的使用</a>
+<ul>
+<li><a href="#%E5%88%9B%E5%BB%BA%E6%8E%A7%E5%88%B6%E5%99%A8">创建控制器</a></li>
+<li><a href="#%E8%AF%BB%E5%8F%96%E8%AF%B7%E6%B1%82%E5%AF%B9%E8%B1%A1">读取请求对象</a></li>
+<li><a href="#%E6%9B%B4%E5%A4%9A%E8%A3%85%E9%A5%B0%E5%99%A8">更多装饰器</a></li>
+</ul></li>
+<li><a href="#%E6%8F%90%E4%BE%9B%E8%80%85%E7%9A%84%E4%BD%BF%E7%94%A8">提供者的使用</a>
+<ul>
+<li><a href="#%E5%88%9B%E5%BB%BA%E6%9C%8D%E5%8A%A1">创建服务</a></li>
+<li><a href="#%E6%B3%A8%E5%85%A5%E5%B9%B6%E4%BD%BF%E7%94%A8">注入并使用</a></li>
+</ul></li>
+<li><a href="#%E4%B8%AD%E9%97%B4%E4%BB%B6%E7%9A%84%E4%BD%BF%E7%94%A8">中间件的使用</a>
+<ul>
+<li><a href="#%E5%88%9B%E5%BB%BA%E4%B8%AD%E9%97%B4%E4%BB%B6">创建中间件</a></li>
+<li><a href="#%E6%B3%A8%E5%86%8C%E4%B8%AD%E9%97%B4%E4%BB%B6">注册中间件</a></li>
+<li><a href="#%E8%8C%83%E5%9B%B4%E6%8E%A7%E5%88%B6">范围控制</a></li>
+<li><a href="#%E4%B8%AD%E9%97%B4%E4%BB%B6%E4%B8%B2%E8%81%94">中间件串联</a></li>
+<li><a href="#%E5%85%A8%E5%B1%80%E4%B8%AD%E9%97%B4%E4%BB%B6">全局中间件</a></li>
+</ul></li>
+<li><a href="#%E5%AE%88%E5%8D%AB%E7%9A%84%E4%BD%BF%E7%94%A8">守卫的使用</a>
+<ul>
+<li><a href="#%E5%88%9B%E5%BB%BA%E5%AE%88%E5%8D%AB">创建守卫</a></li>
+<li><a href="#%E5%9F%BA%E4%BA%8E%E8%A7%92%E8%89%B2%E5%AE%88%E5%8D%AB">基于角色守卫</a></li>
+<li><a href="#%E7%BB%91%E5%AE%9A%E5%AE%88%E5%8D%AB">绑定守卫</a></li>
+</ul></li>
+<li><a href="#%E6%8B%A6%E6%88%AA%E5%99%A8%E7%9A%84%E4%BD%BF%E7%94%A8">拦截器的使用</a>
+<ul>
+<li><a href="#%E5%88%9B%E5%BB%BA%E6%8B%A6%E6%88%AA%E5%99%A8">创建拦截器</a></li>
+<li><a href="#%E8%AE%B0%E5%BD%95%E6%89%A7%E8%A1%8C%E6%97%B6%E9%97%B4">记录执行时间</a></li>
+<li><a href="#%E7%BB%91%E5%AE%9A%E6%8B%A6%E6%88%AA%E5%99%A8">绑定拦截器</a></li>
+<li><a href="#%E6%9B%B4%E5%A4%9A%E5%BA%94%E7%94%A8%E6%A1%88%E4%BE%8B">更多应用案例</a></li>
+</ul></li>
+<li><a href="#%E5%BC%82%E5%B8%B8%E8%BF%87%E6%BB%A4%E5%99%A8%E7%9A%84%E4%BD%BF%E7%94%A8">异常过滤器的使用</a>
+<ul>
+<li><a href="#%E6%A0%87%E5%87%86%E5%BC%82%E5%B8%B8">标准异常</a></li>
+<li><a href="#%E8%87%AA%E5%AE%9A%E4%B9%89%E5%BC%82%E5%B8%B8">自定义异常</a></li>
+<li><a href="#%E5%86%85%E7%BD%AE-http-%E5%BC%82%E5%B8%B8">内置 HTTP 异常</a></li>
+<li><a href="#%E5%88%9B%E5%BB%BA-http-%E5%BC%82%E5%B8%B8%E8%BF%87%E6%BB%A4%E5%99%A8">创建 HTTP 异常过滤器</a></li>
+<li><a href="#%E7%BB%91%E5%AE%9A%E8%BF%87%E6%BB%A4%E5%99%A8">绑定过滤器</a></li>
+<li><a href="#%E5%88%9B%E5%BB%BA%E9%80%9A%E7%94%A8%E5%BC%82%E5%B8%B8%E8%BF%87%E6%BB%A4%E5%99%A8">创建通用异常过滤器</a></li>
+</ul></li>
+<li><a href="#%E7%AE%A1%E9%81%93%E7%9A%84%E4%BD%BF%E7%94%A8">管道的使用</a>
+<ul>
+<li><a href="#%E7%BB%91%E5%AE%9A%E7%AE%A1%E9%81%93">绑定管道</a></li>
+<li><a href="#%E5%9F%BA%E4%BA%8E-schema-%E7%9A%84%E9%AA%8C%E8%AF%81">基于 schema 的验证</a></li>
+<li><a href="#%E5%9F%BA%E4%BA%8E-class-%E7%9A%84%E9%AA%8C%E8%AF%81">基于 class 的验证</a></li>
+</ul></li>
+<li><a href="#%E6%80%BB%E7%BB%93">总结</a></li>
+</ul></li>
+</ul>
+<h1><a id="nestjs学习笔记一快速上手与基础概念" class="content__heading-anchor"></a>Nestjs学习笔记（一）：快速上手与基础概念</h1>
+<p><strong>NestJS</strong> 是一个用于构建高效、可扩展的 <strong>Node.js</strong> 服务器端应用程序的框架。它采用了渐进式 <strong>JavaScript</strong> ，使用 <strong>TypeScript</strong> 构建并完全支持 <strong>TypeScript</strong>（但仍允许开发人员使用纯<strong>JavaScript</strong> 编码），并结合了<strong>OOP</strong>（面向对象编程）、<strong>FP</strong>（面向函数编程）和 <strong>FRP</strong>（面向函数的响应式编程）的元素。</p>
+<h2><a id="快速创建项目" class="content__heading-anchor"></a>快速创建项目</h2>
+<p>全局安装脚手架并启用严格模式创建项目；</p>
+<pre><code class="language-powershell"><span class="hljs-comment">## 全局安装脚手架</span>
+npm i <span class="hljs-literal">-g</span> @nestjs/<span class="hljs-built_in">cli</span>
+<span class="hljs-comment">## 启用 Typescript 严格模式创建项目</span>
+nest new project <span class="hljs-literal">--strict</span>
+</code></pre>
+<h2><a id="熟悉关键文件" class="content__heading-anchor"></a>熟悉关键文件</h2>
+<p><code>src</code>目录是主要的源码目录，主要由入口文件 <code>main.ts</code> 和 一组 <code>module</code>，<code>service</code>，<code>controller</code>构成。</p>
+<pre><code>project
+├─ src
+│  ├─ app.controller.ts          # 业务数据交互的入口，实现数据在前后端的交互
+│  ├─ app.service.ts           # 封装业务逻辑，将重复的业务逻辑在服务层进行封装
+│  ├─ app.module.ts            # 负责模块的管理，通常 app.module 负责全局模块的管理
+│  └─ main.ts                  # 入口文件，创建应用实例
+├─ README.md
+├─ nest-cli.json
+├─ package.json
+├─ tsconfig.build.json
+└─ tsconfig.json
+</code></pre>
+<h2><a id="运行应用程序" class="content__heading-anchor"></a>运行应用程序</h2>
+<ol>
+<li>普通启动模式：<code>npm run start</code></li>
+<li>监听启动模式：<code>npm run start:dev</code></li>
+<li>调试启动模式：<code>npm run start:debug</code></li>
+</ol>
+<h2><a id="从模块管理开始" class="content__heading-anchor"></a>从模块管理开始</h2>
+<p><strong>Nestjs</strong> 是典型的采用模块化组织应用结构的框架，通过上图可以看到，整个应用由一个根模块(<strong>Application Module</strong>)和多个功能模块共同组成。</p>
+<h3><a id="创建模块" class="content__heading-anchor"></a>创建模块：</h3>
+<ul>
+<li>完整命令：<code>nest generate module &lt;module-name&gt;</code></li>
+<li>简写命令：<code>nest g mo &lt;module-name&gt;</code></li>
+</ul>
+<p>每个模块都是一个由<code>@Module()</code>装饰器注释的类，应用中模块间的关系将由<code>@Module()</code>装饰器中携带的所有元数据描述。</p>
+<pre><code class="language-tsx"><span class="hljs-keyword">import</span> { <span class="hljs-title class_">Module</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;@nestjs/common&quot;</span>;
+
+<span class="hljs-meta">@Module</span>({
+  <span class="hljs-attr">providers</span>: [],
+  <span class="hljs-attr">imports</span>: [],
+  <span class="hljs-attr">controllers</span>: [],
+  <span class="hljs-attr">exports</span>: [],
+})
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">OrdersModule</span> {}
+</code></pre>
+<h3><a id="module-元数据" class="content__heading-anchor"></a>@Module() 元数据</h3>
+<p>通过 <strong>Orders</strong> 模块了解<code>@Module()</code>元数据如何组织模块：</p>
+<p>/tab</p>
+<table>
+<thead>
+<tr><th>providers</th><th>注册订单提供者模块，如：负责订单 CRUD 的服务；</th></tr>
+</thead>
+<tbody>
+<tr><td>controllers</td><td>注册订单控制器模块，如：负责订单 CRUD 的路由处理；</td></tr>
+<tr><td>imports</td><td>注册与订单相关联的模块，如：与订单关联的用户查询服务；</td></tr>
+<tr><td>exports</td><td>导出订单提供者模块，如：用户查询需要订单提供者统计订单数量；</td></tr>
+</tbody>
+</table>
+<p>💡 PS：<strong>Orders</strong> 模块通过<code>exports</code>将订单提供者模块导出的行为称为<strong>模块共享</strong>；</p>
+<h3><a id="模块再导出" class="content__heading-anchor"></a>模块再导出</h3>
+<p>一个模块仅负责将一系列相关联的模块通过<code>imports</code>导入，紧接着就通过<code>exports</code>全部导出的行为就是模块在导出，利用<strong>模块再导出</strong>的能力，可以减少大量关联模块重复导入造成的负担。</p>
+<pre><code class="language-tsx"><span class="hljs-meta">@Module</span>({
+  <span class="hljs-attr">imports</span>: [<span class="hljs-title class_">DatabaseModule</span>, <span class="hljs-title class_">RedisModule</span>, <span class="hljs-title class_">MongoModule</span>],
+  <span class="hljs-attr">exports</span>: [<span class="hljs-title class_">DatabaseModule</span>, <span class="hljs-title class_">RedisModule</span>, <span class="hljs-title class_">MongoModule</span>],
+})
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">ConnectionModule</span> {}
+</code></pre>
+<p>💡 PS：在需要同时使用数据库连接、Redis 连接、Mongo 连接的情况下仅需要导 <strong>ConnectionModule</strong> 模块即可。</p>
+<h3><a id="全局模块" class="content__heading-anchor"></a>全局模块</h3>
+<p>如果需要 <strong>ConnectionModule</strong> 模块在任何地方都能开箱即用，那可以为其增加 <code>@Global()</code> 装饰器；</p>
+<pre><code class="language-tsx"><span class="hljs-meta">@Global</span>()
+<span class="hljs-meta">@Module</span>({
+  <span class="hljs-attr">imports</span>: [<span class="hljs-title class_">DatabaseModule</span>, <span class="hljs-title class_">RedisModule</span>, <span class="hljs-title class_">MongoModule</span>],
+  <span class="hljs-attr">exports</span>: [<span class="hljs-title class_">DatabaseModule</span>, <span class="hljs-title class_">RedisModule</span>, <span class="hljs-title class_">MongoModule</span>],
+})
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">ConnectionModule</span> {}
+</code></pre>
+<h2><a id="控制器的使用" class="content__heading-anchor"></a>控制器的使用</h2>
+<p>控制器用来接收和处理客户端发起的特定请求，不同的客户端请求将由 <strong>Nestjs</strong> 路由机制分配到对应的控制器进行处理。</p>
+<h3><a id="创建控制器" class="content__heading-anchor"></a>创建控制器</h3>
+<ul>
+<li>完整命令：<code>nest generate controller &lt;controller-name&gt;</code></li>
+<li>简写命令：<code>nest g co &lt;controller-name&gt;</code></li>
+</ul>
+<p>控制器是使用<code>@Controller(’path’)</code>装饰器注释的类，其中<code>path</code>是一个可选的路由路径前缀，通过<code>path</code>可以将相关的路由进行分组。</p>
+<pre><code class="language-tsx"><span class="hljs-keyword">import</span> { <span class="hljs-title class_">Controller</span>, <span class="hljs-title class_">Get</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;@nestjs/common&quot;</span>;
+
+<span class="hljs-meta">@Controller</span>(<span class="hljs-string">&quot;orders&quot;</span>)
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">OrdersController</span> {
+  <span class="hljs-meta">@Get</span>()
+  <span class="hljs-title function_">index</span>(<span class="hljs-params"></span>) {
+    <span class="hljs-keyword">return</span> <span class="hljs-string">&quot;This is the order controller&quot;</span>;
+  }
+}
+</code></pre>
+<p>💡 小结：</p>
+<ol>
+<li>当客户端通过 <strong>GET</strong> 方法对 <code>orders</code> 路由发送请求时将由 <code>index()</code> 处理函数响应。</li>
+<li>除<code>@Get()</code>装饰器外，<strong>Nestjs</strong> 还为 <strong>HTTP</strong> 标准方法提供的装饰有<code>@Post()</code>、<code>@Put()</code>、<code>@Delete()</code>、<code>@Patch()</code>、<code>@Options()</code>和<code>@Head()</code>，以及<code>@All()</code>用来处理所有的情况。</li>
+<li><code>@Controller(’path’)</code>中的 <code>path</code> 从设计上虽为可选参数，但在实际项目中未避免混乱会在创建控制器后优先分配 <code>path</code>。</li>
+</ol>
+<h3><a id="读取请求对象" class="content__heading-anchor"></a>读取请求对象</h3>
+<p>请求对象表示一个 <strong>HTTP</strong> 请求所携带的数据信息，如请求数据中的查询参数、路由参数、请求头、请求体等数据。通过在 <strong>OrdersController</strong> 控制器中编写更多的处理方法来演示接收不同的 <strong>HTTP</strong> 方法和不同位置的参数：</p>
+<ol>
+<li>通过 <strong>GET</strong> 方法获取订单列表数据，并通过<strong>查询参数</strong>传递订单分页数据：</li>
+</ol>
+<pre><code class="language-tsx"><span class="hljs-meta">@Get</span>(<span class="hljs-string">&#x27;list&#x27;</span>)
+<span class="hljs-title function_">list</span>(<span class="hljs-params"><span class="hljs-meta">@Query</span>(<span class="hljs-string">&#x27;page&#x27;</span>) <span class="hljs-attr">page</span>: <span class="hljs-built_in">number</span>, <span class="hljs-meta">@Query</span>(<span class="hljs-string">&#x27;limit&#x27;</span>) <span class="hljs-attr">limit</span>: <span class="hljs-built_in">number</span></span>) {
+  <span class="hljs-keyword">return</span> <span class="hljs-string">`获取第<span class="hljs-subst">${page}</span>页，每页<span class="hljs-subst">${limit}</span>条订单`</span>;
+}
+</code></pre>
+<pre><code class="language-powershell"><span class="hljs-built_in">curl</span> <span class="hljs-literal">--request</span> GET \
+  <span class="hljs-literal">--url</span> <span class="hljs-string">&#x27;http://localhost:3000/orders/list?page=1&amp;limit=20&#x27;</span>
+</code></pre>
+<ol>
+<li>通过 <strong>GET</strong> 方法查询指定 ID 的订单详情，并通过<strong>路由参数</strong>传递订单 ID；</li>
+</ol>
+<pre><code class="language-tsx"><span class="hljs-meta">@Get</span>(<span class="hljs-string">&#x27;detail/:id&#x27;</span>)
+<span class="hljs-title function_">findById</span>(<span class="hljs-params"><span class="hljs-meta">@Param</span>() <span class="hljs-attr">param</span>: { id: <span class="hljs-built_in">number</span> }</span>) {
+  <span class="hljs-keyword">return</span> <span class="hljs-string">`获取 ID 为 <span class="hljs-subst">${param.id}</span> 的订单详情`</span>;
+}
+</code></pre>
+<pre><code class="language-powershell"><span class="hljs-built_in">curl</span> <span class="hljs-literal">--request</span> GET \
+  <span class="hljs-literal">--url</span> http://localhost:<span class="hljs-number">3000</span>/orders/detail/<span class="hljs-number">1</span>
+</code></pre>
+<ol>
+<li>通过 <strong>PATCH</strong> 方法更新指定 ID 订单的最新状态，并通过路由参数传递订单 ID 及最新状态；</li>
+</ol>
+<pre><code class="language-tsx"><span class="hljs-meta">@Patch</span>(<span class="hljs-string">&#x27;:id/:status&#x27;</span>)
+<span class="hljs-title function_">updateByIdAndStatus</span>(<span class="hljs-params">
+  <span class="hljs-meta">@Param</span>(<span class="hljs-string">&#x27;id&#x27;</span>) <span class="hljs-attr">id</span>: <span class="hljs-built_in">number</span>,
+  <span class="hljs-meta">@Param</span>(<span class="hljs-string">&#x27;status&#x27;</span>) <span class="hljs-attr">status</span>: <span class="hljs-built_in">string</span>,
+</span>) {
+  <span class="hljs-keyword">return</span> <span class="hljs-string">`将 ID 为 <span class="hljs-subst">${id}</span> 订单状态更新为 <span class="hljs-subst">${status}</span>`</span>;
+}
+</code></pre>
+<pre><code class="language-powershell"><span class="hljs-built_in">curl</span> <span class="hljs-literal">--request</span> PATCH \
+  <span class="hljs-literal">--url</span> <span class="hljs-string">&#x27;http://localhost:3000/orders/1/已退款&#x27;</span>
+</code></pre>
+<ol>
+<li>通过 <strong>POST</strong> 方法创建一个新的订单，并通过请求体 <strong>Body</strong> 接收订单数据；</li>
+</ol>
+<pre><code class="language-tsx"><span class="hljs-keyword">interface</span> <span class="hljs-title class_">ICreateOrder</span> {
+  <span class="hljs-attr">article</span>: <span class="hljs-built_in">string</span>;
+  <span class="hljs-attr">price</span>: <span class="hljs-built_in">number</span>;
+  <span class="hljs-attr">count</span>: <span class="hljs-built_in">number</span>;
+  <span class="hljs-attr">source</span>: <span class="hljs-built_in">string</span>;
+}
+
+<span class="hljs-meta">@Post</span>()
+<span class="hljs-title function_">create</span>(<span class="hljs-params"><span class="hljs-meta">@Body</span>() <span class="hljs-attr">order</span>: <span class="hljs-title class_">ICreateOrder</span></span>) {
+  <span class="hljs-keyword">return</span> <span class="hljs-string">`创建订单，订单信息为 <span class="hljs-subst">${<span class="hljs-built_in">JSON</span>.stringify(order)}</span>`</span>;
+}
+</code></pre>
+<pre><code class="language-powershell"><span class="hljs-built_in">curl</span> <span class="hljs-literal">--request</span> POST \
+  <span class="hljs-literal">--url</span> http://localhost:<span class="hljs-number">3000</span>/orders \
+  <span class="hljs-literal">--header</span> <span class="hljs-string">&#x27;content-type: application/json&#x27;</span> \
+  <span class="hljs-literal">--data</span> <span class="hljs-string">&#x27;{
+    &quot;article&quot;: &quot;HUAWEI-Meta60&quot;,
+    &quot;price&quot;: 5999,
+    &quot;count&quot;: 1,
+    &quot;source&quot;: &quot;Made in China&quot;
+}&#x27;</span>
+</code></pre>
+<p>💡 小结：</p>
+<ol>
+<li>控制器中不同的处理函数可以通过 <strong>HTTP</strong> 方法来区分；</li>
+<li>当多个处理函数需要使用相同的 <strong>HTTP</strong> 方法时需要添加处理函数级别的路由以示区分；</li>
+<li><code>@Param()</code>未指定参数时表示所有路由参数的集合，指定参数时表示对应指定的参数，<code>@Query()</code>与<code>@Param()</code>具有相同的特点。</li>
+</ol>
+<h3><a id="更多装饰器" class="content__heading-anchor"></a>更多装饰器</h3>
+<ol>
+<li>@Header(key, value)：</li>
+</ol>
+<pre><code class="language-tsx"><span class="hljs-meta">@Post</span>()
+<span class="hljs-meta">@Header</span>(<span class="hljs-string">&#x27;Cache-Control&#x27;</span>, <span class="hljs-string">&#x27;none&#x27;</span>)
+<span class="hljs-title function_">create</span>(<span class="hljs-params"><span class="hljs-meta">@Body</span>() <span class="hljs-attr">createOrderDto</span>: <span class="hljs-title class_">CreateOrderDto</span></span>) {
+  <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">ordersService</span>.<span class="hljs-title function_">create</span>(createOrderDto);
+}
+</code></pre>
+<ol>
+<li>@Redirect(res, statusCode)</li>
+</ol>
+<pre><code class="language-tsx"><span class="hljs-meta">@Get</span>(<span class="hljs-string">&#x27;:id&#x27;</span>)
+<span class="hljs-meta">@Redirect</span>(<span class="hljs-string">&#x27;https://nestjs.com/&#x27;</span>, <span class="hljs-number">301</span>)
+<span class="hljs-title function_">findOne</span>(<span class="hljs-params"><span class="hljs-meta">@Param</span>(<span class="hljs-string">&#x27;id&#x27;</span>) <span class="hljs-attr">id</span>: <span class="hljs-built_in">string</span></span>) {
+  <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">ordersService</span>.<span class="hljs-title function_">findOne</span>(+id);
+}
+</code></pre>
+<p>💡 小结：</p>
+<ol>
+<li>301：资源被永久重定向到新的资源，客户端需要考虑同步更新；</li>
+<li>302：资源被临时重定向到新的资源，如：服务端升级时会启用临时资源；</li>
+</ol>
+<p>下面列出的内置装饰器可简化请求数据信息的读取：</p>
+<table>
+<thead>
+<tr><th>@Request(), @Req()</th><th>req</th></tr>
+</thead>
+<tbody>
+<tr><td>@Response(), @Res()*</td><td>res</td></tr>
+<tr><td>@Next()</td><td>next</td></tr>
+<tr><td>@Session()</td><td>req.session</td></tr>
+<tr><td>@Param(key?: string)</td><td>req.params / req.params[key]</td></tr>
+<tr><td>@Body(key?: string)</td><td>req.body / req.body[key]</td></tr>
+<tr><td>@Query(key?: string)</td><td>req.query / req.query[key]</td></tr>
+<tr><td>@Headers(name?: string)</td><td>req.headers / req.headers[name]</td></tr>
+<tr><td>@Ip()</td><td>req.ip</td></tr>
+<tr><td>@HostParam()</td><td>req.hosts</td></tr>
+</tbody>
+</table>
+<h2><a id="提供者的使用" class="content__heading-anchor"></a>提供者的使用</h2>
+<p>在 Nestjs 中将提供服务的类及一些工厂类、助手类等称作提供者，它们同时均可以通过注入的方式作为依赖模块；</p>
+<h3><a id="创建服务" class="content__heading-anchor"></a>创建服务</h3>
+<ul>
+<li>完整命令：<code>nest generate service orders</code>；</li>
+<li>简写命令：<code>nest g s orders</code>；</li>
+</ul>
+<p>服务是典型的提供者，HTTP 请求在经过控制器处理后应该将复杂的任务交由服务层进行处理，如：将复杂的订单生成、查询、更新及删除等操作进行封装。</p>
+<pre><code class="language-tsx"><span class="hljs-keyword">import</span> { <span class="hljs-title class_">Injectable</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;@nestjs/common&quot;</span>;
+<span class="hljs-keyword">import</span> { <span class="hljs-title class_">CreateOrderDto</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;./dto/create-order.dto&quot;</span>;
+<span class="hljs-keyword">import</span> { <span class="hljs-title class_">UpdateOrderDto</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;./dto/update-order.dto&quot;</span>;
+
+<span class="hljs-meta">@Injectable</span>()
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">OrdersService</span> {
+  <span class="hljs-title function_">create</span>(<span class="hljs-params"><span class="hljs-attr">createOrderDto</span>: <span class="hljs-title class_">CreateOrderDto</span></span>) {
+    <span class="hljs-keyword">return</span> <span class="hljs-string">&quot;This action adds a new order&quot;</span>;
+  }
+
+  <span class="hljs-title function_">findAll</span>(<span class="hljs-params"></span>) {
+    <span class="hljs-keyword">return</span> <span class="hljs-string">`This action returns all orders`</span>;
+  }
+
+  <span class="hljs-title function_">findOne</span>(<span class="hljs-params"><span class="hljs-attr">id</span>: <span class="hljs-built_in">number</span></span>) {
+    <span class="hljs-keyword">return</span> <span class="hljs-string">`This action returns a #<span class="hljs-subst">${id}</span> order`</span>;
+  }
+
+  <span class="hljs-title function_">update</span>(<span class="hljs-params"><span class="hljs-attr">id</span>: <span class="hljs-built_in">number</span>, <span class="hljs-attr">updateOrderDto</span>: <span class="hljs-title class_">UpdateOrderDto</span></span>) {
+    <span class="hljs-keyword">return</span> <span class="hljs-string">`This action updates a #<span class="hljs-subst">${id}</span> order`</span>;
+  }
+
+  <span class="hljs-title function_">remove</span>(<span class="hljs-params"><span class="hljs-attr">id</span>: <span class="hljs-built_in">number</span></span>) {
+    <span class="hljs-keyword">return</span> <span class="hljs-string">`This action removes a #<span class="hljs-subst">${id}</span> order`</span>;
+  }
+}
+</code></pre>
+<p>💡 PS：<strong>Nestjs</strong> 应用启动时必须解析全部依赖，因此每个提供者都将实例化完成，同时在应用停止后每个提供者将全部被销毁，所以默认的提供者生命周期同应用的生命周期。</p>
+<h3><a id="注入并使用" class="content__heading-anchor"></a>注入并使用</h3>
+<p>将 <strong>OrdersService</strong> 通过构造函数注入到 <strong>OrdersController</strong> 控制器，这样就得到了初始化后的 <strong>ordersService</strong> 成员，接着就可以在不同的处理函数调用服务中提供的能力。</p>
+<pre><code class="language-tsx"><span class="hljs-keyword">import</span> { <span class="hljs-title class_">Controller</span>, <span class="hljs-title class_">Get</span>, <span class="hljs-title class_">Post</span>, <span class="hljs-title class_">Body</span>, <span class="hljs-title class_">Param</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;@nestjs/common&quot;</span>;
+<span class="hljs-keyword">import</span> { <span class="hljs-title class_">OrdersService</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;./orders.service&quot;</span>;
+<span class="hljs-keyword">import</span> { <span class="hljs-title class_">CreateOrderDto</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;./dto/create-order.dto&quot;</span>;
+
+<span class="hljs-meta">@Controller</span>(<span class="hljs-string">&quot;orders&quot;</span>)
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">OrdersController</span> {
+  <span class="hljs-title function_">constructor</span>(<span class="hljs-params"><span class="hljs-keyword">private</span> <span class="hljs-keyword">readonly</span> <span class="hljs-attr">ordersService</span>: <span class="hljs-title class_">OrdersService</span></span>) {}
+
+  <span class="hljs-meta">@Post</span>()
+  <span class="hljs-title function_">create</span>(<span class="hljs-params"><span class="hljs-meta">@Body</span>() <span class="hljs-attr">createOrderDto</span>: <span class="hljs-title class_">CreateOrderDto</span></span>) {
+    <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">ordersService</span>.<span class="hljs-title function_">create</span>(createOrderDto);
+  }
+
+  <span class="hljs-meta">@Get</span>()
+  <span class="hljs-title function_">findAll</span>(<span class="hljs-params"></span>) {
+    <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">ordersService</span>.<span class="hljs-title function_">findAll</span>();
+  }
+
+  <span class="hljs-meta">@Get</span>(<span class="hljs-string">&quot;:id&quot;</span>)
+  <span class="hljs-title function_">findOne</span>(<span class="hljs-params"><span class="hljs-meta">@Param</span>(<span class="hljs-string">&quot;id&quot;</span>) <span class="hljs-attr">id</span>: <span class="hljs-built_in">string</span></span>) {
+    <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">ordersService</span>.<span class="hljs-title function_">findOne</span>(+id);
+  }
+}
+</code></pre>
+<p>💡 PS：</p>
+<p>除构造函数注入的这种方式外，还可以通过属性注入：</p>
+<pre><code class="language-tsx"><span class="hljs-meta">@Inject</span>()
+<span class="hljs-keyword">private</span> <span class="hljs-keyword">readonly</span> <span class="hljs-attr">ordersService</span>: <span class="hljs-title class_">OrdersService</span>;
+</code></pre>
+<h2><a id="中间件的使用" class="content__heading-anchor"></a>中间件的使用</h2>
+<p>中间件是路由处理程序之前运行的函数，在中间件中可以访问 request 和 response 对象，以及将控制权传递给下一个中间件的<code>next()</code>函数。</p>
+<h3><a id="创建中间件" class="content__heading-anchor"></a>创建中间件</h3>
+<ul>
+<li>完整命令：<code>nest generate middleware &lt;middleware-name&gt;</code></li>
+<li>简写命令：<code>nest g mi &lt;middleware-name&gt;</code></li>
+</ul>
+<p>中间件是一个使用<code>@Injectable()</code>装饰器注释且实现<strong>NestMiddleware</strong>接口的类，</p>
+<pre><code class="language-tsx"><span class="hljs-keyword">import</span> { <span class="hljs-title class_">Injectable</span>, <span class="hljs-title class_">NestMiddleware</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;@nestjs/common&quot;</span>;
+<span class="hljs-keyword">import</span> { <span class="hljs-title class_">Request</span>, <span class="hljs-title class_">Response</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;express&quot;</span>;
+
+<span class="hljs-meta">@Injectable</span>()
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">LoggerMiddleware</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">NestMiddleware</span> {
+  <span class="hljs-title function_">use</span>(<span class="hljs-params"><span class="hljs-attr">req</span>: <span class="hljs-title class_">Request</span>, <span class="hljs-attr">res</span>: <span class="hljs-title class_">Response</span>, <span class="hljs-attr">next</span>: () =&gt; <span class="hljs-built_in">void</span></span>) {
+    <span class="hljs-keyword">const</span> start = process.<span class="hljs-title function_">hrtime</span>();
+    res.<span class="hljs-title function_">on</span>(<span class="hljs-string">&quot;finish&quot;</span>, <span class="hljs-function">() =&gt;</span> {
+      <span class="hljs-keyword">const</span> diff = process.<span class="hljs-title function_">hrtime</span>(start);
+      <span class="hljs-keyword">const</span> time = (diff[<span class="hljs-number">0</span>] * <span class="hljs-number">1e3</span> + diff[<span class="hljs-number">1</span>] * <span class="hljs-number">1e-6</span>).<span class="hljs-title function_">toFixed</span>(<span class="hljs-number">3</span>);
+      <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">`<span class="hljs-subst">${req.method}</span> <span class="hljs-subst">${req.url}</span> - <span class="hljs-subst">${time}</span>ms`</span>);
+    });
+    <span class="hljs-title function_">next</span>();
+  }
+}
+</code></pre>
+<p>💡 PS：对于没有属性、没有额外的函数也没有额外的依赖的情况下，可以用一个普通的函数来表示中间件，这类中间件成为<strong>功能类中间件</strong>。</p>
+<h3><a id="注册中间件" class="content__heading-anchor"></a>注册中间件</h3>
+<p>中间件的注册于控制器和提供者的注册方式不同，需要在消费中间件的模块通过继承 <strong>NestModule</strong> 并实现 <code>configure</code> 接口，如下面我们在订单模块中注册了这个 <strong>Logger</strong> 中间件：</p>
+<pre><code class="language-tsx"><span class="hljs-keyword">import</span> { <span class="hljs-title class_">MiddlewareConsumer</span>, <span class="hljs-title class_">Module</span>, <span class="hljs-title class_">NestModule</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;@nestjs/common&quot;</span>;
+<span class="hljs-keyword">import</span> { <span class="hljs-title class_">OrdersService</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;./orders.service&quot;</span>;
+<span class="hljs-keyword">import</span> { <span class="hljs-title class_">OrdersController</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;./orders.controller&quot;</span>;
+<span class="hljs-keyword">import</span> { <span class="hljs-title class_">LoggerMiddleware</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;src/logger/logger.middleware&quot;</span>;
+
+<span class="hljs-meta">@Module</span>({
+  <span class="hljs-attr">controllers</span>: [<span class="hljs-title class_">OrdersController</span>],
+  <span class="hljs-attr">providers</span>: [<span class="hljs-title class_">OrdersService</span>],
+})
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">OrdersModule</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">NestModule</span> {
+  <span class="hljs-title function_">configure</span>(<span class="hljs-params"><span class="hljs-attr">consumer</span>: <span class="hljs-title class_">MiddlewareConsumer</span></span>) {
+    consumer.<span class="hljs-title function_">apply</span>(<span class="hljs-title class_">LoggerMiddleware</span>).<span class="hljs-title function_">forRoutes</span>(<span class="hljs-string">&quot;orders&quot;</span>);
+  }
+}
+</code></pre>
+<p>💡 PS：<code>forRoutes()</code>支持多种形式的参数来表示生效的范围，如：单字符串、多个字符串、RouteInfo 对象、单个控制器类或多个控制器类。</p>
+<h3><a id="范围控制" class="content__heading-anchor"></a>范围控制</h3>
+<p><strong>MiddlewareConsumer</strong> 提供了<code>exclude</code>函数来按规则排除一些不应用中间件的路由，具体的规则可见 <a href="https://github.com/pillarjs/path-to-regexp#parameters">path-to-regexp</a>：</p>
+<pre><code class="language-tsx"><span class="hljs-comment">// 基于具体路由配置及模式匹配的排除方案</span>
+consumer
+  .<span class="hljs-title function_">apply</span>(<span class="hljs-title class_">LoggerMiddleware</span>)
+  .<span class="hljs-title function_">exclude</span>(
+    { <span class="hljs-attr">path</span>: <span class="hljs-string">&quot;orders&quot;</span>, <span class="hljs-attr">method</span>: <span class="hljs-title class_">RequestMethod</span>.<span class="hljs-property">GET</span> },
+    { <span class="hljs-attr">path</span>: <span class="hljs-string">&quot;orders&quot;</span>, <span class="hljs-attr">method</span>: <span class="hljs-title class_">RequestMethod</span>.<span class="hljs-property">POST</span> },
+    <span class="hljs-string">&quot;orders/(.*)&quot;</span>
+  )
+  .<span class="hljs-title function_">forRoutes</span>(<span class="hljs-string">&quot;orders&quot;</span>);
+</code></pre>
+<p><strong>MiddlewareConsumer</strong> 提供的 <code>forRoutes</code>支持下面这种模式匹配的方式：</p>
+<pre><code class="language-tsx"><span class="hljs-title function_">forRoutes</span>({ <span class="hljs-attr">path</span>: <span class="hljs-string">&quot;ab*cd&quot;</span>, <span class="hljs-attr">method</span>: <span class="hljs-title class_">RequestMethod</span>.<span class="hljs-property">ALL</span> });
+</code></pre>
+<h3><a id="中间件串联" class="content__heading-anchor"></a>中间件串联</h3>
+<p>当一个中间件处理完成后，如果请求还没有结束将有<code>next()</code>函数将控制权向下传递。如下面这个示例：为了允许客户端发起跨域访问，在 <strong>Cors</strong> 中间件中为每一个请求添加特殊的请求头后再交由 <strong>Logger</strong> 中间件继续执行。</p>
+<pre><code class="language-tsx"><span class="hljs-keyword">import</span> { <span class="hljs-title class_">Injectable</span>, <span class="hljs-title class_">NestMiddleware</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;@nestjs/common&quot;</span>;
+<span class="hljs-keyword">import</span> { <span class="hljs-title class_">Request</span>, <span class="hljs-title class_">Response</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;express&quot;</span>;
+
+<span class="hljs-meta">@Injectable</span>()
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">CorsMiddleware</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">NestMiddleware</span> {
+  <span class="hljs-title function_">use</span>(<span class="hljs-params"><span class="hljs-attr">req</span>: <span class="hljs-title class_">Request</span>, <span class="hljs-attr">res</span>: <span class="hljs-title class_">Response</span>, <span class="hljs-attr">next</span>: () =&gt; <span class="hljs-built_in">void</span></span>) {
+    res.<span class="hljs-title function_">header</span>(<span class="hljs-string">&quot;Access-Control-Allow-Origin&quot;</span>, <span class="hljs-string">&quot;*&quot;</span>); <span class="hljs-comment">// 允许所有来源</span>
+    res.<span class="hljs-title function_">header</span>(<span class="hljs-string">&quot;Access-Control-Allow-Headers&quot;</span>, <span class="hljs-string">&quot;Content-Type,Authorization&quot;</span>); <span class="hljs-comment">// 允许指定的请求头</span>
+    res.<span class="hljs-title function_">header</span>(
+      <span class="hljs-string">&quot;Access-Control-Allow-Methods&quot;</span>,
+      <span class="hljs-string">&quot;GET, POST, PUT, DELETE, OPTIONS&quot;</span>
+    ); <span class="hljs-comment">// 允许指定的请求方法</span>
+    <span class="hljs-title function_">next</span>();
+  }
+}
+</code></pre>
+<pre><code class="language-tsx"><span class="hljs-keyword">export</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">OrdersModule</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">NestModule</span> {
+  <span class="hljs-title function_">configure</span>(<span class="hljs-params"><span class="hljs-attr">consumer</span>: <span class="hljs-title class_">MiddlewareConsumer</span></span>) {
+    consumer.<span class="hljs-title function_">apply</span>(<span class="hljs-title class_">CorsMiddleware</span>, <span class="hljs-title class_">LoggerMiddleware</span>).<span class="hljs-title function_">forRoutes</span>(<span class="hljs-string">&quot;orders&quot;</span>);
+  }
+}
+</code></pre>
+<h3><a id="全局中间件" class="content__heading-anchor"></a>全局中间件</h3>
+<p>全局注册 <strong>类中间件</strong>，可以在根模块 <strong>AppModule</strong> 中注册，使用通配符的形式表示 <code>forRoutes('*')</code>：</p>
+<pre><code class="language-tsx"><span class="hljs-keyword">export</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">AppModule</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">NestModule</span> {
+  <span class="hljs-title function_">configure</span>(<span class="hljs-params"><span class="hljs-attr">consumer</span>: <span class="hljs-title class_">MiddlewareConsumer</span></span>) {
+    consumer.<span class="hljs-title function_">apply</span>(<span class="hljs-title class_">CorsMiddleware</span>, <span class="hljs-title class_">LoggerMiddleware</span>).<span class="hljs-title function_">forRoutes</span>(<span class="hljs-string">&quot;*&quot;</span>);
+  }
+}
+</code></pre>
+<p>如果需要全局注册 <strong>功能类中间件</strong> ，那么就可以在创建 <strong>app</strong> 实例后，通过 <code>app.use('')</code> 函数注册：</p>
+<pre><code class="language-tsx"><span class="hljs-keyword">const</span> app = <span class="hljs-keyword">await</span> <span class="hljs-title class_">NestFactory</span>.<span class="hljs-title function_">create</span>(<span class="hljs-title class_">AppModule</span>);
+app.<span class="hljs-title function_">use</span>(logger);
+<span class="hljs-keyword">await</span> app.<span class="hljs-title function_">listen</span>(<span class="hljs-number">3000</span>);
+</code></pre>
+<h2><a id="守卫的使用" class="content__heading-anchor"></a>守卫的使用</h2>
+<p>守卫依据服务运行期间的权限、角色及访问控制列表等条件来确定客户端的访问是否交由路由处理程序处理。相比于传统的中间件充当守卫的角色而言 ，NestJS 提供的守卫支持访问<code>ExecutionContext</code> ****实例，因此可以明确知道接着要执行什么。</p>
+<h3><a id="创建守卫" class="content__heading-anchor"></a>创建守卫</h3>
+<ul>
+<li>完整命令：<code>nest generate guard &lt;guard-name&gt;</code></li>
+<li>简写命令：<code>nest g gu &lt;guard-name&gt;</code></li>
+</ul>
+<p>守卫也是一个使用<code>@Injectable()</code>装饰器注释的类，它需要实现 <code>CanActivate</code> 接口：</p>
+<pre><code class="language-tsx"><span class="hljs-keyword">import</span> { <span class="hljs-title class_">CanActivate</span>, <span class="hljs-title class_">ExecutionContext</span>, <span class="hljs-title class_">Injectable</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;@nestjs/common&quot;</span>;
+<span class="hljs-keyword">import</span> { <span class="hljs-title class_">Observable</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;rxjs&quot;</span>;
+
+<span class="hljs-meta">@Injectable</span>()
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">RolesGuard</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">CanActivate</span> {
+  <span class="hljs-title function_">canActivate</span>(
+    <span class="hljs-attr">context</span>: <span class="hljs-title class_">ExecutionContext</span>
+  ): <span class="hljs-built_in">boolean</span> | <span class="hljs-title class_">Promise</span>&lt;<span class="hljs-built_in">boolean</span>&gt; | <span class="hljs-title class_">Observable</span>&lt;<span class="hljs-built_in">boolean</span>&gt; {
+    <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;
+  }
+}
+</code></pre>
+<h3><a id="基于角色守卫" class="content__heading-anchor"></a>基于角色守卫</h3>
+<p>首先要使用<code>Reflector</code>创建一个用来分配角色的装饰器，然后在对应的路由处理函数上添加这个装饰器并分配权限；</p>
+<pre><code class="language-tsx"><span class="hljs-keyword">import</span> { <span class="hljs-title class_">Reflector</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;@nestjs/core&quot;</span>;
+
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">const</span> <span class="hljs-title class_">Roles</span> = <span class="hljs-title class_">Reflector</span>.<span class="hljs-property">createDecorator</span>&lt;<span class="hljs-built_in">string</span>[]&gt;();
+</code></pre>
+<pre><code class="language-tsx">
+<span class="hljs-meta">@Roles</span>([<span class="hljs-string">&#x27;admin&#x27;</span>])
+<span class="hljs-meta">@Post</span>()
+<span class="hljs-title function_">create</span>(<span class="hljs-params"><span class="hljs-meta">@Body</span>() <span class="hljs-attr">createOrderDto</span>: <span class="hljs-title class_">CreateOrderDto</span></span>) {
+  <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">ordersService</span>.<span class="hljs-title function_">create</span>(createOrderDto);
+}
+</code></pre>
+<p>接着在<code>RolesGuard</code> 中通过 <strong>执行上下文类</strong> 获取被调用处理函数的引用，并注入<code>Reflector</code>来提取处理函数被分配的角色：</p>
+<pre><code class="language-tsx"><span class="hljs-keyword">import</span> { <span class="hljs-title class_">CanActivate</span>, <span class="hljs-title class_">ExecutionContext</span>, <span class="hljs-title class_">Injectable</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;@nestjs/common&quot;</span>;
+<span class="hljs-keyword">import</span> { <span class="hljs-title class_">Reflector</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;@nestjs/core&quot;</span>;
+<span class="hljs-keyword">import</span> { <span class="hljs-title class_">Observable</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;rxjs&quot;</span>;
+<span class="hljs-keyword">import</span> { <span class="hljs-title class_">Roles</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;./roles.decorator&quot;</span>;
+
+<span class="hljs-meta">@Injectable</span>()
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">RolesGuard</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">CanActivate</span> {
+  <span class="hljs-title function_">constructor</span>(<span class="hljs-params"><span class="hljs-keyword">private</span> <span class="hljs-keyword">readonly</span> <span class="hljs-attr">reflector</span>: <span class="hljs-title class_">Reflector</span></span>) {}
+  <span class="hljs-title function_">canActivate</span>(
+    <span class="hljs-attr">context</span>: <span class="hljs-title class_">ExecutionContext</span>
+  ): <span class="hljs-built_in">boolean</span> | <span class="hljs-title class_">Promise</span>&lt;<span class="hljs-built_in">boolean</span>&gt; | <span class="hljs-title class_">Observable</span>&lt;<span class="hljs-built_in">boolean</span>&gt; {
+    <span class="hljs-keyword">const</span> handler = context.<span class="hljs-title function_">getHandler</span>();
+    <span class="hljs-keyword">const</span> roles = <span class="hljs-variable language_">this</span>.<span class="hljs-property">reflector</span>.<span class="hljs-property">get</span>&lt;<span class="hljs-built_in">string</span>[]&gt;(<span class="hljs-title class_">Roles</span>, handler);
+    <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(roles); <span class="hljs-comment">// output [&#x27;admin&#x27;]</span>
+    <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;
+  }
+}
+</code></pre>
+<p>现在假设与客户端协商通过 <strong>Header</strong> 中添加 <code>role</code> 属性来传递角色信息，那么在<code>RolesGuard</code>中可以通过执行上下文获取 <strong>Request</strong> 对象中的请求头数据，最后对比角色列表，并返回是否包含角色的结果：</p>
+<pre><code>import { CanActivate, ExecutionContext, Injectable } from &#x27;@nestjs/common&#x27;;
+import { Reflector } from &#x27;@nestjs/core&#x27;;
+import { Observable } from &#x27;rxjs&#x27;;
+import { Roles } from &#x27;./roles.decorator&#x27;;
+import { Request } from &#x27;express&#x27;;
+
+@Injectable()
+export class RolesGuard implements CanActivate {
+  constructor(private readonly reflector: Reflector) {}
+  canActivate(
+    context: ExecutionContext,
+  ): boolean | Promise&lt;boolean&gt; | Observable&lt;boolean&gt; {
+    const handler = context.getHandler();
+    const roles = this.reflector.get&lt;string[]&gt;(Roles, handler);
+    const request: Request = context.switchToHttp().getRequest();
+    const role = request.headers[&#x27;role&#x27;] || &#x27;&#x27;;
+    return roles.includes(role as string);
+  }
+}
+</code></pre>
+<h3><a id="绑定守卫" class="content__heading-anchor"></a>绑定守卫</h3>
+<p>控制器范围绑定：</p>
+<pre><code class="language-tsx"><span class="hljs-meta">@Controller</span>(<span class="hljs-string">&quot;orders&quot;</span>)
+<span class="hljs-meta">@UseGuards</span>(<span class="hljs-title class_">RolesGuard</span>)
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">OrdersController</span> {}
+
+<span class="hljs-comment">// or</span>
+
+<span class="hljs-meta">@Controller</span>(<span class="hljs-string">&quot;orders&quot;</span>)
+<span class="hljs-meta">@UseGuards</span>(<span class="hljs-keyword">new</span> <span class="hljs-title class_">RolesGuard</span>())
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">OrdersController</span> {}
+</code></pre>
+<p>全局范围绑定：</p>
+<pre><code class="language-tsx"><span class="hljs-keyword">const</span> app = <span class="hljs-keyword">await</span> <span class="hljs-title class_">NestFactory</span>.<span class="hljs-title function_">create</span>(<span class="hljs-title class_">AppModule</span>);
+app.<span class="hljs-title function_">useGlobalGuards</span>(<span class="hljs-keyword">new</span> <span class="hljs-title class_">RolesGuard</span>());
+
+<span class="hljs-comment">// or</span>
+
+<span class="hljs-meta">@Module</span>({
+  <span class="hljs-attr">providers</span>: [
+    {
+      <span class="hljs-attr">provide</span>: <span class="hljs-variable constant_">APP_GUARD</span>,
+      <span class="hljs-attr">useClass</span>: <span class="hljs-title class_">RolesGuard</span>,
+    },
+  ],
+})
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">AppModule</span> {}
+</code></pre>
+<h2><a id="拦截器的使用" class="content__heading-anchor"></a>拦截器的使用</h2>
+<p>拦截器是应用 AOP 切面编程模式来对路由处理函数进行功能扩展的技术，通过拦截器可以扩展下面这些能力：</p>
+<ul>
+<li>在方法执行之前/之后绑定额外的逻辑</li>
+<li>转换函数返回的结果</li>
+<li>转换函数抛出的异常</li>
+<li>扩展基本功能行为</li>
+<li>根据特定条件完全覆盖函数（例如，缓存）</li>
+</ul>
+<h3><a id="创建拦截器" class="content__heading-anchor"></a>创建拦截器</h3>
+<ul>
+<li>完整命令：<code>nest generate interceptor &lt;interceptor-name&gt;</code></li>
+<li>简写命令：<code>nest g itc &lt;interceptor-name&gt;</code></li>
+</ul>
+<p>拦截器也是一个使用<code>@Injectable()</code>装饰器注释的类，它需要实现 <code>NestInterceptor</code> 接口：</p>
+<pre><code class="language-tsx"><span class="hljs-keyword">import</span> {
+  <span class="hljs-title class_">CallHandler</span>,
+  <span class="hljs-title class_">ExecutionContext</span>,
+  <span class="hljs-title class_">Injectable</span>,
+  <span class="hljs-title class_">NestInterceptor</span>,
+} <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;@nestjs/common&quot;</span>;
+<span class="hljs-keyword">import</span> { <span class="hljs-title class_">Observable</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;rxjs&quot;</span>;
+
+<span class="hljs-meta">@Injectable</span>()
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">TimerInterceptor</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">NestInterceptor</span> {
+  <span class="hljs-title function_">intercept</span>(<span class="hljs-attr">context</span>: <span class="hljs-title class_">ExecutionContext</span>, <span class="hljs-attr">next</span>: <span class="hljs-title class_">CallHandler</span>): <span class="hljs-title class_">Observable</span>&lt;<span class="hljs-built_in">any</span>&gt; {
+    <span class="hljs-keyword">return</span> next.<span class="hljs-title function_">handle</span>();
+  }
+}
+</code></pre>
+<h3><a id="记录执行时间" class="content__heading-anchor"></a>记录执行时间</h3>
+<p>当客户端的请求触发到 <strong>TimerInterceptor</strong> 拦截器时，将获取到请求对象实例，并记录下了请求进入的时间点；</p>
+<p>当 <code>next.handle()</code> 函数返回结果后表示对应的路由处理函数已经执行完成。通过返回的 <strong>Observable</strong> 对象，可以在其管道中使用 <code>tap</code> 操作符记录结束时间并打印执行时长信息。</p>
+<pre><code class="language-tsx"><span class="hljs-keyword">import</span> {
+  <span class="hljs-title class_">CallHandler</span>,
+  <span class="hljs-title class_">ExecutionContext</span>,
+  <span class="hljs-title class_">Injectable</span>,
+  <span class="hljs-title class_">NestInterceptor</span>,
+} <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;@nestjs/common&quot;</span>;
+<span class="hljs-keyword">import</span> { <span class="hljs-title class_">Observable</span>, tap } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;rxjs&quot;</span>;
+
+<span class="hljs-meta">@Injectable</span>()
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">TimerInterceptor</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">NestInterceptor</span> {
+  <span class="hljs-title function_">intercept</span>(<span class="hljs-attr">context</span>: <span class="hljs-title class_">ExecutionContext</span>, <span class="hljs-attr">next</span>: <span class="hljs-title class_">CallHandler</span>): <span class="hljs-title class_">Observable</span>&lt;<span class="hljs-built_in">any</span>&gt; {
+    <span class="hljs-keyword">const</span> req = context.<span class="hljs-title function_">switchToHttp</span>().<span class="hljs-title function_">getRequest</span>();
+    <span class="hljs-keyword">const</span> start = process.<span class="hljs-title function_">hrtime</span>();
+
+    <span class="hljs-keyword">return</span> next.<span class="hljs-title function_">handle</span>().<span class="hljs-title function_">pipe</span>(
+      <span class="hljs-title function_">tap</span>(<span class="hljs-function">() =&gt;</span> {
+        <span class="hljs-keyword">const</span> diff = process.<span class="hljs-title function_">hrtime</span>(start);
+        <span class="hljs-keyword">const</span> time = (diff[<span class="hljs-number">0</span>] * <span class="hljs-number">1e3</span> + diff[<span class="hljs-number">1</span>] * <span class="hljs-number">1e-6</span>).<span class="hljs-title function_">toFixed</span>(<span class="hljs-number">3</span>);
+        <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">`<span class="hljs-subst">${req.method}</span> <span class="hljs-subst">${req.url}</span> - <span class="hljs-subst">${time}</span>ms`</span>);
+      })
+    );
+  }
+}
+</code></pre>
+<h3><a id="绑定拦截器" class="content__heading-anchor"></a>绑定拦截器</h3>
+<p>控制器范围绑定：</p>
+<pre><code class="language-tsx"><span class="hljs-meta">@UseInterceptors</span>(<span class="hljs-title class_">TimerInterceptor</span>)
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">OrdersController</span> {}
+
+<span class="hljs-comment">// or</span>
+
+<span class="hljs-meta">@UseInterceptors</span>(<span class="hljs-keyword">new</span> <span class="hljs-title class_">TimerInterceptor</span>())
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">OrdersController</span> {}
+</code></pre>
+<p>全局范围绑定：</p>
+<pre><code class="language-tsx"><span class="hljs-keyword">const</span> app = <span class="hljs-keyword">await</span> <span class="hljs-title class_">NestFactory</span>.<span class="hljs-title function_">create</span>(<span class="hljs-title class_">AppModule</span>);
+app.<span class="hljs-title function_">useGlobalInterceptors</span>(<span class="hljs-keyword">new</span> <span class="hljs-title class_">TimerInterceptor</span>());
+
+<span class="hljs-comment">// or</span>
+
+<span class="hljs-meta">@Module</span>({
+  <span class="hljs-attr">providers</span>: [
+    {
+      <span class="hljs-attr">provide</span>: <span class="hljs-variable constant_">APP_INTERCEPTOR</span>,
+      <span class="hljs-attr">useClass</span>: <span class="hljs-title class_">TimerInterceptor</span>,
+    },
+  ],
+})
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">AppModule</span> {}
+</code></pre>
+<h3><a id="更多应用案例" class="content__heading-anchor"></a>更多应用案例</h3>
+<ol>
+<li>响应映射：使用<strong>Rxjs</strong>提供的<code>map</code>操作符对处理函数返回的数据做二次加工：</li>
+</ol>
+<pre><code class="language-tsx"><span class="hljs-meta">@Injectable</span>()
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">TransformInterceptor</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">NestInterceptor</span> {
+  <span class="hljs-title function_">intercept</span>(<span class="hljs-attr">context</span>: <span class="hljs-title class_">ExecutionContext</span>, <span class="hljs-attr">next</span>: <span class="hljs-title class_">CallHandler</span>): <span class="hljs-title class_">Observable</span>&lt;<span class="hljs-built_in">any</span>&gt; {
+    <span class="hljs-keyword">return</span> next.<span class="hljs-title function_">handle</span>().<span class="hljs-title function_">pipe</span>(
+      <span class="hljs-title function_">map</span>(<span class="hljs-function">(<span class="hljs-params">data</span>) =&gt;</span> {
+        <span class="hljs-keyword">return</span> {
+          <span class="hljs-attr">time</span>: <span class="hljs-keyword">new</span> <span class="hljs-title class_">Date</span>().<span class="hljs-title function_">toISOString</span>(),
+          data,
+        };
+      })
+    );
+  }
+}
+</code></pre>
+<ol>
+<li>异常映射：使用<strong>Rxjs</strong>提供的<code>catchError</code>操作符抛出指定的异常：</li>
+</ol>
+<pre><code class="language-tsx"><span class="hljs-meta">@Injectable</span>()
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">ErrorsInterceptor</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">NestInterceptor</span> {
+  <span class="hljs-title function_">intercept</span>(<span class="hljs-attr">context</span>: <span class="hljs-title class_">ExecutionContext</span>, <span class="hljs-attr">next</span>: <span class="hljs-title class_">CallHandler</span>): <span class="hljs-title class_">Observable</span>&lt;<span class="hljs-built_in">any</span>&gt; {
+    <span class="hljs-keyword">return</span> next
+      .<span class="hljs-title function_">handle</span>()
+      .<span class="hljs-title function_">pipe</span>(<span class="hljs-title function_">catchError</span>(<span class="hljs-function">(<span class="hljs-params">err</span>) =&gt;</span> <span class="hljs-title function_">throwError</span>(<span class="hljs-function">() =&gt;</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">BadGatewayException</span>())));
+  }
+}
+</code></pre>
+<ol>
+<li>处理函数超时：使用<strong>Rxjs</strong>提供的<code>timeout</code>和<code>catchError</code>共同实现处理函数超时：</li>
+</ol>
+<pre><code class="language-tsx"><span class="hljs-meta">@Injectable</span>()
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">TimeoutInterceptor</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">NestInterceptor</span> {
+  <span class="hljs-title function_">intercept</span>(<span class="hljs-attr">context</span>: <span class="hljs-title class_">ExecutionContext</span>, <span class="hljs-attr">next</span>: <span class="hljs-title class_">CallHandler</span>): <span class="hljs-title class_">Observable</span>&lt;<span class="hljs-built_in">any</span>&gt; {
+    <span class="hljs-keyword">return</span> next.<span class="hljs-title function_">handle</span>().<span class="hljs-title function_">pipe</span>(
+      <span class="hljs-title function_">timeout</span>(<span class="hljs-number">5</span> * <span class="hljs-number">1000</span>),
+      <span class="hljs-title function_">catchError</span>(<span class="hljs-function">(<span class="hljs-params">err</span>) =&gt;</span> {
+        <span class="hljs-keyword">if</span> (err <span class="hljs-keyword">instanceof</span> <span class="hljs-title class_">TimeoutError</span>) {
+          <span class="hljs-keyword">return</span> <span class="hljs-title function_">throwError</span>(<span class="hljs-function">() =&gt;</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">RequestTimeoutException</span>());
+        }
+        <span class="hljs-keyword">return</span> <span class="hljs-title function_">throwError</span>(<span class="hljs-function">() =&gt;</span> err);
+      })
+    );
+  }
+}
+</code></pre>
+<h2><a id="异常过滤器的使用" class="content__heading-anchor"></a>异常过滤器的使用</h2>
+<p><strong>NestJS</strong> 内置的 <strong>全局异常过滤器</strong> 负责处理应用中所有未处理的 <strong>HttpException</strong> 及其子类的异常，其他异常将由内置过滤器生成默认的 JSON 响应：</p>
+<pre><code class="language-json"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;statusCode&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">500</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;message&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Internal server error&quot;</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<h3><a id="标准异常" class="content__heading-anchor"></a>标准异常</h3>
+<p>通过实例化 <strong>NestJs</strong> 内置的 <code>HttpException</code> 类来抛出的异常为标准异常，下面的代码展示了由 <code>message</code> 和 <code>statusCode</code> 组成的标准示例：</p>
+<pre><code class="language-tsx"><span class="hljs-meta">@Get</span>()
+<span class="hljs-title function_">findAll</span>(<span class="hljs-params"></span>) {
+  <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">HttpException</span>(<span class="hljs-string">&#x27;Forbidden&#x27;</span>, <span class="hljs-title class_">HttpStatus</span>.<span class="hljs-property">FORBIDDEN</span>);
+}
+</code></pre>
+<p>下面的代码完全自定义了抛出异常的 <strong>JSON</strong> 响应体：</p>
+<pre><code class="language-tsx"><span class="hljs-meta">@Get</span>()
+<span class="hljs-keyword">async</span> <span class="hljs-title function_">findAll</span>(<span class="hljs-params"></span>) {
+  <span class="hljs-keyword">try</span> {
+    <span class="hljs-comment">// TODO</span>
+  } <span class="hljs-keyword">catch</span> (error) {
+    <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">HttpException</span>(
+      {
+        <span class="hljs-attr">status</span>: <span class="hljs-title class_">HttpStatus</span>.<span class="hljs-property">FORBIDDEN</span>,
+        <span class="hljs-attr">error</span>: <span class="hljs-string">&#x27;This is a custom message&#x27;</span>,
+      },
+      <span class="hljs-title class_">HttpStatus</span>.<span class="hljs-property">FORBIDDEN</span>,
+      {
+        <span class="hljs-attr">cause</span>: error,
+      },
+    );
+  }
+}
+</code></pre>
+<pre><code class="language-json"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;status&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">403</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;error&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;This is a custom message&quot;</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<h3><a id="自定义异常" class="content__heading-anchor"></a>自定义异常</h3>
+<p>继承 <code>HttpException</code> 类可以封装符合自己项目的自定义异常，正如上面完全自定义抛出异常 <strong>JSON</strong> 响应体的代码。</p>
+<pre><code class="language-tsx"><span class="hljs-keyword">import</span> { <span class="hljs-title class_">HttpException</span>, <span class="hljs-title class_">HttpStatus</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;@nestjs/common&quot;</span>;
+
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">ForbiddenException</span> <span class="hljs-keyword">extends</span> <span class="hljs-title class_ inherited__">HttpException</span> {
+  <span class="hljs-title function_">constructor</span>(<span class="hljs-params"><span class="hljs-attr">message</span>: <span class="hljs-built_in">string</span>, error?: <span class="hljs-built_in">any</span></span>) {
+    <span class="hljs-variable language_">super</span>(
+      {
+        <span class="hljs-attr">status</span>: <span class="hljs-title class_">HttpStatus</span>.<span class="hljs-property">FORBIDDEN</span>,
+        <span class="hljs-attr">error</span>: message,
+      },
+      <span class="hljs-title class_">HttpStatus</span>.<span class="hljs-property">FORBIDDEN</span>,
+      {
+        <span class="hljs-attr">cause</span>: error,
+      }
+    );
+  }
+}
+</code></pre>
+<p>在 <code>findAll</code> 函数将抛出标准异常改为自定义的 <code>ForbiddenException</code> 异常：</p>
+<pre><code class="language-tsx"><span class="hljs-meta">@Get</span>()
+<span class="hljs-keyword">async</span> <span class="hljs-title function_">findAll</span>(<span class="hljs-params"></span>) {
+  <span class="hljs-keyword">try</span> {
+    <span class="hljs-keyword">await</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">ordersService</span>.<span class="hljs-title function_">findAll</span>();
+  } <span class="hljs-keyword">catch</span> (error) {
+    <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">ForbiddenException</span>(<span class="hljs-string">&#x27;This is a custom message&#x27;</span>, error);
+  }
+}
+</code></pre>
+<h3><a id="内置-http-异常" class="content__heading-anchor"></a>内置 HTTP 异常</h3>
+<p>下面这些是 <strong>NestJS</strong> 内置的 <strong>HTTP</strong> 异常类，它们与上面自定义异常一样都是继承自<strong>HttpException</strong>。</p>
+<ul>
+<li><code>BadRequestException</code></li>
+<li><code>UnauthorizedException</code></li>
+<li><code>NotFoundException</code></li>
+<li><code>ForbiddenException</code></li>
+<li><code>NotAcceptableException</code></li>
+<li><code>RequestTimeoutException</code></li>
+<li><code>ConflictException</code></li>
+<li><code>GoneException</code></li>
+<li><code>HttpVersionNotSupportedException</code></li>
+<li><code>PayloadTooLargeException</code></li>
+<li><code>UnsupportedMediaTypeException</code></li>
+<li><code>UnprocessableEntityException</code></li>
+<li><code>InternalServerErrorException</code></li>
+<li><code>NotImplementedException</code></li>
+<li><code>ImATeapotException</code></li>
+<li><code>MethodNotAllowedException</code></li>
+<li><code>BadGatewayException</code></li>
+<li><code>ServiceUnavailableException</code></li>
+<li><code>GatewayTimeoutException</code></li>
+<li><code>PreconditionFailedException</code></li>
+</ul>
+<h3><a id="创建-http-异常过滤器" class="content__heading-anchor"></a>创建 HTTP 异常过滤器</h3>
+<p>创建异常过滤器来接管内置的 <strong>全局异常过滤器</strong> 实现使用不同项目的异常捕获处理，如增加异常的日志记录或改变 <strong>JSON</strong> 模式。</p>
+<ol>
+<li>创建过滤器：
+<ul>
+<li>全局命令：<code>nest generate filter &lt;filter-name&gt;</code></li>
+<li>简写命令：<code>nest g f &lt;filter-name&gt;</code></li>
+</ul></li>
+</ol>
+<pre><code class="language-tsx"><span class="hljs-keyword">import</span> { <span class="hljs-title class_">ArgumentsHost</span>, <span class="hljs-title class_">Catch</span>, <span class="hljs-title class_">ExceptionFilter</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;@nestjs/common&quot;</span>;
+
+<span class="hljs-meta">@Catch</span>()
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">HttpExceptionFilter</span>&lt;T&gt; <span class="hljs-keyword">implements</span> <span class="hljs-title class_">ExceptionFilter</span> {
+  <span class="hljs-keyword">catch</span>(<span class="hljs-attr">exception</span>: T, <span class="hljs-attr">host</span>: <span class="hljs-title class_">ArgumentsHost</span>) {}
+}
+</code></pre>
+<ol>
+<li>通过<code>@Catch()</code> 指定默认创建的过滤器为指定的 <code>HttpException</code> 过滤器：</li>
+</ol>
+<pre><code class="language-tsx"><span class="hljs-keyword">import</span> {
+  <span class="hljs-title class_">ArgumentsHost</span>,
+  <span class="hljs-title class_">Catch</span>,
+  <span class="hljs-title class_">ExceptionFilter</span>,
+  <span class="hljs-title class_">HttpException</span>,
+} <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;@nestjs/common&quot;</span>;
+
+<span class="hljs-meta">@Catch</span>(<span class="hljs-title class_">HttpException</span>)
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">HttpExceptionFilter</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">ExceptionFilter</span> {
+  <span class="hljs-keyword">catch</span>(<span class="hljs-attr">exception</span>: <span class="hljs-title class_">HttpException</span>, <span class="hljs-attr">host</span>: <span class="hljs-title class_">ArgumentsHost</span>) {
+    <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(exception, host);
+  }
+}
+</code></pre>
+<p>通过执行上下文对象(<code>host</code>)中的 <strong>request</strong> 获取当前请求的地址，异常对象(<code>exception</code>)获取当前异常状态码，并执行上下文对象(<code>host</code>)中重构 <strong>response</strong> 响应格式，完成响应重构：</p>
+<pre><code class="language-tsx"><span class="hljs-keyword">import</span> {
+  <span class="hljs-title class_">ArgumentsHost</span>,
+  <span class="hljs-title class_">Catch</span>,
+  <span class="hljs-title class_">ExceptionFilter</span>,
+  <span class="hljs-title class_">HttpException</span>,
+} <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;@nestjs/common&quot;</span>;
+
+<span class="hljs-meta">@Catch</span>(<span class="hljs-title class_">HttpException</span>)
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">HttpExceptionFilter</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">ExceptionFilter</span> {
+  <span class="hljs-keyword">catch</span>(<span class="hljs-attr">exception</span>: <span class="hljs-title class_">HttpException</span>, <span class="hljs-attr">host</span>: <span class="hljs-title class_">ArgumentsHost</span>) {
+    <span class="hljs-keyword">const</span> ctx = host.<span class="hljs-title function_">switchToHttp</span>();
+    <span class="hljs-keyword">const</span> request = ctx.<span class="hljs-title function_">getRequest</span>();
+    <span class="hljs-keyword">const</span> response = ctx.<span class="hljs-title function_">getResponse</span>();
+    <span class="hljs-keyword">const</span> status = exception.<span class="hljs-title function_">getStatus</span>();
+
+    response.<span class="hljs-title function_">status</span>(status).<span class="hljs-title function_">json</span>({
+      <span class="hljs-attr">statusCode</span>: status,
+      <span class="hljs-attr">timestamp</span>: <span class="hljs-keyword">new</span> <span class="hljs-title class_">Date</span>().<span class="hljs-title function_">toISOString</span>(),
+      <span class="hljs-attr">path</span>: request.<span class="hljs-property">url</span>,
+    });
+  }
+}
+</code></pre>
+<p>💡  小结：</p>
+<ol>
+<li><code>exception</code> 为当前捕获到的异常对象；</li>
+<li><code>host</code> 是当前的执行上下文对象；</li>
+</ol>
+<h3><a id="绑定过滤器" class="content__heading-anchor"></a>绑定过滤器</h3>
+<p>路由执行函数范围绑定：</p>
+<pre><code class="language-tsx"><span class="hljs-meta">@Get</span>()
+<span class="hljs-meta">@UseFilters</span>(<span class="hljs-keyword">new</span> <span class="hljs-title class_">HttpExceptionFilter</span>())
+<span class="hljs-keyword">async</span> <span class="hljs-title function_">findAll</span>(<span class="hljs-params"></span>) {
+  <span class="hljs-keyword">try</span> {
+    <span class="hljs-keyword">await</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">ordersService</span>.<span class="hljs-title function_">findAll</span>();
+  } <span class="hljs-keyword">catch</span> (error) {
+    <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">ForbiddenException</span>(<span class="hljs-string">&#x27;This is a custom message&#x27;</span>, error);
+  }
+}
+
+<span class="hljs-comment">// or</span>
+
+<span class="hljs-meta">@Get</span>()
+<span class="hljs-meta">@UseFilters</span>(<span class="hljs-title class_">HttpExceptionFilter</span>)
+<span class="hljs-keyword">async</span> <span class="hljs-title function_">findAll</span>(<span class="hljs-params"></span>) {
+  <span class="hljs-keyword">try</span> {
+    <span class="hljs-keyword">await</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">ordersService</span>.<span class="hljs-title function_">findAll</span>();
+  } <span class="hljs-keyword">catch</span> (error) {
+    <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">ForbiddenException</span>(<span class="hljs-string">&#x27;This is a custom message&#x27;</span>, error);
+  }
+}
+</code></pre>
+<p>控制器范围绑定：</p>
+<pre><code class="language-tsx"><span class="hljs-meta">@UseFilters</span>(<span class="hljs-keyword">new</span> <span class="hljs-title class_">HttpExceptionFilter</span>())
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">OrdersController</span> {}
+
+<span class="hljs-comment">// or</span>
+
+<span class="hljs-meta">@UseFilters</span>(<span class="hljs-title class_">HttpExceptionFilter</span>)
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">OrdersController</span> {}
+</code></pre>
+<p>全局范围绑定：</p>
+<pre><code class="language-tsx"><span class="hljs-keyword">const</span> app = <span class="hljs-keyword">await</span> <span class="hljs-title class_">NestFactory</span>.<span class="hljs-title function_">create</span>(<span class="hljs-title class_">AppModule</span>);
+app.<span class="hljs-title function_">useGlobalFilters</span>(<span class="hljs-keyword">new</span> <span class="hljs-title class_">HttpExceptionFilter</span>());
+
+<span class="hljs-comment">// or</span>
+
+<span class="hljs-meta">@Module</span>({
+  <span class="hljs-attr">providers</span>: [
+    {
+      <span class="hljs-attr">provide</span>: <span class="hljs-variable constant_">APP_FILTER</span>,
+      <span class="hljs-attr">useClass</span>: <span class="hljs-title class_">HttpExceptionFilter</span>,
+    },
+  ],
+})
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">AppModule</span> {}
+</code></pre>
+<h3><a id="创建通用异常过滤器" class="content__heading-anchor"></a>创建通用异常过滤器</h3>
+<p>在创建 <strong>HTTP</strong> 异常过滤器的时候使用 <code>@Catch()</code> 装饰器绑定了特定的 <code>HttpException</code>，接下来就创建一个脱离特定异常类且与平台无关的通用异常过滤器。</p>
+<pre><code class="language-tsx"><span class="hljs-comment">// create command：`nest g f all-exceptions`</span>
+<span class="hljs-keyword">import</span> {
+  <span class="hljs-title class_">ArgumentsHost</span>,
+  <span class="hljs-title class_">Catch</span>,
+  <span class="hljs-title class_">ExceptionFilter</span>,
+  <span class="hljs-title class_">HttpException</span>,
+  <span class="hljs-title class_">HttpStatus</span>,
+} <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;@nestjs/common&quot;</span>;
+<span class="hljs-keyword">import</span> { <span class="hljs-title class_">HttpAdapterHost</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;@nestjs/core&quot;</span>;
+
+<span class="hljs-meta">@Catch</span>()
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">AllExceptionsFilter</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">ExceptionFilter</span> {
+  <span class="hljs-title function_">constructor</span>(<span class="hljs-params"><span class="hljs-keyword">private</span> <span class="hljs-keyword">readonly</span> <span class="hljs-attr">httpAdapterHost</span>: <span class="hljs-title class_">HttpAdapterHost</span></span>) {}
+
+  <span class="hljs-keyword">catch</span>(<span class="hljs-attr">exception</span>: <span class="hljs-built_in">unknown</span>, <span class="hljs-attr">host</span>: <span class="hljs-title class_">ArgumentsHost</span>) {
+    <span class="hljs-keyword">const</span> { httpAdapter } = <span class="hljs-variable language_">this</span>.<span class="hljs-property">httpAdapterHost</span>;
+
+    <span class="hljs-keyword">const</span> ctx = host.<span class="hljs-title function_">switchToHttp</span>();
+
+    <span class="hljs-keyword">const</span> httpStatus =
+      exception <span class="hljs-keyword">instanceof</span> <span class="hljs-title class_">HttpException</span>
+        ? exception.<span class="hljs-title function_">getStatus</span>()
+        : <span class="hljs-title class_">HttpStatus</span>.<span class="hljs-property">INTERNAL_SERVER_ERROR</span>;
+
+    <span class="hljs-keyword">const</span> responseBody = {
+      <span class="hljs-attr">statusCode</span>: httpStatus,
+      <span class="hljs-attr">timestamp</span>: <span class="hljs-keyword">new</span> <span class="hljs-title class_">Date</span>().<span class="hljs-title function_">toISOString</span>(),
+      <span class="hljs-attr">path</span>: httpAdapter.<span class="hljs-title function_">getRequestUrl</span>(ctx.<span class="hljs-title function_">getRequest</span>()),
+    };
+
+    httpAdapter.<span class="hljs-title function_">reply</span>(ctx.<span class="hljs-title function_">getResponse</span>(), responseBody, httpStatus);
+  }
+}
+</code></pre>
+<p>绑定通用异常过滤器：</p>
+<pre><code class="language-tsx"><span class="hljs-keyword">const</span> { httpAdapter } = app.<span class="hljs-title function_">get</span>(<span class="hljs-title class_">HttpAdapterHost</span>);
+app.<span class="hljs-title function_">useGlobalFilters</span>(<span class="hljs-keyword">new</span> <span class="hljs-title class_">AllExceptionsFilter</span>(httpAdapter));
+</code></pre>
+<h2><a id="管道的使用" class="content__heading-anchor"></a>管道的使用</h2>
+<p>管道有两个典型的应用场景，其一是转换(将输入数据转换为所需要的形式，如，将字符串转为数字类型)，其二是校验(校验传入数据是否有效，无效时将抛出异常)数据是否有效。因此管道将运行在路由处理函数的 <code>arguments</code> 上。</p>
+<h3><a id="绑定管道" class="content__heading-anchor"></a>绑定管道</h3>
+<p>NestJs 提供了 9 个开箱即用的内置管道(<code>ValidationPipe</code>，<code>ParseIntPipe</code>，<code>ParseFloatPipe</code>，<code>ParseBoolPipe</code>，<code>ParseArrayPipe</code>，<code>ParseUUIDPipe</code>，<code>ParseEnumPipe</code>，<code>DefaultValuePipe</code>，<code>ParseFilePipe</code>)，接着就尝试绑定 <code>ParseIntPipe</code> 到 <code>findOne</code> 处理函数 函数，获 <strong>number</strong> 类型 的 <code>id</code> 参数：</p>
+<pre><code class="language-tsx"><span class="hljs-meta">@Get</span>(<span class="hljs-string">&#x27;:id&#x27;</span>)
+<span class="hljs-title function_">findOne</span>(<span class="hljs-params"><span class="hljs-meta">@Param</span>(<span class="hljs-string">&#x27;id&#x27;</span>, ParseIntPipe) <span class="hljs-attr">id</span>: <span class="hljs-built_in">number</span></span>) {
+  <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-keyword">typeof</span> id); <span class="hljs-comment">// number</span>
+  <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">ordersService</span>.<span class="hljs-title function_">findOne</span>(id);
+}
+</code></pre>
+<p>如果传递的参数无法转换为数字则抛出如下的异常：</p>
+<pre><code class="language-json"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;statusCode&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">400</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;timestamp&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2023-12-09T14:42:20.014Z&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;path&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;/orders/a&quot;</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<p>通过实例化 <code>ParseIntPipe</code> 对象定义转换失败后的错误码：</p>
+<pre><code class="language-tsx"><span class="hljs-meta">@Get</span>(<span class="hljs-string">&#x27;:id&#x27;</span>)
+  <span class="hljs-title function_">findOne</span>(<span class="hljs-params">
+    <span class="hljs-meta">@Param</span>(
+      <span class="hljs-string">&#x27;id&#x27;</span>,
+      <span class="hljs-keyword">new</span> ParseIntPipe({
+        errorHttpStatusCode: HttpStatus.NOT_ACCEPTABLE,
+      }),
+    )
+    <span class="hljs-attr">id</span>: <span class="hljs-built_in">number</span>,
+  </span>) {
+    <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-keyword">typeof</span> id); <span class="hljs-comment">// number</span>
+    <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">ordersService</span>.<span class="hljs-title function_">findOne</span>(id);
+  }
+</code></pre>
+<h3><a id="基于-schema-的验证" class="content__heading-anchor"></a>基于 schema 的验证</h3>
+<p><strong>zod</strong> 是用来定义 <strong>schema</strong> 和 进行验证的模块，基于管道可以很好的时间路由处理函数参数的验证：</p>
+<ol>
+<li>安装 <strong>zod</strong>：<code>npm install --save zod</code> ；</li>
+<li>创建管道：<code>nest generate pipe zod-validation</code> or <code>nest g pi zod-validation</code>；</li>
+<li>完善管道：利用注入的<code>ZodObject</code> 解析参数数据格式；</li>
+</ol>
+<pre><code class="language-tsx"><span class="hljs-keyword">import</span> {
+  <span class="hljs-title class_">ArgumentMetadata</span>,
+  <span class="hljs-title class_">BadRequestException</span>,
+  <span class="hljs-title class_">Injectable</span>,
+  <span class="hljs-title class_">PipeTransform</span>,
+} <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;@nestjs/common&quot;</span>;
+<span class="hljs-keyword">import</span> { <span class="hljs-title class_">ZodObject</span> } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;zod&quot;</span>;
+
+<span class="hljs-meta">@Injectable</span>()
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">ZodValidationPipe</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">PipeTransform</span> {
+  <span class="hljs-title function_">constructor</span>(<span class="hljs-params"><span class="hljs-keyword">private</span> <span class="hljs-attr">schema</span>: <span class="hljs-title class_">ZodObject</span>&lt;<span class="hljs-built_in">any</span>&gt;</span>) {}
+
+  <span class="hljs-title function_">transform</span>(<span class="hljs-params"><span class="hljs-attr">value</span>: <span class="hljs-built_in">any</span>, <span class="hljs-attr">metadata</span>: <span class="hljs-title class_">ArgumentMetadata</span></span>) {
+    <span class="hljs-keyword">try</span> {
+      <span class="hljs-variable language_">this</span>.<span class="hljs-property">schema</span>.<span class="hljs-title function_">parse</span>(value);
+    } <span class="hljs-keyword">catch</span> (error) {
+      <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">BadRequestException</span>(<span class="hljs-string">&quot;Validation failed&quot;</span>);
+    }
+    <span class="hljs-keyword">return</span> value;
+  }
+}
+</code></pre>
+<ol>
+<li>定义 schema：</li>
+</ol>
+<pre><code class="language-tsx"><span class="hljs-keyword">import</span> { z } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;zod&quot;</span>;
+
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">const</span> createOrderSchema = z
+  .<span class="hljs-title function_">object</span>({
+    <span class="hljs-attr">orderId</span>: z.<span class="hljs-title function_">string</span>(),
+    <span class="hljs-attr">orderNo</span>: z.<span class="hljs-title function_">string</span>(),
+    <span class="hljs-attr">orderName</span>: z.<span class="hljs-title function_">string</span>(),
+    <span class="hljs-attr">orderStatus</span>: z.<span class="hljs-title function_">string</span>(),
+    <span class="hljs-attr">orderAmount</span>: z.<span class="hljs-title function_">number</span>(),
+    <span class="hljs-attr">createTime</span>: z.<span class="hljs-title function_">date</span>(),
+    <span class="hljs-attr">updateTime</span>: z.<span class="hljs-title function_">date</span>(),
+  })
+  .<span class="hljs-title function_">required</span>();
+
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">type</span> <span class="hljs-title class_">CreateOrderDto</span> = z.<span class="hljs-property">infer</span>&lt;<span class="hljs-keyword">typeof</span> createOrderSchema&gt;;
+</code></pre>
+<ol>
+<li>绑定管道：</li>
+</ol>
+<pre><code class="language-tsx"><span class="hljs-meta">@Post</span>()
+<span class="hljs-meta">@UsePipes</span>(<span class="hljs-keyword">new</span> <span class="hljs-title class_">ZodValidationPipe</span>(createOrderSchema))
+<span class="hljs-title function_">create</span>(<span class="hljs-params"><span class="hljs-meta">@Body</span>() <span class="hljs-attr">createOrderDto</span>: <span class="hljs-title class_">CreateOrderDto</span></span>) {
+  <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">ordersService</span>.<span class="hljs-title function_">create</span>(createOrderDto);
+}
+</code></pre>
+<h3><a id="基于-class-的验证" class="content__heading-anchor"></a>基于 class 的验证</h3>
+<p>在 <strong>NestJS</strong> 中可以使用 <strong>class-validator</strong> 模块实现基于类和装饰器的形式进行参数验证。</p>
+<ol>
+<li>安装 <strong>class-validator</strong>：<code>npm i --save class-validator class-transformer</code> ;</li>
+<li>创建管道：<code>nest generate pipe validation</code> or <code>nest g pi validation</code>；</li>
+<li>完善管道：利用 <code>metatype</code> 提供的参数元类型验证参数；</li>
+</ol>
+<pre><code class="language-tsx"><span class="hljs-keyword">import</span> {
+  <span class="hljs-title class_">ArgumentMetadata</span>,
+  <span class="hljs-title class_">BadRequestException</span>,
+  <span class="hljs-title class_">Injectable</span>,
+  <span class="hljs-title class_">PipeTransform</span>,
+} <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;@nestjs/common&quot;</span>;
+<span class="hljs-keyword">import</span> { validate } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;class-validator&quot;</span>;
+<span class="hljs-keyword">import</span> { plainToInstance } <span class="hljs-keyword">from</span> <span class="hljs-string">&quot;class-transformer&quot;</span>;
+
+<span class="hljs-meta">@Injectable</span>()
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">ValidationPipe</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">PipeTransform</span> {
+  <span class="hljs-keyword">async</span> <span class="hljs-title function_">transform</span>(<span class="hljs-params"><span class="hljs-attr">value</span>: <span class="hljs-built_in">any</span>, { metatype }: <span class="hljs-title class_">ArgumentMetadata</span></span>) {
+    <span class="hljs-keyword">if</span> (!metatype || !<span class="hljs-variable language_">this</span>.<span class="hljs-title function_">toValidate</span>(metatype)) {
+      <span class="hljs-keyword">return</span> value;
+    }
+    <span class="hljs-keyword">const</span> <span class="hljs-built_in">object</span> = <span class="hljs-title function_">plainToInstance</span>(metatype, value);
+    <span class="hljs-keyword">const</span> errors = <span class="hljs-keyword">await</span> <span class="hljs-title function_">validate</span>(<span class="hljs-built_in">object</span>);
+    <span class="hljs-keyword">if</span> (errors.<span class="hljs-property">length</span> &gt; <span class="hljs-number">0</span>) {
+      <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">BadRequestException</span>(<span class="hljs-string">&quot;Validation failed&quot;</span>);
+    }
+    <span class="hljs-keyword">return</span> value;
+  }
+
+  <span class="hljs-keyword">private</span> <span class="hljs-title function_">toValidate</span>(<span class="hljs-attr">metatype</span>: <span class="hljs-built_in">any</span>): <span class="hljs-built_in">boolean</span> {
+    <span class="hljs-keyword">const</span> <span class="hljs-attr">types</span>: <span class="hljs-built_in">any</span>[] = [<span class="hljs-title class_">String</span>, <span class="hljs-title class_">Number</span>, <span class="hljs-title class_">Date</span>];
+    <span class="hljs-keyword">return</span> !types.<span class="hljs-title function_">includes</span>(metatype);
+  }
+}
+</code></pre>
+<ol>
+<li>重新绑定管道：</li>
+</ol>
+<pre><code class="language-tsx"><span class="hljs-meta">@Post</span>()
+<span class="hljs-title function_">create</span>(<span class="hljs-params"><span class="hljs-meta">@Body</span>(<span class="hljs-keyword">new</span> ValidationPipe()) <span class="hljs-attr">createOrderDto</span>: <span class="hljs-title class_">CreateOrderDto</span></span>) {
+  <span class="hljs-keyword">return</span> <span class="hljs-variable language_">this</span>.<span class="hljs-property">ordersService</span>.<span class="hljs-title function_">create</span>(createOrderDto);
+}
+</code></pre>
+<p>💡 全局绑定管道：</p>
+<pre><code class="language-tsx"><span class="hljs-keyword">const</span> app = <span class="hljs-keyword">await</span> <span class="hljs-title class_">NestFactory</span>.<span class="hljs-title function_">create</span>(<span class="hljs-title class_">AppModule</span>);
+app.<span class="hljs-title function_">useGlobalPipes</span>(<span class="hljs-keyword">new</span> <span class="hljs-title class_">ValidationPipe</span>());
+
+<span class="hljs-comment">// or</span>
+
+<span class="hljs-meta">@Module</span>({
+  <span class="hljs-attr">providers</span>: [
+    {
+      <span class="hljs-attr">provide</span>: <span class="hljs-variable constant_">APP_PIPE</span>,
+      <span class="hljs-attr">useClass</span>: <span class="hljs-title class_">ValidationPipe</span>,
+    },
+  ],
+})
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">AppModule</span> {}
+</code></pre>
+<h2><a id="总结" class="content__heading-anchor"></a>总结</h2>
+<p>本篇文章介绍了 Nestjs 的使用，包括创建项目和模块，控制器、服务、模块、中间件、异常过滤器、管道、守卫和拦截器的使用。控制器处理客户端请求，服务封装复杂的业务逻辑，模块管理所有控制器和提供者，中间件更改请求响应对象，异常过滤器处理所有未处理的异常，管道对客户端数据进行转换和验证，守卫根据特定的权限角色决定是否进行处理，拦截器对处理函数进行切面上的扩展。</p>
+ </article> </section> </main>  <footer class="footer"> <hr class="footer__divide"> <div class="footer__row"> <p class="m-2">
+&#169; 2017-2024 <a href="/" class="link">9Sky 九天</a> </p> <div class="m-2"> <ul data-astro-cid-tfcnbjmv> <li data-astro-cid-tfcnbjmv> <a class="link" href="/" data-astro-cid-tfcnbjmv> 
+主页
+</a> </li> <li data-astro-cid-tfcnbjmv> <a class="link" href="/blog" data-astro-cid-tfcnbjmv>  文章 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/projects" data-astro-cid-tfcnbjmv>  项目 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/lab" data-astro-cid-tfcnbjmv>  实验室 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/about" data-astro-cid-tfcnbjmv>  关于 </a> </li> </ul>  </div> </div> </footer> </body></html> 

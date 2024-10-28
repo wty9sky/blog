@@ -1,0 +1,77 @@
+<!DOCTYPE html><html> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width"><title>关于</title><link rel="icon" type="image/vnd.microsoft.icon" href="/favicon.ico"><link rel="sitemap" href="/sitemap-index.xml"><title>关于</title><link rel="canonical" href="https://wty9sky.github.io/about/"><meta name="robots" content="index, follow"><meta property="og:title" content="关于"><meta property="og:type" content="article"><meta property="og:image" content="/og.svg"><meta property="og:url" content="https://wty9sky.github.io/about/"><meta property="og:locale" content="zh_CN"><meta property="og:locale:alternate" content="zh_TW"><meta property="og:locale:alternate" content="en_US"><meta property="og:site_name" content="9Sky 九天"><link rel="shortcut icon" href="/favicon.ico"><link rel="bookmark" href="/favicon.ico"><link rel="apple-touch-icon" href="/avatar.png"><meta name="generator" content="Astro v4.16.7"><meta name="keywords" content="关于,9Sky,九天,博客"><meta name="astro-view-transitions-enabled" content="true"><meta name="astro-view-transitions-fallback" content="animate"><link rel="stylesheet" href="/_astro/about.CkC6PiIh.css">
+<link rel="stylesheet" href="/_astro/about.D3zQv4Ly.css"><script type="module" src="/_astro/hoisted.2daoxv0f.js"></script></head> <body> <header class="header"> <h5 class="header__heading"> <a href="/" class="link">9Sky 九天</a> <span>
+/
+关于 </span> </h5> </header> <div id="navbar-sentinal"></div> <nav class="navbar" id="navbar-wrapper"> <div class="navbar__content"> <h5 class="navbar__path"> <a href="/" class="link">9Sky 九天</a> <span>
+/
+关于 </span> </h5> <div class="navbar__menu"> <ul data-astro-cid-tfcnbjmv> <li data-astro-cid-tfcnbjmv> <a class="link" href="/" data-astro-cid-tfcnbjmv> <i class="ri-home-line" data-astro-cid-tfcnbjmv></i>
+主页
+</a> </li> <li data-astro-cid-tfcnbjmv> <a class="link" href="/blog" data-astro-cid-tfcnbjmv> <i class="ri-newspaper-line" data-astro-cid-tfcnbjmv></i> 文章 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/projects" data-astro-cid-tfcnbjmv> <i class="ri-server-line" data-astro-cid-tfcnbjmv></i> 项目 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/lab" data-astro-cid-tfcnbjmv> <i class="ri-server-line" data-astro-cid-tfcnbjmv></i> 实验室 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/about" data-astro-cid-tfcnbjmv> <i class="ri-cup-line" data-astro-cid-tfcnbjmv></i> 关于 </a> </li> </ul>  </div> </div> </nav> <script>
+  // 使用 ViewTransition 后，所有 DOM 操作的 js 都有一堆问题
+  // 这里用了极不优雅的 var，有待改进
+  var observer;
+  function addNavObserver() {
+    const headerEl = document.querySelector("#navbar-wrapper");
+    const sentinalEl = document.querySelector("#navbar-sentinal");
+    if (!sentinalEl || !headerEl) return;
+    observer = new window.IntersectionObserver((e) => {
+      if (!e[0].isIntersectin && e[0].boundingClientRect.top <= 0) {
+        headerEl.classList.add("navbar--sticked");
+      } else {
+        headerEl.classList.remove("navbar--sticked");
+      }
+    });
+    observer.observe(sentinalEl);
+  }
+
+  function removeNavObserver() {
+    if (observer) observer.disconnect();
+    observer = null;
+  }
+
+  document.addEventListener(
+    "astro:page-load",
+    () => {
+      addNavObserver();
+    },
+    { once: false },
+  );
+
+  document.addEventListener(
+    "astro:before-swap",
+    () => {
+      removeNavObserver();
+    },
+    { once: false },
+  );
+</script>  <main class="page"> <section class="page__section page__section--at-top"> <h1 class="page__heading">关于</h1> <hr class="page__divide"> <article class="content"> <h2 id="关于我">关于我</h2>
+<p>你好，我是 9Sky 九天。</p>
+<ul>
+<li>🧑 来自黑龙江牡丹江，本科毕业于电子科技大学成都学院。</li>
+<li>🌈 理科生，但是其实或许是个有情怀的和感性的浪漫主义者。INTJ。</li>
+<li>⚙️ <strong>特别爱好折腾</strong>，喜欢折腾各种的玩意儿。欢迎参观我的「<a href="https://wty9sky.github.io/lab">实验室</a>」。</li>
+<li>👨‍💻 立志成为<strong>全栈工程师</strong>，创作优秀的软件产品。</li>
+<li>🌐 开源爱好者，支持OpenSource与包容开放的互联网。</li>
+<li>🎒 喜爱专研技术，喜欢在虚拟世界和现实生活中穿梭。</li>
+</ul>
+<p><strong>我有一个很丰富的自己想要介绍给你，可惜这里空隙太小，写不下。</strong></p>
+<h3 id="我的旅途">我的旅途</h3>
+<ul>
+<li>✨ 黑龙江牡丹江，牡丹江第四中学;</li>
+<li>✨ 黑龙江牡丹江，牡丹江第一高级中学;</li>
+<li>✨ 四川成都，电子科技大学成都学院，计算机科学与技术;</li>
+<li>✨ 求学永无止境…</li>
+</ul>
+<!-- - ✨ 中国北京，清华大学(待读)，计算机科学与技术(硕士); -->
+<!-- - ✨ 英国剑桥，英国剑桥大学University of Cambridge(待读)，计算机科学与技术(博士);-->
+<h2 id="关于本站">关于本站</h2>
+<p>这是我「信息汪洋里的一个家」。会发一些技术/题解/折腾记录/生活日常，不定期更新。</p>
+<h2 id="联系">联系</h2>
+<ul>
+<li>Email：<a href="mailto:xmsn2014@126.com">xmsn2014@126.com</a></li>
+<li>Github：<a href="https://github.com/wty9sky">wty9sky</a></li>
+<li>QQ：3263831497</li>
+<li>Wechat：xmsn90</li>
+</ul> </article> </section> </main>  <footer class="footer"> <hr class="footer__divide"> <div class="footer__row"> <p class="m-2">
+&#169; 2017-2024 <a href="/" class="link">9Sky 九天</a> </p> <div class="m-2"> <ul data-astro-cid-tfcnbjmv> <li data-astro-cid-tfcnbjmv> <a class="link" href="/" data-astro-cid-tfcnbjmv> 
+主页
+</a> </li> <li data-astro-cid-tfcnbjmv> <a class="link" href="/blog" data-astro-cid-tfcnbjmv>  文章 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/projects" data-astro-cid-tfcnbjmv>  项目 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/lab" data-astro-cid-tfcnbjmv>  实验室 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/about" data-astro-cid-tfcnbjmv>  关于 </a> </li> </ul>  </div> </div> </footer> </body></html>
