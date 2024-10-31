@@ -1,0 +1,283 @@
+<!DOCTYPE html><html> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width"><title>从零开发富文本编辑器(2)-selection与range</title><link rel="icon" type="image/vnd.microsoft.icon" href="/favicon.ico"><link rel="sitemap" href="/sitemap-index.xml"><title>从零开发富文本编辑器(2)-selection与range</title><link rel="canonical" href="https://wty9sky.github.io/blog/detail/26/"><meta name="description" content="在开始实现简单的富文本编辑器之前，要先了解富文本中涉及到的Selection选区和Range范围的概念。"><meta name="robots" content="index, follow"><meta property="og:title" content="从零开发富文本编辑器(2)-selection与range"><meta property="og:type" content="article"><meta property="og:image" content="/og.svg"><meta property="og:url" content="https://wty9sky.github.io/blog/detail/26/"><meta property="og:locale" content="zh_CN"><meta property="og:locale:alternate" content="zh_TW"><meta property="og:locale:alternate" content="en_US"><meta property="og:site_name" content="9Sky 九天"><link rel="shortcut icon" href="/favicon.ico"><link rel="bookmark" href="/favicon.ico"><link rel="apple-touch-icon" href="/avatar.png"><meta name="generator" content="Astro v4.16.8"><meta name="keywords" content="详情"><meta name="astro-view-transitions-enabled" content="true"><meta name="astro-view-transitions-fallback" content="animate"><link rel="stylesheet" href="/_astro/about.zJyvFudD.css">
+<link rel="stylesheet" href="/_astro/about.DaaC2zNV.css"><script type="module" src="/_astro/hoisted.HO6_Fzad.js"></script></head> <body> <header class="header"> <h5 class="header__heading"> <a href="/" class="link">9Sky 九天</a> <span>
+/
+<a href="/blog" class="link"> 博客 </a> </span><span>
+/
+从零开发富文本编辑器(2)-selection与range </span> </h5> </header> <div id="navbar-sentinal"></div> <nav class="navbar" id="navbar-wrapper"> <div class="navbar__content"> <h5 class="navbar__path"> <a href="/" class="link">9Sky 九天</a> <span>
+/
+<a href="/blog" class="link"> 博客 </a> </span><span>
+/
+从零开发富文本编辑器(2)-selection与range </span> </h5> <div class="navbar__menu"> <ul data-astro-cid-tfcnbjmv> <li data-astro-cid-tfcnbjmv> <a class="link" href="/" data-astro-cid-tfcnbjmv> <i class="ri-home-line" data-astro-cid-tfcnbjmv></i>
+主页
+</a> </li> <li data-astro-cid-tfcnbjmv> <a class="link" href="/blog" data-astro-cid-tfcnbjmv> <i class="ri-newspaper-line" data-astro-cid-tfcnbjmv></i> 文章 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/projects" data-astro-cid-tfcnbjmv> <i class="ri-server-line" data-astro-cid-tfcnbjmv></i> 项目 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/lab" data-astro-cid-tfcnbjmv> <i class="ri-server-line" data-astro-cid-tfcnbjmv></i> 实验室 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/about" data-astro-cid-tfcnbjmv> <i class="ri-cup-line" data-astro-cid-tfcnbjmv></i> 关于 </a> </li> </ul>  </div> </div> </nav> <script>
+  // 使用 ViewTransition 后，所有 DOM 操作的 js 都有一堆问题
+  // 这里用了极不优雅的 var，有待改进
+  var observer;
+  function addNavObserver() {
+    const headerEl = document.querySelector("#navbar-wrapper");
+    const sentinalEl = document.querySelector("#navbar-sentinal");
+    if (!sentinalEl || !headerEl) return;
+    observer = new window.IntersectionObserver((e) => {
+      if (!e[0].isIntersectin && e[0].boundingClientRect.top <= 0) {
+        headerEl.classList.add("navbar--sticked");
+      } else {
+        headerEl.classList.remove("navbar--sticked");
+      }
+    });
+    observer.observe(sentinalEl);
+  }
+
+  function removeNavObserver() {
+    if (observer) observer.disconnect();
+    observer = null;
+  }
+
+  document.addEventListener(
+    "astro:page-load",
+    () => {
+      addNavObserver();
+    },
+    { once: false },
+  );
+
+  document.addEventListener(
+    "astro:before-swap",
+    () => {
+      removeNavObserver();
+    },
+    { once: false },
+  );
+</script>  <main class="page"> <section class="page__section page__section--at-top"> <!-- {
+        article.cover && (
+          <a href={article.cover} data-fancybox data-caption={article.title}>
+            <img
+              src={article.cover}
+              alt={article.title}
+              title={article.title}
+              class="page__cover mb-8"
+            />
+          </a>
+        )
+      } --> <h1 class="page__heading">从零开发富文本编辑器(2)-selection与range</h1> <p class="page__meta"> <i class="ri-calendar-line"></i> <span>2024 年 10 月 30 日 05:59</span> </p> <hr class="page__divide"> <article class="content"> <h2><a id="文章目录" class="content__heading-anchor"></a>文章目录</h2>
+<ul>
+<li><a href="#1%E9%80%89%E5%8C%BA-selection">1、选区 Selection</a></li>
+<li><a href="#2selection-%E5%AF%B9%E8%B1%A1">2、Selection 对象</a>
+<ul>
+<li><a href="#%E5%B1%9E%E6%80%A7">属性</a>
+<ul>
+<li><a href="#rangecount">rangeCount</a></li>
+<li><a href="#anchor">anchor</a></li>
+<li><a href="#focus">focus</a></li>
+<li><a href="#iscollapsed">isCollapsed</a></li>
+</ul></li>
+<li><a href="#%E6%96%B9%E6%B3%95">方法：</a></li>
+</ul></li>
+<li><a href="#3%E8%8C%83%E5%9B%B4-range%E5%AF%B9%E8%B1%A1">3、范围 Range对象</a>
+<ul>
+<li><a href="#%E5%B1%9E%E6%80%A7-1">属性</a>
+<ul>
+<li><a href="#collapsed">collapsed</a></li>
+<li><a href="#startcontainer">startContainer</a></li>
+<li><a href="#endcontainer">endContainer</a></li>
+<li><a href="#startoffset">startOffset</a></li>
+<li><a href="#endoffset">endOffset</a></li>
+<li><a href="#commonancestorcontainer">commonAncestorContainer</a></li>
+</ul></li>
+<li><a href="#%E4%B8%BB%E8%A6%81%E6%96%B9%E6%B3%95">主要方法：</a></li>
+</ul></li>
+</ul>
+<p>在开始实现简单的富文本编辑器之前，要先了解几个富文本中涉及到的概念。</p>
+<ol>
+<li>选区 Selection</li>
+<li>范围 Range</li>
+</ol>
+<h2><a id="1选区-selection" class="content__heading-anchor"></a>1、选区 Selection</h2>
+<p>在实现富文本编辑器过程中，有个重要概念：选区。</p>
+<p>在原生浏览器中，选区由 <a href="https://developer.mozilla.org/zh-CN/docs/Web/API/Selection">Selection</a> 对象表示。</p>
+<p><code>Selection</code> 对象表示用户选择的文本范围或插入符号的当前位置。它代表页面中的文本选区，可能横跨多个元素。文本选区由用户拖拽鼠标经过文字而产生。</p>
+<p>有两个需要明白的点：<br>
+锚点 anchor：选择内容时，按下鼠标/键盘开始选择的位置<br>
+焦点 focus：选择内容结束时，鼠标/键盘处于的位置</p>
+<p>这两个点与选择方向有关</p>
+<p>从左至右选择内容：anchor在左边，focus在右边</p>
+<p>如图示：</p>
+<p><a href="https://p0-xtjj-private.juejin.cn/tos-cn-i-73owjymdk6/38e1d41e0bae4075bf75585a499f572e~tplv-73owjymdk6-jj-mark-v1:0:0:0:0:5o6Y6YeR5oqA5pyv56S-5Yy6IEAg6bqm6YKj5Liq5YWc:q75.awebp?policy=eyJ2bSI6MywidWlkIjoiMTM2MzA1MDE0ODY3NTAxNiJ9&amp;rk3s=f64ab15b&amp;x-orig-authkey=f32326d3454f2ac7e96d3d06cdbb035152127018&amp;x-orig-expires=1730958932&amp;x-orig-sign=z1GvCfk7Y8SX4RiAybUx2J3bxY8%3D" data-fancybox data-caption="lr.gif"><img src="https://p0-xtjj-private.juejin.cn/tos-cn-i-73owjymdk6/38e1d41e0bae4075bf75585a499f572e~tplv-73owjymdk6-jj-mark-v1:0:0:0:0:5o6Y6YeR5oqA5pyv56S-5Yy6IEAg6bqm6YKj5Liq5YWc:q75.awebp?policy=eyJ2bSI6MywidWlkIjoiMTM2MzA1MDE0ODY3NTAxNiJ9&amp;rk3s=f64ab15b&amp;x-orig-authkey=f32326d3454f2ac7e96d3d06cdbb035152127018&amp;x-orig-expires=1730958932&amp;x-orig-sign=z1GvCfk7Y8SX4RiAybUx2J3bxY8%3D" alt="lr.gif" title="lr.gif" /></a><br>
+从右至左选择内容：focus在左边，anchor在右边<br>
+如图示：</p>
+<p><a href="https://p0-xtjj-private.juejin.cn/tos-cn-i-73owjymdk6/aec62ce1c2d045baa3a16f1ed8492044~tplv-73owjymdk6-jj-mark-v1:0:0:0:0:5o6Y6YeR5oqA5pyv56S-5Yy6IEAg6bqm6YKj5Liq5YWc:q75.awebp?policy=eyJ2bSI6MywidWlkIjoiMTM2MzA1MDE0ODY3NTAxNiJ9&amp;rk3s=f64ab15b&amp;x-orig-authkey=f32326d3454f2ac7e96d3d06cdbb035152127018&amp;x-orig-expires=1730958932&amp;x-orig-sign=wQUIv%2BqrsSvnhJittJdm4H2Z5Go%3D" data-fancybox data-caption="rl.gif"><img src="https://p0-xtjj-private.juejin.cn/tos-cn-i-73owjymdk6/aec62ce1c2d045baa3a16f1ed8492044~tplv-73owjymdk6-jj-mark-v1:0:0:0:0:5o6Y6YeR5oqA5pyv56S-5Yy6IEAg6bqm6YKj5Liq5YWc:q75.awebp?policy=eyJ2bSI6MywidWlkIjoiMTM2MzA1MDE0ODY3NTAxNiJ9&amp;rk3s=f64ab15b&amp;x-orig-authkey=f32326d3454f2ac7e96d3d06cdbb035152127018&amp;x-orig-expires=1730958932&amp;x-orig-sign=wQUIv%2BqrsSvnhJittJdm4H2Z5Go%3D" alt="rl.gif" title="rl.gif" /></a></p>
+<p>而从anchor到focus中间的内容，就是被选中的内容，也就是选择范围Range，不同的浏览器对于Range的限制不同。</p>
+<ul>
+<li>Firefox：一个选区可以有多个Range。</li>
+<li>其他浏览器：一个选区Selection最多只能有一个Range。</li>
+</ul>
+<h2><a id="2selection-对象" class="content__heading-anchor"></a>2、Selection 对象</h2>
+<p>在浏览器中，可以通过 <code>getSelection</code> 获取选区对象。</p>
+<pre><code class="language-javascript"><span class="hljs-keyword">const</span> selection = <span class="hljs-variable language_">window</span>.<span class="hljs-title function_">getSelection</span>();
+</code></pre>
+<p>被选中的文本都不直接在 Selection 中，而是存在Range 中。</p>
+<h3><a id="属性" class="content__heading-anchor"></a>属性</h3>
+<h4><a id="rangecount" class="content__heading-anchor"></a>rangeCount</h4>
+<p><code>selection.rangeCount</code> 属性可以返回该选区所包含的连续范围的数量,通过该属性可以获取选区 (Selection) 中包含多少个Range，通过 <code>selection.getRangeAt(index)</code> 可以获取到选区中第 index 个被选中的块。</p>
+<pre><code class="language-javascript"><span class="hljs-keyword">const</span> selection = <span class="hljs-variable language_">window</span>.<span class="hljs-title function_">getSelection</span>();
+<span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(selection.<span class="hljs-property">rangeCount</span>); 
+<span class="hljs-comment">// 在firefox浏览器中显示多个选区具体数量，在其他浏览器中只会显示一个</span>
+<span class="hljs-keyword">const</span> firstRange = selection.<span class="hljs-title function_">getRangeAt</span>(<span class="hljs-number">0</span>); <span class="hljs-comment">// 被选中的内容，即上方粉红色的部分</span>
+</code></pre>
+<p>Chrome浏览器：</p>
+<p><a href="https://p0-xtjj-private.juejin.cn/tos-cn-i-73owjymdk6/3cf2e5d951084b5b8479125348478bcf~tplv-73owjymdk6-jj-mark-v1:0:0:0:0:5o6Y6YeR5oqA5pyv56S-5Yy6IEAg6bqm6YKj5Liq5YWc:q75.awebp?policy=eyJ2bSI6MywidWlkIjoiMTM2MzA1MDE0ODY3NTAxNiJ9&amp;rk3s=f64ab15b&amp;x-orig-authkey=f32326d3454f2ac7e96d3d06cdbb035152127018&amp;x-orig-expires=1730958932&amp;x-orig-sign=VJKs2WgImw%2Bj%2F7IhjAK57CYRlQQ%3D" data-fancybox data-caption="Jietu20241030-121058.jpg"><img src="https://p0-xtjj-private.juejin.cn/tos-cn-i-73owjymdk6/3cf2e5d951084b5b8479125348478bcf~tplv-73owjymdk6-jj-mark-v1:0:0:0:0:5o6Y6YeR5oqA5pyv56S-5Yy6IEAg6bqm6YKj5Liq5YWc:q75.awebp?policy=eyJ2bSI6MywidWlkIjoiMTM2MzA1MDE0ODY3NTAxNiJ9&amp;rk3s=f64ab15b&amp;x-orig-authkey=f32326d3454f2ac7e96d3d06cdbb035152127018&amp;x-orig-expires=1730958932&amp;x-orig-sign=VJKs2WgImw%2Bj%2F7IhjAK57CYRlQQ%3D" alt="Jietu20241030-121058.jpg" title="Jietu20241030-121058.jpg" /></a></p>
+<p>FireFox浏览器：</p>
+<p><a href="https://p0-xtjj-private.juejin.cn/tos-cn-i-73owjymdk6/b385adb6b92746109856de65a67e5c54~tplv-73owjymdk6-jj-mark-v1:0:0:0:0:5o6Y6YeR5oqA5pyv56S-5Yy6IEAg6bqm6YKj5Liq5YWc:q75.awebp?policy=eyJ2bSI6MywidWlkIjoiMTM2MzA1MDE0ODY3NTAxNiJ9&amp;rk3s=f64ab15b&amp;x-orig-authkey=f32326d3454f2ac7e96d3d06cdbb035152127018&amp;x-orig-expires=1730958932&amp;x-orig-sign=Pz15tWn2MOtxZ2v7IlTLJ0Ju4HM%3D" data-fancybox data-caption="firefox.jpg"><img src="https://p0-xtjj-private.juejin.cn/tos-cn-i-73owjymdk6/b385adb6b92746109856de65a67e5c54~tplv-73owjymdk6-jj-mark-v1:0:0:0:0:5o6Y6YeR5oqA5pyv56S-5Yy6IEAg6bqm6YKj5Liq5YWc:q75.awebp?policy=eyJ2bSI6MywidWlkIjoiMTM2MzA1MDE0ODY3NTAxNiJ9&amp;rk3s=f64ab15b&amp;x-orig-authkey=f32326d3454f2ac7e96d3d06cdbb035152127018&amp;x-orig-expires=1730958932&amp;x-orig-sign=Pz15tWn2MOtxZ2v7IlTLJ0Ju4HM%3D" alt="firefox.jpg" title="firefox.jpg" /></a></p>
+<h4><a id="anchor" class="content__heading-anchor"></a>anchor</h4>
+<p>在 Selection 中，anchor 锚点相关的属性有 <code>anchorNode</code> 与 <code>anchorOffset</code>，只读。</p>
+<ul>
+<li><p><code>anchorNode</code>只读</p>
+<ul>
+<li>返回该选区起点所在的节点</li>
+</ul></li>
+<li><p><code>anchorOffset</code></p>
+<ul>
+<li>返回一个数字，其表示的是选区起点在<code>anchorNode</code>中的位置偏移量。</li>
+</ul>
+<ol>
+<li>如果 <code>anchorNode</code> 是文本节点，那么返回的就是从该文字节点的第一个字开始，直到被选中的第一个字之间的字数（如果第一个字就被选中，那么偏移量为零）。</li>
+<li>如果 <code>anchorNode</code> 是一个元素，那么返回的就是在选区第一个节点之前的同级节点总数。(这些节点都是 <code>anchorNode</code> 的子节点)</li>
+</ol></li>
+</ul>
+<h4><a id="focus" class="content__heading-anchor"></a>focus</h4>
+<p>在 Selection 中，focus 焦点相关的属性有 <code>focusNode</code> 与 <code>focusOffset</code>，只读。</p>
+<ul>
+<li><code>focusNode</code>
+<ul>
+<li>返回该选区终点所在的节点。</li>
+</ul></li>
+<li><code>focusOffset</code>
+<ul>
+<li>返回一个数字，其表示的是选区终点在<code>focusNode</code>中的位置偏移量。</li>
+</ul>
+<ol>
+<li>如果 <code>focusNode</code> 是文本节点，那么选区末尾未被选中的第一个字，在该文字节点中是第几个字（从 0 开始计），就返回它。</li>
+<li>如果 <code>focusNode</code> 是一个元素，那么返回的就是在选区末尾之后第一个节点之前的同级节点总数。</li>
+</ol></li>
+</ul>
+<p>举个例子：<br>
+当选中<code>职场生存</code>中的生存的时候，通过控制台输出结果，可以看到如下结果：</p>
+<p><a href="https://p0-xtjj-private.juejin.cn/tos-cn-i-73owjymdk6/cc6bbf519dd64a4daf73f137453f1a04~tplv-73owjymdk6-jj-mark-v1:0:0:0:0:5o6Y6YeR5oqA5pyv56S-5Yy6IEAg6bqm6YKj5Liq5YWc:q75.awebp?policy=eyJ2bSI6MywidWlkIjoiMTM2MzA1MDE0ODY3NTAxNiJ9&amp;rk3s=f64ab15b&amp;x-orig-authkey=f32326d3454f2ac7e96d3d06cdbb035152127018&amp;x-orig-expires=1730958932&amp;x-orig-sign=1DSKW4e1naT2YUcS8mjFczX4AXM%3D" data-fancybox data-caption="doc_1.jpg"><img src="https://p0-xtjj-private.juejin.cn/tos-cn-i-73owjymdk6/cc6bbf519dd64a4daf73f137453f1a04~tplv-73owjymdk6-jj-mark-v1:0:0:0:0:5o6Y6YeR5oqA5pyv56S-5Yy6IEAg6bqm6YKj5Liq5YWc:q75.awebp?policy=eyJ2bSI6MywidWlkIjoiMTM2MzA1MDE0ODY3NTAxNiJ9&amp;rk3s=f64ab15b&amp;x-orig-authkey=f32326d3454f2ac7e96d3d06cdbb035152127018&amp;x-orig-expires=1730958932&amp;x-orig-sign=1DSKW4e1naT2YUcS8mjFczX4AXM%3D" alt="doc_1.jpg" title="doc_1.jpg" /></a><br>
+根据结果列出已知条件：</p>
+<pre><code>∵ focusOffset = 2 锚点偏移值是2
+∵ anchorOffset = 4 焦点偏移值是4
+∵ anchorOffset&gt;focusOffset
+∴ 选区是从右到左的方向
+</code></pre>
+<p>在<code>anchorNode</code>节点中，可以看到data是<code>职场生存</code>，也就是锚点所在的TextNode节点的值，同理在<code>focusNode</code>中的data是<code>职场生存</code>，也就是焦点所在的TextNode节点的值。</p>
+<p><a href="https://p0-xtjj-private.juejin.cn/tos-cn-i-73owjymdk6/2d6ecce1211949469174b5969fe7d2ae~tplv-73owjymdk6-jj-mark-v1:0:0:0:0:5o6Y6YeR5oqA5pyv56S-5Yy6IEAg6bqm6YKj5Liq5YWc:q75.awebp?policy=eyJ2bSI6MywidWlkIjoiMTM2MzA1MDE0ODY3NTAxNiJ9&amp;rk3s=f64ab15b&amp;x-orig-authkey=f32326d3454f2ac7e96d3d06cdbb035152127018&amp;x-orig-expires=1730958932&amp;x-orig-sign=mNSnABEbs6LZ66Ynq%2B5ypxtntzA%3D" data-fancybox data-caption="doc_2.jpg"><img src="https://p0-xtjj-private.juejin.cn/tos-cn-i-73owjymdk6/2d6ecce1211949469174b5969fe7d2ae~tplv-73owjymdk6-jj-mark-v1:0:0:0:0:5o6Y6YeR5oqA5pyv56S-5Yy6IEAg6bqm6YKj5Liq5YWc:q75.awebp?policy=eyJ2bSI6MywidWlkIjoiMTM2MzA1MDE0ODY3NTAxNiJ9&amp;rk3s=f64ab15b&amp;x-orig-authkey=f32326d3454f2ac7e96d3d06cdbb035152127018&amp;x-orig-expires=1730958932&amp;x-orig-sign=mNSnABEbs6LZ66Ynq%2B5ypxtntzA%3D" alt="doc_2.jpg" title="doc_2.jpg" /></a><br>
+以上的例子是当Range和Selection是在同一个TextNode节点的情况下。</p>
+<p>那当Range是多个Node节点组合的情况是什么样呢，继续看例子：<br>
+这次选中了二级标题和内容，属于多个Node节点，然后再输出selection查看结果：</p>
+<p><a href="https://p0-xtjj-private.juejin.cn/tos-cn-i-73owjymdk6/c0f14ebc60014cac8410f2441032b8b3~tplv-73owjymdk6-jj-mark-v1:0:0:0:0:5o6Y6YeR5oqA5pyv56S-5Yy6IEAg6bqm6YKj5Liq5YWc:q75.awebp?policy=eyJ2bSI6MywidWlkIjoiMTM2MzA1MDE0ODY3NTAxNiJ9&amp;rk3s=f64ab15b&amp;x-orig-authkey=f32326d3454f2ac7e96d3d06cdbb035152127018&amp;x-orig-expires=1730958932&amp;x-orig-sign=g5WlYAKFvohY7SDiBjv898zjL5Q%3D" data-fancybox data-caption="doc_3.jpg"><img src="https://p0-xtjj-private.juejin.cn/tos-cn-i-73owjymdk6/c0f14ebc60014cac8410f2441032b8b3~tplv-73owjymdk6-jj-mark-v1:0:0:0:0:5o6Y6YeR5oqA5pyv56S-5Yy6IEAg6bqm6YKj5Liq5YWc:q75.awebp?policy=eyJ2bSI6MywidWlkIjoiMTM2MzA1MDE0ODY3NTAxNiJ9&amp;rk3s=f64ab15b&amp;x-orig-authkey=f32326d3454f2ac7e96d3d06cdbb035152127018&amp;x-orig-expires=1730958932&amp;x-orig-sign=g5WlYAKFvohY7SDiBjv898zjL5Q%3D" alt="doc_3.jpg" title="doc_3.jpg" /></a><br>
+可以看到</p>
+<pre><code>anchorOffset = 0 锚点偏移值是0
+focusOffset = 5 焦点偏移值是5
+</code></pre>
+<p>发现焦点偏移值是5，不急，先看看anchorNode和focusNode是什么情况<br>
+anchorNode：<br>
+<a href="https://p0-xtjj-private.juejin.cn/tos-cn-i-73owjymdk6/17a35cb2737f433bb80688ab176b9d83~tplv-73owjymdk6-jj-mark-v1:0:0:0:0:5o6Y6YeR5oqA5pyv56S-5Yy6IEAg6bqm6YKj5Liq5YWc:q75.awebp?policy=eyJ2bSI6MywidWlkIjoiMTM2MzA1MDE0ODY3NTAxNiJ9&amp;rk3s=f64ab15b&amp;x-orig-authkey=f32326d3454f2ac7e96d3d06cdbb035152127018&amp;x-orig-expires=1730958932&amp;x-orig-sign=GYZ7kQxrU3vdsKHtqNCf9twIXtk%3D" data-fancybox data-caption="Pasted image 20241030172744.png"><img src="https://p0-xtjj-private.juejin.cn/tos-cn-i-73owjymdk6/17a35cb2737f433bb80688ab176b9d83~tplv-73owjymdk6-jj-mark-v1:0:0:0:0:5o6Y6YeR5oqA5pyv56S-5Yy6IEAg6bqm6YKj5Liq5YWc:q75.awebp?policy=eyJ2bSI6MywidWlkIjoiMTM2MzA1MDE0ODY3NTAxNiJ9&amp;rk3s=f64ab15b&amp;x-orig-authkey=f32326d3454f2ac7e96d3d06cdbb035152127018&amp;x-orig-expires=1730958932&amp;x-orig-sign=GYZ7kQxrU3vdsKHtqNCf9twIXtk%3D" alt="Pasted image 20241030172744.png" title="Pasted image 20241030172744.png" /></a></p>
+<p>focusNode：</p>
+<p><a href="https://p0-xtjj-private.juejin.cn/tos-cn-i-73owjymdk6/9c47e853de204c959b5f973a1a166a2e~tplv-73owjymdk6-jj-mark-v1:0:0:0:0:5o6Y6YeR5oqA5pyv56S-5Yy6IEAg6bqm6YKj5Liq5YWc:q75.awebp?policy=eyJ2bSI6MywidWlkIjoiMTM2MzA1MDE0ODY3NTAxNiJ9&amp;rk3s=f64ab15b&amp;x-orig-authkey=f32326d3454f2ac7e96d3d06cdbb035152127018&amp;x-orig-expires=1730958932&amp;x-orig-sign=N6P9Fmxy%2FFULe7Ulost0GEoHUCg%3D" data-fancybox data-caption="Pasted image 20241030172801.png"><img src="https://p0-xtjj-private.juejin.cn/tos-cn-i-73owjymdk6/9c47e853de204c959b5f973a1a166a2e~tplv-73owjymdk6-jj-mark-v1:0:0:0:0:5o6Y6YeR5oqA5pyv56S-5Yy6IEAg6bqm6YKj5Liq5YWc:q75.awebp?policy=eyJ2bSI6MywidWlkIjoiMTM2MzA1MDE0ODY3NTAxNiJ9&amp;rk3s=f64ab15b&amp;x-orig-authkey=f32326d3454f2ac7e96d3d06cdbb035152127018&amp;x-orig-expires=1730958932&amp;x-orig-sign=N6P9Fmxy%2FFULe7Ulost0GEoHUCg%3D" alt="Pasted image 20241030172801.png" title="Pasted image 20241030172801.png" /></a></p>
+<p>可以发现anchorNode和focusNode不再是同一个节点，因为选区横跨了两个节点区域<br>
+因此在anchorNode中，anchorOffset是0，从0开始<br>
+而在focusNode中，focusOffset是5，在focusNode中5结束<br>
+这样我们就可以获取选区选择的内容</p>
+<p>接下来继续发散思维，如果横跨3+个区域呢，会是什么情况？<br>
+继续实验：</p>
+<p><a href="https://p0-xtjj-private.juejin.cn/tos-cn-i-73owjymdk6/5e81c7cfe26a4c0fb6bcbef0ad2c8b75~tplv-73owjymdk6-jj-mark-v1:0:0:0:0:5o6Y6YeR5oqA5pyv56S-5Yy6IEAg6bqm6YKj5Liq5YWc:q75.awebp?policy=eyJ2bSI6MywidWlkIjoiMTM2MzA1MDE0ODY3NTAxNiJ9&amp;rk3s=f64ab15b&amp;x-orig-authkey=f32326d3454f2ac7e96d3d06cdbb035152127018&amp;x-orig-expires=1730958932&amp;x-orig-sign=K7YqVAxluyDYbVa6rPhFY1PTvgc%3D" data-fancybox data-caption="Pasted image 20241030183330.png"><img src="https://p0-xtjj-private.juejin.cn/tos-cn-i-73owjymdk6/5e81c7cfe26a4c0fb6bcbef0ad2c8b75~tplv-73owjymdk6-jj-mark-v1:0:0:0:0:5o6Y6YeR5oqA5pyv56S-5Yy6IEAg6bqm6YKj5Liq5YWc:q75.awebp?policy=eyJ2bSI6MywidWlkIjoiMTM2MzA1MDE0ODY3NTAxNiJ9&amp;rk3s=f64ab15b&amp;x-orig-authkey=f32326d3454f2ac7e96d3d06cdbb035152127018&amp;x-orig-expires=1730958932&amp;x-orig-sign=K7YqVAxluyDYbVa6rPhFY1PTvgc%3D" alt="Pasted image 20241030183330.png" title="Pasted image 20241030183330.png" /></a><br>
+anchorNode显示是开始的部分，看起来没有问题</p>
+<p>接下来看看focusNode<br>
+<a href="https://p0-xtjj-private.juejin.cn/tos-cn-i-73owjymdk6/e31096dad775478399671f47cbd7d84d~tplv-73owjymdk6-jj-mark-v1:0:0:0:0:5o6Y6YeR5oqA5pyv56S-5Yy6IEAg6bqm6YKj5Liq5YWc:q75.awebp?policy=eyJ2bSI6MywidWlkIjoiMTM2MzA1MDE0ODY3NTAxNiJ9&amp;rk3s=f64ab15b&amp;x-orig-authkey=f32326d3454f2ac7e96d3d06cdbb035152127018&amp;x-orig-expires=1730958932&amp;x-orig-sign=6%2BRHrIqDEIvMb%2Fuhc0ie0sO92mM%3D" data-fancybox data-caption="Pasted image 20241030183355.png"><img src="https://p0-xtjj-private.juejin.cn/tos-cn-i-73owjymdk6/e31096dad775478399671f47cbd7d84d~tplv-73owjymdk6-jj-mark-v1:0:0:0:0:5o6Y6YeR5oqA5pyv56S-5Yy6IEAg6bqm6YKj5Liq5YWc:q75.awebp?policy=eyJ2bSI6MywidWlkIjoiMTM2MzA1MDE0ODY3NTAxNiJ9&amp;rk3s=f64ab15b&amp;x-orig-authkey=f32326d3454f2ac7e96d3d06cdbb035152127018&amp;x-orig-expires=1730958932&amp;x-orig-sign=6%2BRHrIqDEIvMb%2Fuhc0ie0sO92mM%3D" alt="Pasted image 20241030183355.png" title="Pasted image 20241030183355.png" /></a></p>
+<p>会发现，focusNode并不是我们之前预想的会包括上面选中全部的内容，而是最后一个Range节点区域。<br>
+问题来了，中间的内容哪里去了？Selection.toString()又是如何获取完整的被选中的内容呢？</p>
+<p>前面提到过<code>被选中的文本都不直接在 Selection 中，而是存在Range 中。</code>,后面我们谈Range对象的时候会来解释这个问题。</p>
+<h4><a id="iscollapsed" class="content__heading-anchor"></a>isCollapsed</h4>
+<p><code>isCollapsed</code> 用于判断选区的起始点和终点是否在同一个位置，即当前选区是光标所在的位置。</p>
+<h3><a id="方法" class="content__heading-anchor"></a>方法：</h3>
+<table>
+<thead>
+<tr><th>方法</th><th>说明</th></tr>
+</thead>
+<tbody>
+<tr><td>collapse(parentNode: Node, offset?: number)</td><td>设置光标位置</td></tr>
+<tr><td>setPosition(parentNode, offset?)</td><td>与collapse相同</td></tr>
+<tr><td>collapseToStart()</td><td>将光标移动到当前选区的开头</td></tr>
+<tr><td>collapseToEnd()</td><td>将光标移动到当前选区的结尾</td></tr>
+<tr><td>toString()</td><td>返回选区文本字符串</td></tr>
+<tr><td>containsNode(node, aPartlyContained?)</td><td>判断传入的DOM节点是否处于选区中<br></td></tr>
+<tr><td>deleteFromDocument()</td><td>将选区内容从文档中删除<br><strong>(注：该方法执行后无法通过撤销恢复内容)</strong></td></tr>
+<tr><td>extend(node, offset)</td><td>修改选区，以原来选区的 anchorNode 为基础，设置 focusNode，达到修改选区的效果。</td></tr>
+<tr><td>addRange(range)</td><td>向选区添加一个 Range</td></tr>
+<tr><td>getRangeAt(index)</td><td>获取Range，通过rangeCount可以获取到当前选区有多少个Range，通过当前方法可以获取对应的Range对象。</td></tr>
+<tr><td>addRange(range)</td><td>向选区添加一个 Range</td></tr>
+<tr><td>removeAllRanges()</td><td>删除所有的选区</td></tr>
+<tr><td>removeRange(range)</td><td>移除指定 Range</td></tr>
+<tr><td>selectAllChildren(parentNode)</td><td>选中 parentNode 的所有子元素，parentNode 本身不会被选中<br><strong>(parentNode为TextNode时无效）</strong></td></tr>
+<tr><td>setBaseAndExtent(anchorNode,anchorOffset,focusNode,focusOffset)</td><td>指定 anchorNode 与 focusNode 以及对应的offset设置选区</td></tr>
+</tbody>
+</table>
+<h2><a id="3范围-range对象" class="content__heading-anchor"></a>3、范围 Range对象</h2>
+<p>Range 的创建是通过 document 上的 createRange 创建的，创建之后，通过 range 的方法对 range 对象进行设置。</p>
+<pre><code class="language-js"><span class="hljs-keyword">const</span> range = <span class="hljs-variable language_">document</span>.<span class="hljs-title function_">createRange</span>()
+</code></pre>
+<p>也可以通过selection中获取Range对象</p>
+<pre><code class="language-js"><span class="hljs-keyword">const</span> range = selection.<span class="hljs-title function_">getRangeAt</span>(<span class="hljs-number">0</span>)
+</code></pre>
+<h3><a id="属性-1" class="content__heading-anchor"></a>属性</h3>
+<h4><a id="collapsed" class="content__heading-anchor"></a>collapsed</h4>
+<ul>
+<li>表示 <code>Range</code> 的起始位置和终止位置是否相同，与<code>selection.isCollapsed</code>作用类似</li>
+<li>selection 中isCollapsed是选区内实时的光标状态</li>
+<li>range
+<ul>
+<li>有可能是新创建的Range，还没有生效</li>
+<li>或者从selection中提取出来的旧的属性</li>
+<li>不一定能直接代表当前状态，但可以代表之前或未来的状态（过去完成时或将来完成时）</li>
+</ul></li>
+</ul>
+<h4><a id="startcontainer" class="content__heading-anchor"></a>startContainer</h4>
+<p>返回包含 <code>Range</code> 开始的节点。</p>
+<h4><a id="endcontainer" class="content__heading-anchor"></a>endContainer</h4>
+<p>返回包含 <code>Range</code> 终点的节点。</p>
+<h4><a id="startoffset" class="content__heading-anchor"></a>startOffset</h4>
+<p>表示 <code>Range</code> 终点在 <code>endContainer</code> 中的位置。</p>
+<h4><a id="endoffset" class="content__heading-anchor"></a>endOffset</h4>
+<p>表示 <code>Range</code> 开始在 <code>startContainer</code> 中的位置。</p>
+<h4><a id="commonancestorcontainer" class="content__heading-anchor"></a>commonAncestorContainer</h4>
+<p>startContainer 与 endContainer 所在的公共父节点。</p>
+<ul>
+<li>range与selection不同的地方在于range没有左右之分，方向均为从左至右。</li>
+</ul>
+<h3><a id="主要方法" class="content__heading-anchor"></a>主要方法：</h3>
+<table>
+<thead>
+<tr><th>方法</th><th>说明</th></tr>
+</thead>
+<tbody>
+<tr><td>cloneRange()</td><td>克隆Range，返回一个不会影响原有Range的对象（深拷贝）</td></tr>
+<tr><td>cloneContents()</td><td>返回一个克隆 <code>Range</code> 中所有节点的HTML片段</td></tr>
+<tr><td>collapse(toStart: boolean)</td><td>设置光标到当前选择范围的端点（折叠范围）</td></tr>
+<tr><td>insertNode(newNode)</td><td>向 range 首部插入新的节点</td></tr>
+<tr><td>selectNode(referenceNode)</td><td>将<code>Range</code>置为包含整个<code>referenceNode</code>及其内容。</td></tr>
+<tr><td>selectNodeContents(referenceNode)</td><td>设置 <code>Range</code> 包含<code>referenceNode</code>节点的内容，此节点中的内容会被<code>Range</code>选中</td></tr>
+<tr><td>setStart(startNode, startOffset)</td><td>设置 <code>Range</code> 的起点</td></tr>
+<tr><td>setEnd(endNode, endOffset)</td><td>设置 <code>Range</code> 的终点</td></tr>
+<tr><td>setStartBefore(refenceNode, offset)</td><td>以<code>refenceNode</code>为基准，设置 <code>Range</code> 在refenceNode节点前的起点位置。</td></tr>
+<tr><td>setStartAfter(refenceNode, offset)</td><td>以<code>refenceNode</code>为基准，设置 <code>Range</code> 在refenceNode节点后的起点位置。</td></tr>
+<tr><td>surroundContents(newParent)</td><td>将 <code>Range</code> 中的内容移动到一个新的节点<br><strong>注：如果是跨节点会报错</strong></td></tr>
+</tbody>
+</table>
+<p>接下来继续讨论上面的问题</p>
+<p>当跨区选择范围后，selection只有锚点和焦点的节点的值，中间的跨区内容则存储在范围range中，在range中，可以通过<code>cloneContents()</code>获取范围内的HTML片段</p>
+<p><a href="https://p0-xtjj-private.juejin.cn/tos-cn-i-73owjymdk6/6f17ccc02009473a8f704ba194b84155~tplv-73owjymdk6-jj-mark-v1:0:0:0:0:5o6Y6YeR5oqA5pyv56S-5Yy6IEAg6bqm6YKj5Liq5YWc:q75.awebp?policy=eyJ2bSI6MywidWlkIjoiMTM2MzA1MDE0ODY3NTAxNiJ9&amp;rk3s=f64ab15b&amp;x-orig-authkey=f32326d3454f2ac7e96d3d06cdbb035152127018&amp;x-orig-expires=1730958932&amp;x-orig-sign=0K1DvPna3WO5xVuPfKXq9Npcdd8%3D" data-fancybox data-caption="image.png"><img src="https://p0-xtjj-private.juejin.cn/tos-cn-i-73owjymdk6/6f17ccc02009473a8f704ba194b84155~tplv-73owjymdk6-jj-mark-v1:0:0:0:0:5o6Y6YeR5oqA5pyv56S-5Yy6IEAg6bqm6YKj5Liq5YWc:q75.awebp?policy=eyJ2bSI6MywidWlkIjoiMTM2MzA1MDE0ODY3NTAxNiJ9&amp;rk3s=f64ab15b&amp;x-orig-authkey=f32326d3454f2ac7e96d3d06cdbb035152127018&amp;x-orig-expires=1730958932&amp;x-orig-sign=0K1DvPna3WO5xVuPfKXq9Npcdd8%3D" alt="image.png" title="image.png" /></a><br>
+可以看到通过cloneContents()就能获取到选择范围内的元素，之后再进行进一步的处理。</p>
+<p>以上就是Selection和Range的概念了，虽然在现代的富文本编辑器中很少直接涉及这些Selection和Range，都是框架封装后暴露API提供给开发者使用，但是其底层原理依然和Selection与Range有关系，后面的从0实现LO级富文本编辑器也会调用Selection和Range，从而直观的去了解富文本的操作。</p>
+ </article> </section> </main>  <footer class="footer"> <hr class="footer__divide"> <div class="footer__row"> <p class="m-2">
+&#169; 2017-2024 <a href="/" class="link">9Sky 九天</a> </p> <div class="m-2"> <ul data-astro-cid-tfcnbjmv> <li data-astro-cid-tfcnbjmv> <a class="link" href="/" data-astro-cid-tfcnbjmv> 
+主页
+</a> </li> <li data-astro-cid-tfcnbjmv> <a class="link" href="/blog" data-astro-cid-tfcnbjmv>  文章 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/projects" data-astro-cid-tfcnbjmv>  项目 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/lab" data-astro-cid-tfcnbjmv>  实验室 </a> </li><li data-astro-cid-tfcnbjmv> <a class="link" href="/about" data-astro-cid-tfcnbjmv>  关于 </a> </li> </ul>  </div> </div> </footer> </body></html> 
