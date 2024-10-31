@@ -11,10 +11,14 @@ groups:
         method: Vercel
   - name: 🌟 自开源&文档
     services:
-      - name: SwdDesign
-        app: SwdDesign 组件库文档
+      - name: SwordDesign
+        app: SwordDesign 组件库文档
         url: https://blog.swdwiki.com/sword-design
-        method: Github
+        method: Github Action
+      - name: SwordTools
+        app: SwordTools 工具库文档
+        url: https://blog.swdwiki.com/sword-tool
+        method: Github Action
   - name: 🌟 AI & AIGC APP
     services:
       - name: AIGC
